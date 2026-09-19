@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">AGATHA</string>
+    <!-- google_maps_key is generated at build time from local.properties (MAPS_API_KEY);
+         see the resValue() call in app/build.gradle.kts. -->
+</resources>

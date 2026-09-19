@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Only used for the launch window and the app's manifest theme attribute; every
+         screen's actual colors/typography come from ui/theme/Theme.kt (Compose Material 3),
+         which is the single source of truth described in docs/ARQUITECTURA_Y_DISENO.md. -->
+    <style name="Theme.Agatha" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowLightStatusBar">true</item>
+    </style>
+</resources>

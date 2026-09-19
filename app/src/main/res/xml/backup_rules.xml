@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+   RNF-MOV-05 (seguridad): no incluimos credenciales ni tokens de sesión en el backup
+   automático de Android. Ajustar esta lista cuando se agregue almacenamiento de sesión.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="." />
+    <exclude domain="database" path="." />
+</full-backup-content>

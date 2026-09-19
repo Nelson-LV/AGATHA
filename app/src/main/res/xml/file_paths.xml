@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scoped storage location the FileProvider is allowed to share: only the app-private
+     "evidencias" cache folder used to stage a photo before/after the system camera intent
+     (HE-06). Nothing else on the device is exposed. -->
+<paths>
+    <cache-path name="evidencias" path="evidencias/" />
+</paths>

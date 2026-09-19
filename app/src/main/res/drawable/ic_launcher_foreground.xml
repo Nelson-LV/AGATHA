@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The AGATHA wordmark's bar-chart glyph (see ui/components/AgathaLogoMark.kt for the
+     in-app Compose version used on every screen header), recreated here for the launcher
+     adaptive icon. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M28,42 L40,42 A2,2 0 0 1 42,44 L42,74 A2,2 0 0 1 40,76 L28,76 A2,2 0 0 1 26,74 L26,44 A2,2 0 0 1 28,42 Z" />
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M48,18 L60,18 A2,2 0 0 1 62,20 L62,74 A2,2 0 0 1 60,76 L48,76 A2,2 0 0 1 46,74 L46,20 A2,2 0 0 1 48,18 Z" />
+    <path
+        android:fillColor="#2563EB"
+        android:pathData="M68,30 L80,30 A2,2 0 0 1 82,32 L82,74 A2,2 0 0 1 80,76 L68,76 A2,2 0 0 1 66,74 L66,32 A2,2 0 0 1 68,30 Z" />
+</vector>
