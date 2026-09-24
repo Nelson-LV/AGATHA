@@ -14,3 +14,4 @@ captures/
 *.ap_
 *.dex
 google-services.json
+graphify-out/
