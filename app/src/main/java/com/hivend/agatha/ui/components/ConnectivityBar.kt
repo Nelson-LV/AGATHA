@@ -28,12 +28,12 @@ import com.hivend.agatha.ui.theme.OfflineText
  */
 @Composable
 fun ConnectivityBar(
-    conectado: Boolean,
-    mensaje: String,
+    connected: Boolean,
+    message: String,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (conectado) ConnectedContainer else OfflineContainer
-    val contentColor = if (conectado) ConnectedText else OfflineText
+    val containerColor = if (connected) ConnectedContainer else OfflineContainer
+    val contentColor = if (connected) ConnectedText else OfflineText
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -44,7 +44,7 @@ fun ConnectivityBar(
     ) {
         Dot(color = contentColor)
         Text(
-            text = mensaje,
+            text = message,
             color = contentColor,
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(start = 6.dp),
@@ -66,8 +66,8 @@ private fun Dot(color: Color) {
 private fun ConnectivityBarPreview() {
     AgathaTheme {
         Column {
-            ConnectivityBar(conectado = true, mensaje = "Conectado · Sincronizado hace 2 min")
-            ConnectivityBar(conectado = false, mensaje = "Sin conexión · 3 pendientes por sincronizar")
+            ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
+            ConnectivityBar(connected = false, message = "Sin conexión · 3 pendientes por sincronizar")
         }
     }
 }

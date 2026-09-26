@@ -42,8 +42,8 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
-import com.hivend.agatha.core.util.crearUriParaEvidencia
-import com.hivend.agatha.domain.model.EvidenciaFoto
+import com.hivend.agatha.core.util.createEvidenceUri
+import com.hivend.agatha.domain.model.PhotoEvidence
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
@@ -67,35 +67,35 @@ import kotlinx.coroutines.launch
 @Composable
 fun PhotoEvidenceScreen(
     onBack: () -> Unit,
-    onGuardado: (String) -> Unit,
+    onSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: PhotoEvidenceViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    var uriPendiente by remember { mutableStateOf<Uri?>(null) }
+    var pendingUri by remember { mutableStateOf<Uri?>(null) }
 
-    LaunchedEffect(uiState.guardadoConExito) {
-        if (uiState.guardadoConExito) onGuardado(viewModel.alertaId)
+    LaunchedEffect(uiState.savedSuccessfully) {
+        if (uiState.savedSuccessfully) onSaved(viewModel.alertId)
     }
 
-    val tomarFotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { exito ->
-        if (exito) uriPendiente?.let { viewModel.onFotoAgregada(it.toString()) }
+    val takePhotoLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        if (success) pendingUri?.let { viewModel.onPhotoAdded(it.toString()) }
     }
-    val elegirDeGaleriaLauncher = rememberLauncherForActivityResult(
+    val pickFromGalleryLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.PickVisualMedia(),
-    ) { uri -> uri?.let { viewModel.onFotoAgregada(it.toString()) } }
+    ) { uri -> uri?.let { viewModel.onPhotoAdded(it.toString()) } }
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         BackTopBar(title = "Evidencia Fotográfica", onBack = onBack)
-        ConnectivityBar(conectado = false, mensaje = "Sin conexión · se guarda localmente")
+        ConnectivityBar(connected = false, message = "Sin conexión · se guarda localmente")
 
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f).padding(16.dp),
         ) {
-            SitePill(sitio = uiState.alerta?.sitio ?: "—")
+            SitePill(site = uiState.alert?.site ?: "—")
 
             Column(
                 modifier = Modifier
@@ -106,7 +106,7 @@ fun PhotoEvidenceScreen(
             ) {
                 Text("Evidencia fotográfica", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Sensor ${uiState.alerta?.sensorId ?: viewModel.alertaId} · Inspección en curso · Adjunta cuantas fotos necesites",
+                    "Sensor ${uiState.alert?.sensorId ?: viewModel.alertId} · Inspección en curso · Adjunta cuantas fotos necesites",
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 10.dp),
@@ -118,18 +118,18 @@ fun PhotoEvidenceScreen(
                     verticalArrangement = Arrangement.spacedBy(10.dp),
                     modifier = Modifier.weight(1f),
                 ) {
-                    items(uiState.evidencias, key = { it.uri }) { evidencia ->
-                        EvidenceTile(evidencia = evidencia, onDescripcionCambiada = viewModel::onDescripcionCambiada)
+                    items(uiState.evidence, key = { it.uri }) { evidence ->
+                        EvidenceTile(evidence = evidence, onDescriptionChanged = viewModel::onDescriptionChanged)
                     }
                     item {
                         AddEvidenceTile(
-                            onTomarFoto = {
-                                val uri = crearUriParaEvidencia(context)
-                                uriPendiente = uri
-                                tomarFotoLauncher.launch(uri)
+                            onTakePhoto = {
+                                val uri = createEvidenceUri(context)
+                                pendingUri = uri
+                                takePhotoLauncher.launch(uri)
                             },
-                            onElegirDeGaleria = {
-                                elegirDeGaleriaLauncher.launch(
+                            onPickFromGallery = {
+                                pickFromGalleryLauncher.launch(
                                     PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
                                 )
                             },
@@ -138,12 +138,12 @@ fun PhotoEvidenceScreen(
                 }
 
                 Button(
-                    onClick = viewModel::guardarEvidencias,
-                    enabled = !uiState.guardando,
+                    onClick = viewModel::saveEvidence,
+                    enabled = !uiState.saving,
                     colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 ) {
-                    Text(if (uiState.guardando) "Guardando…" else "✓ Guardar evidencias")
+                    Text(if (uiState.saving) "Guardando…" else "✓ Guardar evidencias")
                 }
             }
         }
@@ -151,11 +151,11 @@ fun PhotoEvidenceScreen(
 }
 
 @Composable
-private fun EvidenceTile(evidencia: EvidenciaFoto, onDescripcionCambiada: (String, String) -> Unit) {
+private fun EvidenceTile(evidence: PhotoEvidence, onDescriptionChanged: (String, String) -> Unit) {
     Column {
         AsyncImage(
-            model = evidencia.uri,
-            contentDescription = evidencia.descripcion,
+            model = evidence.uri,
+            contentDescription = evidence.description,
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .fillMaxWidth()
@@ -163,8 +163,8 @@ private fun EvidenceTile(evidencia: EvidenciaFoto, onDescripcionCambiada: (Strin
                 .background(NeutralSurfaceVariant, RoundedCornerShape(10.dp)),
         )
         OutlinedTextField(
-            value = evidencia.descripcion,
-            onValueChange = { onDescripcionCambiada(evidencia.uri, it) },
+            value = evidence.description,
+            onValueChange = { onDescriptionChanged(evidence.uri, it) },
             placeholder = { Text("Agregar descripción…", style = MaterialTheme.typography.bodySmall) },
             textStyle = MaterialTheme.typography.bodySmall,
             singleLine = true,
@@ -174,8 +174,8 @@ private fun EvidenceTile(evidencia: EvidenciaFoto, onDescripcionCambiada: (Strin
 }
 
 @Composable
-private fun AddEvidenceTile(onTomarFoto: () -> Unit, onElegirDeGaleria: () -> Unit) {
-    var mostrarOpciones by remember { mutableStateOf(false) }
+private fun AddEvidenceTile(onTakePhoto: () -> Unit, onPickFromGallery: () -> Unit) {
+    var showOptions by remember { mutableStateOf(false) }
 
     Box(
         contentAlignment = Alignment.Center,
@@ -184,21 +184,21 @@ private fun AddEvidenceTile(onTomarFoto: () -> Unit, onElegirDeGaleria: () -> Un
             .aspectRatio(1f)
             .background(AgathaBlueContainer, RoundedCornerShape(10.dp))
             .border(1.dp, AgathaBlue, RoundedCornerShape(10.dp))
-            .clickable { mostrarOpciones = !mostrarOpciones },
+            .clickable { showOptions = !showOptions },
     ) {
-        if (mostrarOpciones) {
+        if (showOptions) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     "📷 Tomar foto",
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.clickable { mostrarOpciones = false; onTomarFoto() }.padding(6.dp),
+                    modifier = Modifier.clickable { showOptions = false; onTakePhoto() }.padding(6.dp),
                 )
                 Text(
                     "🖼 Elegir de galería",
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier.clickable { mostrarOpciones = false; onElegirDeGaleria() }.padding(6.dp),
+                    modifier = Modifier.clickable { showOptions = false; onPickFromGallery() }.padding(6.dp),
                 )
             }
         } else {

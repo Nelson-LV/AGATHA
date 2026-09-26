@@ -2,8 +2,8 @@ package com.hivend.agatha.ui.notification
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.repository.AlertaRepository
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,16 +19,16 @@ import kotlinx.coroutines.flow.stateIn
  */
 @HiltViewModel
 class NotificationPreviewViewModel @Inject constructor(
-    alertaRepository: AlertaRepository,
+    alertRepository: AlertRepository,
 ) : ViewModel() {
 
-    val alertaDestacada: StateFlow<Alerta?> = alertaRepository.observarAlertas()
-        .map { alertas -> alertas.minByOrNull { it.nivel.severidad() } }
+    val featuredAlert: StateFlow<Alert?> = alertRepository.observeAlerts()
+        .map { alerts -> alerts.minByOrNull { it.level.severity() } }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 }
 
-private fun com.hivend.agatha.domain.model.NivelAlerta.severidad(): Int = when (this) {
-    com.hivend.agatha.domain.model.NivelAlerta.ROJO -> 0
-    com.hivend.agatha.domain.model.NivelAlerta.AMARILLO -> 1
-    com.hivend.agatha.domain.model.NivelAlerta.VERDE -> 2
+private fun com.hivend.agatha.domain.model.AlertLevel.severity(): Int = when (this) {
+    com.hivend.agatha.domain.model.AlertLevel.RED -> 0
+    com.hivend.agatha.domain.model.AlertLevel.YELLOW -> 1
+    com.hivend.agatha.domain.model.AlertLevel.GREEN -> 2
 }

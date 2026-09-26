@@ -30,8 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.CategoriaEvento
-import com.hivend.agatha.domain.model.ResultadoInspeccion
+import com.hivend.agatha.domain.model.EventCategory
+import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
@@ -53,26 +53,26 @@ import com.hivend.agatha.ui.theme.TextSecondary
 @Composable
 fun InspectionFormScreen(
     onBack: () -> Unit,
-    onGuardado: (String) -> Unit,
+    onSaved: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: InspectionFormViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(uiState.guardadoConExito) {
-        if (uiState.guardadoConExito) onGuardado(viewModel.alertaId)
+    LaunchedEffect(uiState.savedSuccessfully) {
+        if (uiState.savedSuccessfully) onSaved(viewModel.alertId)
     }
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         BackTopBar(title = "Registrar Inspección", onBack = onBack)
-        ConnectivityBar(conectado = false, mensaje = "Sin conexión · se guarda localmente")
+        ConnectivityBar(connected = false, message = "Sin conexión · se guarda localmente")
 
         LazyColumn(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(sitio = uiState.alerta?.sitio ?: "—") }
+            item { SitePill(site = uiState.alert?.site ?: "—") }
 
             item {
                 Column(
@@ -85,7 +85,7 @@ fun InspectionFormScreen(
                     Column {
                         Text("Registrar inspección", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Sensor ${uiState.alerta?.sensorId ?: viewModel.alertaId} · ${uiState.alerta?.pk ?: ""}",
+                            "Sensor ${uiState.alert?.sensorId ?: viewModel.alertId} · ${uiState.alert?.pk ?: ""}",
                             color = TextSecondary,
                             style = MaterialTheme.typography.bodySmall,
                         )
@@ -94,10 +94,10 @@ fun InspectionFormScreen(
                     RadioSection(
                         title = "Resultado de la inspección",
                         subtitle = "Selecciona el estado encontrado en el dispositivo o sensor.",
-                        options = ResultadoInspeccion.entries,
-                        optionLabel = { it.etiqueta },
-                        selected = uiState.resultado,
-                        onSelected = viewModel::onResultadoSeleccionado,
+                        options = InspectionResult.entries,
+                        optionLabel = { it.label },
+                        selected = uiState.result,
+                        onSelected = viewModel::onResultSelected,
                     )
 
                     HorizontalDivider(color = NeutralBorder)
@@ -105,10 +105,10 @@ fun InspectionFormScreen(
                     RadioSection(
                         title = "Clasificación del evento",
                         subtitle = "¿Qué originó realmente la alerta?",
-                        options = CategoriaEvento.entries,
-                        optionLabel = { it.etiqueta },
-                        selected = uiState.categoria,
-                        onSelected = viewModel::onCategoriaSeleccionada,
+                        options = EventCategory.entries,
+                        optionLabel = { it.label },
+                        selected = uiState.category,
+                        onSelected = viewModel::onCategorySelected,
                     )
 
                     HorizontalDivider(color = NeutralBorder)
@@ -116,8 +116,8 @@ fun InspectionFormScreen(
                     Column {
                         Text("Observaciones de campo", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
                         OutlinedTextField(
-                            value = uiState.observaciones,
-                            onValueChange = viewModel::onObservacionesChange,
+                            value = uiState.observations,
+                            onValueChange = viewModel::onObservationsChange,
                             placeholder = { Text("Escribe aquí situaciones no contempladas en las categorías (se guarda incluso sin conexión)…") },
                             modifier = Modifier.fillMaxWidth().height(90.dp).padding(top = 6.dp),
                         )
@@ -125,12 +125,12 @@ fun InspectionFormScreen(
 
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         Button(
-                            onClick = viewModel::guardarInspeccion,
-                            enabled = uiState.puedeGuardar && !uiState.guardando,
+                            onClick = viewModel::saveInspection,
+                            enabled = uiState.canSave && !uiState.saving,
                             colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text(if (uiState.guardando) "Guardando…" else "✓ Guardar inspección")
+                            Text(if (uiState.saving) "Guardando…" else "✓ Guardar inspección")
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) {
                             Text("Cancelar")

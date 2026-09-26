@@ -44,13 +44,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.EstadoAlerta
-import com.hivend.agatha.domain.model.EventoHistorial
-import com.hivend.agatha.domain.model.NivelAlerta
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertStatus
+import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.EstadoAlertaChip
+import com.hivend.agatha.ui.components.AlertStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.theme.AgathaBlue
@@ -84,19 +84,19 @@ import com.hivend.agatha.ui.theme.TextTertiary
 @Composable
 fun AlertDetailScreen(
     onBack: () -> Unit,
-    onRegistrarInspeccion: (String) -> Unit,
-    onVerHistorial: (String) -> Unit,
+    onRegisterInspection: (String) -> Unit,
+    onViewHistory: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AlertDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val alerta = uiState.alerta
+    val alert = uiState.alert
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         BackTopBar(title = "Detalle de Alerta", onBack = onBack)
-        ConnectivityBar(conectado = true, mensaje = "Conectado · Sincronizado hace 2 min")
+        ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
 
-        if (alerta == null) {
+        if (alert == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text("Alerta no encontrada", color = TextSecondary)
             }
@@ -107,29 +107,29 @@ fun AlertDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SitePill(sitio = alerta.sitio) }
+            item { SitePill(site = alert.site) }
             item {
                 AlertCard(
-                    alerta = alerta,
-                    onAvanzar = { viewModel.avanzarEstado(it) },
-                    onRegistrarInspeccion = { onRegistrarInspeccion(alerta.id) },
+                    alert = alert,
+                    onAdvance = { viewModel.advanceStatus(it) },
+                    onRegisterInspection = { onRegisterInspection(alert.id) },
                 )
             }
             item {
                 FiltersRow(
-                    estado = alerta.estado,
-                    onVerHistorial = { onVerHistorial(alerta.sensorId) },
+                    status = alert.status,
+                    onViewHistory = { onViewHistory(alert.sensorId) },
                 )
             }
             item { AccelerationGraphCard() }
-            item { RecentHistoryCard(eventos = uiState.historialReciente) }
+            item { RecentHistoryCard(events = uiState.recentHistory) }
             item { SensorAccordionList() }
         }
     }
 }
 
 @Composable
-private fun AlertCard(alerta: Alerta, onAvanzar: (EstadoAlerta) -> Unit, onRegistrarInspeccion: () -> Unit) {
+private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegisterInspection: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
@@ -139,13 +139,13 @@ private fun AlertCard(alerta: Alerta, onAvanzar: (EstadoAlerta) -> Unit, onRegis
             .padding(14.dp),
     ) {
         Text(
-            text = "${alerta.nivel.etiqueta()} · Sensor ${alerta.sensorId} · ${alerta.pk}",
+            text = "${alert.level.label()} · Sensor ${alert.sensorId} · ${alert.pk}",
             color = AlertRed,
             style = MaterialTheme.typography.labelLarge,
         )
-        Text(alerta.descripcion, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+        Text(alert.description, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
 
-        PrimaryActions(estado = alerta.estado, onAvanzar = onAvanzar)
+        PrimaryActions(status = alert.status, onAdvance = onAdvance)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -166,7 +166,7 @@ private fun AlertCard(alerta: Alerta, onAvanzar: (EstadoAlerta) -> Unit, onRegis
             )
         }
 
-        TelemetryRow(alerta)
+        TelemetryRow(alert)
 
         Text("📝  Siguiente paso", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
         Row(
@@ -175,21 +175,21 @@ private fun AlertCard(alerta: Alerta, onAvanzar: (EstadoAlerta) -> Unit, onRegis
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, NeutralBorder, RoundedCornerShape(8.dp))
-                .clickable(onClick = onRegistrarInspeccion)
+                .clickable(onClick = onRegisterInspection)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
-            Text(alerta.siguientePaso, color = AgathaBlue, style = MaterialTheme.typography.bodyMedium)
+            Text(alert.nextStep, color = AgathaBlue, style = MaterialTheme.typography.bodyMedium)
             Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
         }
     }
 }
 
 @Composable
-private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Unit) {
-    when (estado) {
-        EstadoAlerta.GENERADA, EstadoAlerta.RECIBIDA -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit) {
+    when (status) {
+        AlertStatus.GENERATED, AlertStatus.RECEIVED -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
-                onClick = { onAvanzar(EstadoAlerta.EN_INSPECCION) },
+                onClick = { onAdvance(AlertStatus.IN_INSPECTION) },
                 colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                 modifier = Modifier.weight(1f),
             ) {
@@ -197,7 +197,7 @@ private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Un
                 Text("Iniciar inspección", modifier = Modifier.padding(start = 4.dp))
             }
             OutlinedButton(
-                onClick = { onAvanzar(EstadoAlerta.CERRADA) },
+                onClick = { onAdvance(AlertStatus.CLOSED) },
                 border = BorderStroke(1.3.dp, AlertRed),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
                 modifier = Modifier.weight(1f),
@@ -206,9 +206,9 @@ private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Un
                 Text("Marcar como falsa", modifier = Modifier.padding(start = 4.dp))
             }
         }
-        EstadoAlerta.EN_INSPECCION -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        AlertStatus.IN_INSPECTION -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
-                onClick = { onAvanzar(EstadoAlerta.CLASIFICADA) },
+                onClick = { onAdvance(AlertStatus.CLASSIFIED) },
                 colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                 modifier = Modifier.weight(1f),
             ) {
@@ -216,7 +216,7 @@ private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Un
                 Text("Actualizar estado", modifier = Modifier.padding(start = 4.dp))
             }
             OutlinedButton(
-                onClick = { onAvanzar(EstadoAlerta.CERRADA) },
+                onClick = { onAdvance(AlertStatus.CLOSED) },
                 border = BorderStroke(1.3.dp, AlertRed),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
                 modifier = Modifier.weight(1f),
@@ -225,8 +225,8 @@ private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Un
                 Text("Cerrar alerta", modifier = Modifier.padding(start = 4.dp))
             }
         }
-        EstadoAlerta.CLASIFICADA, EstadoAlerta.CERRADA -> StatusChip(
-            text = if (estado == EstadoAlerta.CERRADA) "Sin acciones pendientes" else "Pendiente de cierre por operador",
+        AlertStatus.CLASSIFIED, AlertStatus.CLOSED -> StatusChip(
+            text = if (status == AlertStatus.CLOSED) "Sin acciones pendientes" else "Pendiente de cierre por operador",
             containerColor = NeutralSurfaceVariant,
             contentColor = TextSecondary,
             modifier = Modifier.fillMaxWidth(),
@@ -235,7 +235,7 @@ private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Un
 }
 
 @Composable
-private fun TelemetryRow(alerta: Alerta) {
+private fun TelemetryRow(alert: Alert) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
@@ -245,15 +245,15 @@ private fun TelemetryRow(alerta: Alerta) {
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            TelemetryStat("CONFIANZA", "${alerta.telemetria.confianzaPorcentaje}%")
-            TelemetryStat("ACELERACIÓN", alerta.telemetria.aceleracion)
-            TelemetryStat("HACE", alerta.telemetria.tiempoRelativo)
-            TelemetryStat("BATERÍA", "${alerta.telemetria.bateriaPorcentaje}%")
+            TelemetryStat("CONFIANZA", "${alert.telemetry.confidencePercentage}%")
+            TelemetryStat("ACELERACIÓN", alert.telemetry.acceleration)
+            TelemetryStat("HACE", alert.telemetry.relativeTime)
+            TelemetryStat("BATERÍA", "${alert.telemetry.batteryPercentage}%")
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(Modifier.size(6.dp).background(if (alerta.telemetria.esDatoReal) AlertGreen else TextTertiary, CircleShape))
+            Box(Modifier.size(6.dp).background(if (alert.telemetry.isRealData) AlertGreen else TextTertiary, CircleShape))
             Text(
-                if (alerta.telemetria.esDatoReal) "Dato real" else "Dato simulado",
+                if (alert.telemetry.isRealData) "Dato real" else "Dato simulado",
                 color = StateClosedText,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -270,7 +270,7 @@ private fun TelemetryStat(label: String, value: String) {
 }
 
 @Composable
-private fun FiltersRow(estado: EstadoAlerta, onVerHistorial: () -> Unit) {
+private fun FiltersRow(status: AlertStatus, onViewHistory: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
@@ -279,7 +279,7 @@ private fun FiltersRow(estado: EstadoAlerta, onVerHistorial: () -> Unit) {
             .padding(14.dp),
     ) {
         StatusChip(
-            text = "Estado: ${estado.etiquetaCorta()}",
+            text = "Estado: ${status.shortLabel()}",
             containerColor = NeutralSurfaceVariant,
             contentColor = TextOnMuted,
         )
@@ -287,7 +287,7 @@ private fun FiltersRow(estado: EstadoAlerta, onVerHistorial: () -> Unit) {
             "⬇  Ver historial de cambios de estado",
             color = AgathaBlue,
             style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.clickable(onClick = onVerHistorial),
+            modifier = Modifier.clickable(onClick = onViewHistory),
         )
     }
 }
@@ -349,7 +349,7 @@ private fun LegendDot(label: String, color: Color) {
 }
 
 @Composable
-private fun RecentHistoryCard(eventos: List<EventoHistorial>) {
+private fun RecentHistoryCard(events: List<HistoryEvent>) {
     Column(
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
@@ -358,11 +358,11 @@ private fun RecentHistoryCard(eventos: List<EventoHistorial>) {
             .padding(14.dp),
     ) {
         Text("📰  HISTORIAL DEL DISPOSITIVO", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
-        eventos.forEach { evento ->
+        events.forEach { event ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("${evento.hora} · ${evento.titulo}", color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                Text(evento.detalle, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
-                evento.etiquetaEstado?.let {
+                Text("${event.time} · ${event.title}", color = TextPrimary, style = MaterialTheme.typography.labelLarge)
+                Text(event.detail, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                event.statusLabel?.let {
                     StatusChip(
                         text = it,
                         containerColor = NeutralSurfaceVariant,
@@ -375,9 +375,9 @@ private fun RecentHistoryCard(eventos: List<EventoHistorial>) {
     }
 }
 
-private data class SensorInfo(val emoji: String, val titulo: String, val detalle: String, val color: Color)
+private data class SensorInfo(val emoji: String, val title: String, val detail: String, val color: Color)
 
-private val sensores = listOf(
+private val sensors = listOf(
     SensorInfo("📡", "Movimiento y orientación (detecta deslizamiento)", "Acelerómetro + giroscopio triaxial. Umbral de alerta: 3 cm de desplazamiento.", AlertRed),
     SensorInfo("🎵", "Acústica (detecta fuga de gas)", "Micrófono de contacto sobre la tubería. Detecta el patrón acústico de una fuga.", StateInspectionText),
     SensorInfo("🌡", "Condiciones ambientales", "Temperatura y humedad relativa alrededor del punto de monitoreo.", AgathaBlue),
@@ -387,7 +387,7 @@ private val sensores = listOf(
 @Composable
 private fun SensorAccordionList() {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        sensores.forEach { sensor -> AccordionRow(sensor) }
+        sensors.forEach { sensor -> AccordionRow(sensor) }
     }
 }
 
@@ -408,13 +408,13 @@ private fun AccordionRow(sensor: SensorInfo) {
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(sensor.emoji, color = sensor.color, style = MaterialTheme.typography.titleSmall)
-                Text(sensor.titulo, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                Text(sensor.title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
             }
             Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
         }
         if (expanded) {
             Text(
-                sensor.detalle,
+                sensor.detail,
                 color = TextSecondary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 6.dp),
@@ -423,16 +423,16 @@ private fun AccordionRow(sensor: SensorInfo) {
     }
 }
 
-private fun NivelAlerta.etiqueta(): String = when (this) {
-    NivelAlerta.ROJO -> "ALERTA ROJA"
-    NivelAlerta.AMARILLO -> "ALERTA AMARILLA"
-    NivelAlerta.VERDE -> "ALERTA VERDE"
+private fun AlertLevel.label(): String = when (this) {
+    AlertLevel.RED -> "ALERTA ROJA"
+    AlertLevel.YELLOW -> "ALERTA AMARILLA"
+    AlertLevel.GREEN -> "ALERTA VERDE"
 }
 
-private fun EstadoAlerta.etiquetaCorta(): String = when (this) {
-    EstadoAlerta.GENERADA -> "Generada"
-    EstadoAlerta.RECIBIDA -> "Recibida"
-    EstadoAlerta.EN_INSPECCION -> "En inspección"
-    EstadoAlerta.CLASIFICADA -> "Clasificada"
-    EstadoAlerta.CERRADA -> "Cerrada"
+private fun AlertStatus.shortLabel(): String = when (this) {
+    AlertStatus.GENERATED -> "Generada"
+    AlertStatus.RECEIVED -> "Recibida"
+    AlertStatus.IN_INSPECTION -> "En inspección"
+    AlertStatus.CLASSIFIED -> "Clasificada"
+    AlertStatus.CLOSED -> "Cerrada"
 }

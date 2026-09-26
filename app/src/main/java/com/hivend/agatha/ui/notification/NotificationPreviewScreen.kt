@@ -40,12 +40,12 @@ import java.util.Locale
  */
 @Composable
 fun NotificationPreviewScreen(
-    onAbrirDetalle: (String) -> Unit,
+    onOpenDetail: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: NotificationPreviewViewModel = hiltViewModel(),
 ) {
-    val alerta by viewModel.alertaDestacada.collectAsStateWithLifecycle()
-    val ahora = remember { LocalDateTime.now() }
+    val alert by viewModel.featuredAlert.collectAsStateWithLifecycle()
+    val now = remember { LocalDateTime.now() }
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -55,39 +55,39 @@ fun NotificationPreviewScreen(
             .padding(top = 90.dp, start = 24.dp, end = 24.dp),
     ) {
         Text(
-            ahora.format(DateTimeFormatter.ofPattern("H:mm")),
+            now.format(DateTimeFormatter.ofPattern("H:mm")),
             color = Color.White,
             fontSize = 56.sp,
             fontWeight = FontWeight.Light,
         )
         Text(
-            ahora.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale.forLanguageTag("es-CO"))),
+            now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale.forLanguageTag("es-CO"))),
             color = Color.White.copy(alpha = 0.85f),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
         )
 
-        alerta?.let { destacada ->
+        alert?.let { featured ->
             Row(
                 verticalAlignment = Alignment.Top,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color.White, RoundedCornerShape(16.dp))
-                    .clickable { onAbrirDetalle(destacada.id) }
+                    .clickable { onOpenDetail(featured.id) }
                     .padding(14.dp),
             ) {
                 Box(Modifier.padding(top = 4.dp).size(10.dp).background(AlertRed, CircleShape))
                 Column {
                     Text("AGATHA · ahora", color = TextSecondary, style = MaterialTheme.typography.labelSmall)
                     Text(
-                        "Alerta roja — Sensor ${destacada.sensorId}",
+                        "Alerta roja — Sensor ${featured.sensorId}",
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     Text(
-                        "${destacada.pk} · ${destacada.sitio} · ${destacada.descripcion.substringAfter("— ").ifBlank { destacada.descripcion }}. Toca para ver el detalle.",
+                        "${featured.pk} · ${featured.site} · ${featured.description.substringAfter("— ").ifBlank { featured.description }}. Toca para ver el detalle.",
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 2.dp),

@@ -2,8 +2,8 @@ package com.hivend.agatha.ui.map
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hivend.agatha.domain.model.NodoSensor
-import com.hivend.agatha.domain.repository.NodoSensorRepository
+import com.hivend.agatha.domain.model.SensorNode
+import com.hivend.agatha.domain.repository.SensorNodeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,8 +13,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 data class MapUiState(
-    val nodos: List<NodoSensor> = emptyList(),
-    val nodoSeleccionado: NodoSensor? = null,
+    val nodes: List<SensorNode> = emptyList(),
+    val selectedNode: SensorNode? = null,
 )
 
 /**
@@ -23,20 +23,20 @@ data class MapUiState(
  */
 @HiltViewModel
 class MapViewModel @Inject constructor(
-    nodoSensorRepository: NodoSensorRepository,
+    sensorNodeRepository: SensorNodeRepository,
 ) : ViewModel() {
 
-    private val nodoSeleccionadoId = MutableStateFlow<String?>(null)
+    private val selectedNodeId = MutableStateFlow<String?>(null)
 
     val uiState: StateFlow<MapUiState> = combine(
-        nodoSensorRepository.observarNodos(),
-        nodoSeleccionadoId,
-    ) { nodos, seleccionadoId ->
-        val seleccionado = nodos.find { it.id == seleccionadoId } ?: nodos.firstOrNull()
-        MapUiState(nodos = nodos, nodoSeleccionado = seleccionado)
+        sensorNodeRepository.observeNodes(),
+        selectedNodeId,
+    ) { nodes, seleccionadoId ->
+        val selected = nodes.find { it.id == seleccionadoId } ?: nodes.firstOrNull()
+        MapUiState(nodes = nodes, selectedNode = selected)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MapUiState())
 
-    fun seleccionarNodo(nodoId: String) {
-        nodoSeleccionadoId.value = nodoId
+    fun selectNode(nodeId: String) {
+        selectedNodeId.value = nodeId
     }
 }

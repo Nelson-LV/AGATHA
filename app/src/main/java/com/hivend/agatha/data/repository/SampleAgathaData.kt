@@ -1,12 +1,12 @@
 package com.hivend.agatha.data.repository
 
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.EstadoAlerta
-import com.hivend.agatha.domain.model.EventoHistorial
-import com.hivend.agatha.domain.model.NivelAlerta
-import com.hivend.agatha.domain.model.NodoSensor
-import com.hivend.agatha.domain.model.TelemetriaAlerta
-import com.hivend.agatha.domain.model.TipoEvento
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertStatus
+import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.SensorNode
+import com.hivend.agatha.domain.model.AlertTelemetry
+import com.hivend.agatha.domain.model.EventType
 
 /**
  * Datos de muestra usados por los repositorios en memoria mientras HE-04..HE-08 no
@@ -17,150 +17,150 @@ import com.hivend.agatha.domain.model.TipoEvento
  */
 internal object SampleAgathaData {
 
-    const val SITIO = "Güepsa – San José de Pare"
+    const val SITE = "Güepsa – San José de Pare"
 
-    val alertas: List<Alerta> = listOf(
-        Alerta(
+    val alerts: List<Alert> = listOf(
+        Alert(
             id = "MP-1156",
-            punto = "Punto 3",
+            point = "Punto 3",
             sensorId = "MP-1156",
             pk = "PK37+800",
-            sitio = SITIO,
-            descripcion = "Riesgo de deslizamiento — El tubo se movió 5 cm de su posición original",
-            nivel = NivelAlerta.ROJO,
-            estado = EstadoAlerta.EN_INSPECCION,
-            tiempoRelativo = "hace 5 min",
-            telemetria = TelemetriaAlerta(
-                confianzaPorcentaje = 96,
-                aceleracion = "Alta",
-                tiempoRelativo = "5 min",
-                bateriaPorcentaje = 78,
-                esDatoReal = true,
+            site = SITE,
+            description = "Riesgo de deslizamiento — El tubo se movió 5 cm de su posición original",
+            level = AlertLevel.RED,
+            status = AlertStatus.IN_INSPECTION,
+            relativeTime = "hace 5 min",
+            telemetry = AlertTelemetry(
+                confidencePercentage = 96,
+                acceleration = "Alta",
+                relativeTime = "5 min",
+                batteryPercentage = 78,
+                isRealData = true,
             ),
-            siguientePaso = "Registrar inspección de campo",
+            nextStep = "Registrar inspección de campo",
         ),
-        Alerta(
+        Alert(
             id = "MP-1189",
-            punto = "Punto 2",
+            point = "Punto 2",
             sensorId = "MP-1189",
             pk = "PK22+300",
-            sitio = SITIO,
-            descripcion = "Posible fuga de gas",
-            nivel = NivelAlerta.AMARILLO,
-            estado = EstadoAlerta.RECIBIDA,
-            tiempoRelativo = "hace 40 min",
-            telemetria = TelemetriaAlerta(
-                confianzaPorcentaje = 81,
-                aceleracion = "Media",
-                tiempoRelativo = "40 min",
-                bateriaPorcentaje = 64,
-                esDatoReal = true,
+            site = SITE,
+            description = "Posible fuga de gas",
+            level = AlertLevel.YELLOW,
+            status = AlertStatus.RECEIVED,
+            relativeTime = "hace 40 min",
+            telemetry = AlertTelemetry(
+                confidencePercentage = 81,
+                acceleration = "Media",
+                relativeTime = "40 min",
+                batteryPercentage = 64,
+                isRealData = true,
             ),
-            siguientePaso = "Iniciar inspección",
+            nextStep = "Iniciar inspección",
         ),
-        Alerta(
+        Alert(
             id = "MP-1122",
-            punto = "Punto 1",
+            point = "Punto 1",
             sensorId = "MP-1122",
             pk = "PK10+050",
-            sitio = SITIO,
-            descripcion = "Escenario de prueba — simulación",
-            nivel = NivelAlerta.VERDE,
-            estado = EstadoAlerta.CLASIFICADA,
-            tiempoRelativo = "hace 2 h",
-            telemetria = TelemetriaAlerta(
-                confianzaPorcentaje = 100,
-                aceleracion = "Baja",
-                tiempoRelativo = "2 h",
-                bateriaPorcentaje = 91,
-                esDatoReal = false,
+            site = SITE,
+            description = "Escenario de prueba — simulación",
+            level = AlertLevel.GREEN,
+            status = AlertStatus.CLASSIFIED,
+            relativeTime = "hace 2 h",
+            telemetry = AlertTelemetry(
+                confidencePercentage = 100,
+                acceleration = "Baja",
+                relativeTime = "2 h",
+                batteryPercentage = 91,
+                isRealData = false,
             ),
-            siguientePaso = "Revisar clasificación",
+            nextStep = "Revisar clasificación",
         ),
-        Alerta(
+        Alert(
             id = "MP-1201",
-            punto = "Punto 4",
+            point = "Punto 4",
             sensorId = "MP-1201",
             pk = "PK44+120",
-            sitio = SITIO,
-            descripcion = "Condiciones normales",
-            nivel = NivelAlerta.VERDE,
-            estado = EstadoAlerta.CERRADA,
-            tiempoRelativo = "hace 3 h",
-            telemetria = TelemetriaAlerta(
-                confianzaPorcentaje = 98,
-                aceleracion = "Baja",
-                tiempoRelativo = "3 h",
-                bateriaPorcentaje = 85,
-                esDatoReal = true,
+            site = SITE,
+            description = "Condiciones normales",
+            level = AlertLevel.GREEN,
+            status = AlertStatus.CLOSED,
+            relativeTime = "hace 3 h",
+            telemetry = AlertTelemetry(
+                confidencePercentage = 98,
+                acceleration = "Baja",
+                relativeTime = "3 h",
+                batteryPercentage = 85,
+                isRealData = true,
             ),
-            siguientePaso = "Sin acción pendiente",
+            nextStep = "Sin acción pendiente",
         ),
     )
 
-    val nodos: List<NodoSensor> = listOf(
-        NodoSensor(
+    val nodes: List<SensorNode> = listOf(
+        SensorNode(
             id = "MP-1156",
-            nombre = "Nodo MP-1156",
+            name = "Nodo MP-1156",
             pk = "PK37+800",
-            sitio = SITIO,
-            tipoSensor = "Acelerómetro + giroscopio",
-            estado = NivelAlerta.ROJO,
-            bateriaPorcentaje = 78,
-            ultimaComunicacion = "hace 5 min",
-            xNormalizado = 0.78f,
-            yNormalizado = 0.22f,
+            site = SITE,
+            sensorType = "Acelerómetro + giroscopio",
+            status = AlertLevel.RED,
+            batteryPercentage = 78,
+            lastCommunication = "hace 5 min",
+            normalizedX = 0.78f,
+            normalizedY = 0.22f,
         ),
-        NodoSensor(
+        SensorNode(
             id = "MP-1189",
-            nombre = "Nodo MP-1189",
+            name = "Nodo MP-1189",
             pk = "PK22+300",
-            sitio = SITIO,
-            tipoSensor = "Acústico",
-            estado = NivelAlerta.AMARILLO,
-            bateriaPorcentaje = 64,
-            ultimaComunicacion = "hace 40 min",
-            xNormalizado = 0.45f,
-            yNormalizado = 0.48f,
+            site = SITE,
+            sensorType = "Acústico",
+            status = AlertLevel.YELLOW,
+            batteryPercentage = 64,
+            lastCommunication = "hace 40 min",
+            normalizedX = 0.45f,
+            normalizedY = 0.48f,
         ),
-        NodoSensor(
+        SensorNode(
             id = "MP-1122",
-            nombre = "Nodo MP-1122",
+            name = "Nodo MP-1122",
             pk = "PK10+050",
-            sitio = SITIO,
-            tipoSensor = "Condiciones ambientales",
-            estado = NivelAlerta.VERDE,
-            bateriaPorcentaje = 91,
-            ultimaComunicacion = "hace 2 h",
-            xNormalizado = 0.20f,
-            yNormalizado = 0.75f,
+            site = SITE,
+            sensorType = "Condiciones ambientales",
+            status = AlertLevel.GREEN,
+            batteryPercentage = 91,
+            lastCommunication = "hace 2 h",
+            normalizedX = 0.20f,
+            normalizedY = 0.75f,
         ),
-        NodoSensor(
+        SensorNode(
             id = "MP-1201",
-            nombre = "Nodo MP-1201",
+            name = "Nodo MP-1201",
             pk = "PK44+120",
-            sitio = SITIO,
-            tipoSensor = "Energía / batería",
-            estado = NivelAlerta.VERDE,
-            bateriaPorcentaje = 85,
-            ultimaComunicacion = "hace 3 h",
-            xNormalizado = 0.83f,
-            yNormalizado = 0.80f,
+            site = SITE,
+            sensorType = "Energía / batería",
+            status = AlertLevel.GREEN,
+            batteryPercentage = 85,
+            lastCommunication = "hace 3 h",
+            normalizedX = 0.83f,
+            normalizedY = 0.80f,
         ),
     )
 
-    fun historialPara(dispositivoId: String): List<EventoHistorial> = when (dispositivoId) {
+    fun historyFor(deviceId: String): List<HistoryEvent> = when (deviceId) {
         "MP-1156" -> listOf(
-            EventoHistorial("12:42", TipoEvento.ALERTA, "Alerta roja generada", "Riesgo de deslizamiento — el tubo se movió 5 cm", "Pendiente de confirmar"),
-            EventoHistorial("13:05", TipoEvento.INSPECCION, "Inspección registrada", "Resultado: mantenimiento requerido"),
-            EventoHistorial("13:07", TipoEvento.CLASIFICACION, "Clasificación del evento", "Movimiento de tierra o desprendimiento menor"),
-            EventoHistorial("13:10", TipoEvento.EVIDENCIA, "Evidencia adjunta", "2 fotografías con descripción"),
-            EventoHistorial("13:12", TipoEvento.OBSERVACION, "Observación de campo", "Se detecta erosión leve en el talud norte"),
-            EventoHistorial("13:20", TipoEvento.MANTENIMIENTO, "Mantenimiento realizado", "Ajuste de anclaje y limpieza del sensor", "Completado"),
-            EventoHistorial("13:25", TipoEvento.ALERTA, "Alerta cerrada", "Estado final: Clasificada — sin anomalías adicionales", "Cerrada"),
+            HistoryEvent("12:42", EventType.ALERT, "Alerta roja generada", "Riesgo de deslizamiento — el tubo se movió 5 cm", "Pendiente de confirmar"),
+            HistoryEvent("13:05", EventType.INSPECTION, "Inspección registrada", "Resultado: mantenimiento requerido"),
+            HistoryEvent("13:07", EventType.CLASSIFICATION, "Clasificación del evento", "Movimiento de tierra o desprendimiento menor"),
+            HistoryEvent("13:10", EventType.EVIDENCE, "Evidencia adjunta", "2 fotografías con descripción"),
+            HistoryEvent("13:12", EventType.OBSERVATION, "Observación de campo", "Se detecta erosión leve en el talud norte"),
+            HistoryEvent("13:20", EventType.MAINTENANCE, "Mantenimiento realizado", "Ajuste de anclaje y limpieza del sensor", "Completado"),
+            HistoryEvent("13:25", EventType.ALERT, "Alerta cerrada", "Estado final: Clasificada — sin anomalías adicionales", "Cerrada"),
         )
         else -> listOf(
-            EventoHistorial("08:50", TipoEvento.ALERTA, "Condiciones normales", "Todos los puntos estables"),
+            HistoryEvent("08:50", EventType.ALERT, "Condiciones normales", "Todos los puntos estables"),
         )
     }
 }

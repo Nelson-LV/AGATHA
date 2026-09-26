@@ -4,11 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.core.navigation.AgathaDestination
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.CategoriaEvento
-import com.hivend.agatha.domain.model.Inspeccion
-import com.hivend.agatha.domain.model.ResultadoInspeccion
-import com.hivend.agatha.domain.repository.AlertaRepository
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.EventCategory
+import com.hivend.agatha.domain.model.Inspection
+import com.hivend.agatha.domain.model.InspectionResult
+import com.hivend.agatha.domain.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,60 +20,60 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class InspectionFormUiState(
-    val alerta: Alerta? = null,
-    val resultado: ResultadoInspeccion? = null,
-    val categoria: CategoriaEvento? = CategoriaEvento.MOVIMIENTO_TIERRA,
-    val observaciones: String = "",
-    val guardando: Boolean = false,
-    val guardadoConExito: Boolean = false,
+    val alert: Alert? = null,
+    val result: InspectionResult? = null,
+    val category: EventCategory? = EventCategory.GROUND_MOVEMENT,
+    val observations: String = "",
+    val saving: Boolean = false,
+    val savedSuccessfully: Boolean = false,
 ) {
-    val puedeGuardar: Boolean get() = resultado != null && categoria != null
+    val canSave: Boolean get() = result != null && category != null
 }
 
 @HiltViewModel
 class InspectionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val alertaRepository: AlertaRepository,
+    private val alertRepository: AlertRepository,
 ) : ViewModel() {
 
-    val alertaId: String =
+    val alertId: String =
         checkNotNull(savedStateHandle[AgathaDestination.InspectionForm.ARG_ALERT_ID])
 
     private val formState = MutableStateFlow(InspectionFormUiState())
     val uiState: StateFlow<InspectionFormUiState> = combine(
         formState,
-        alertaRepository.observarAlerta(alertaId),
-    ) { form, alerta -> form.copy(alerta = alerta) }
+        alertRepository.observeAlert(alertId),
+    ) { form, alert -> form.copy(alert = alert) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InspectionFormUiState())
 
-    fun onResultadoSeleccionado(resultado: ResultadoInspeccion) {
-        formState.update { it.copy(resultado = resultado) }
+    fun onResultSelected(result: InspectionResult) {
+        formState.update { it.copy(result = result) }
     }
 
-    fun onCategoriaSeleccionada(categoria: CategoriaEvento) {
-        formState.update { it.copy(categoria = categoria) }
+    fun onCategorySelected(category: EventCategory) {
+        formState.update { it.copy(category = category) }
     }
 
-    fun onObservacionesChange(texto: String) {
-        formState.update { it.copy(observaciones = texto) }
+    fun onObservationsChange(text: String) {
+        formState.update { it.copy(observations = text) }
     }
 
-    fun guardarInspeccion() {
-        val estado = uiState.value
-        if (!estado.puedeGuardar || estado.guardando) return
+    fun saveInspection() {
+        val state = uiState.value
+        if (!state.canSave || state.saving) return
 
         viewModelScope.launch {
-            formState.update { it.copy(guardando = true) }
-            alertaRepository.registrarInspeccion(
-                Inspeccion(
-                    alertaId = alertaId,
-                    resultado = estado.resultado!!,
-                    categoria = estado.categoria!!,
-                    observaciones = estado.observaciones,
-                    registradaSinConexion = true,
+            formState.update { it.copy(saving = true) }
+            alertRepository.registerInspection(
+                Inspection(
+                    alertId = alertId,
+                    result = state.result!!,
+                    category = state.category!!,
+                    observations = state.observations,
+                    recordedOffline = true,
                 )
             )
-            formState.update { it.copy(guardando = false, guardadoConExito = true) }
+            formState.update { it.copy(saving = false, savedSuccessfully = true) }
         }
     }
 }

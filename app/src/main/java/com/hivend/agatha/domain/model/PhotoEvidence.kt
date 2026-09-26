@@ -5,7 +5,7 @@ package com.hivend.agatha.domain.model
  * archivo del cache privado de la app (ver res/xml/file_paths.xml) hasta que la
  * sincronización la sube a la API central y pasa a referenciar la URL remota.
  */
-data class EvidenciaFoto(
+data class PhotoEvidence(
     val uri: String,
-    val descripcion: String,
+    val description: String,
 )

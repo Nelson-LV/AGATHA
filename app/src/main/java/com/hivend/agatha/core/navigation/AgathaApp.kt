@@ -55,7 +55,7 @@ fun AgathaApp() {
         ) {
             composable(NotificationPreview.route) {
                 NotificationPreviewScreen(
-                    onAbrirDetalle = { alertId ->
+                    onOpenDetail = { alertId ->
                         navController.navigate(BottomTab.Alerts.route)
                         navController.navigate(AlertDetail.buildRoute(alertId))
                     },
@@ -73,7 +73,7 @@ fun AgathaApp() {
 
             composable(BottomTab.Map.route) {
                 SensorMapScreen(
-                    onVerHistorial = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
                 )
             }
 
@@ -94,8 +94,8 @@ fun AgathaApp() {
             ) {
                 AlertDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onRegistrarInspeccion = { alertId -> navController.navigate(InspectionForm.buildRoute(alertId)) },
-                    onVerHistorial = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onRegisterInspection = { alertId -> navController.navigate(InspectionForm.buildRoute(alertId)) },
+                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
                 )
             }
 
@@ -105,7 +105,7 @@ fun AgathaApp() {
             ) {
                 InspectionFormScreen(
                     onBack = { navController.popBackStack() },
-                    onGuardado = { alertId -> navController.navigate(PhotoEvidence.buildRoute(alertId)) },
+                    onSaved = { alertId -> navController.navigate(PhotoEvidence.buildRoute(alertId)) },
                 )
             }
 
@@ -115,7 +115,7 @@ fun AgathaApp() {
             ) {
                 PhotoEvidenceScreen(
                     onBack = { navController.popBackStack() },
-                    onGuardado = { alertId ->
+                    onSaved = { alertId ->
                         navController.popBackStack(route = AlertDetail.buildRoute(alertId), inclusive = false)
                     },
                 )

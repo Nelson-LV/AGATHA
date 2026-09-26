@@ -16,9 +16,9 @@ import com.hivend.agatha.ui.theme.TextOnMuted
 
 /** Recordatorio persistente del sitio/tramo que el usuario de campo está atendiendo. */
 @Composable
-fun SitePill(sitio: String, modifier: Modifier = Modifier) {
+fun SitePill(site: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Sitio: $sitio",
+        text = "Sitio: $site",
         color = TextOnMuted,
         style = MaterialTheme.typography.bodyMedium,
         modifier = modifier

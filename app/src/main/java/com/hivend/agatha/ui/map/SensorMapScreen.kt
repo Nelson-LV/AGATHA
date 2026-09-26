@@ -28,8 +28,8 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.NivelAlerta
-import com.hivend.agatha.domain.model.NodoSensor
+import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
@@ -55,7 +55,7 @@ import com.hivend.agatha.ui.theme.TextSecondary
  */
 @Composable
 fun SensorMapScreen(
-    onVerHistorial: (String) -> Unit,
+    onViewHistory: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MapViewModel = hiltViewModel(),
 ) {
@@ -63,24 +63,24 @@ fun SensorMapScreen(
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader()
-        ConnectivityBar(conectado = true, mensaje = "Conectado · Sincronizado hace 2 min")
+        ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
 
         Column(modifier = Modifier.weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SitePill(sitio = uiState.nodos.firstOrNull()?.sitio ?: "—")
+            SitePill(site = uiState.nodes.firstOrNull()?.site ?: "—")
 
             Box(modifier = Modifier.weight(1f)) {
                 MapCanvas(
-                    nodos = uiState.nodos,
-                    seleccionado = uiState.nodoSeleccionado,
-                    onNodoClick = viewModel::seleccionarNodo,
+                    nodes = uiState.nodes,
+                    selected = uiState.selectedNode,
+                    onNodeClick = viewModel::selectNode,
                     modifier = Modifier.fillMaxSize(),
                 )
                 ZoomControls(modifier = Modifier.padding(10.dp))
                 Legend(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
             }
 
-            uiState.nodoSeleccionado?.let { nodo ->
-                NodeInfoCard(nodo = nodo, onVerHistorial = { onVerHistorial(nodo.id) })
+            uiState.selectedNode?.let { node ->
+                NodeInfoCard(node = node, onViewHistory = { onViewHistory(node.id) })
             }
         }
     }
@@ -88,9 +88,9 @@ fun SensorMapScreen(
 
 @Composable
 private fun MapCanvas(
-    nodos: List<NodoSensor>,
-    seleccionado: NodoSensor?,
-    onNodoClick: (String) -> Unit,
+    nodes: List<SensorNode>,
+    selected: SensorNode?,
+    onNodeClick: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Un Canvas de solo-dibujo no puede recibir toques por posición sin más trabajo; los
@@ -100,20 +100,20 @@ private fun MapCanvas(
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val widthPx = constraints.maxWidth.toFloat()
             val heightPx = constraints.maxHeight.toFloat()
-            nodos.forEach { nodo ->
-                val isSelected = nodo.id == seleccionado?.id
+            nodes.forEach { node ->
+                val isSelected = node.id == selected?.id
                 Box(
                     modifier = Modifier
                         .offset {
                             IntOffset(
-                                (nodo.xNormalizado * widthPx).toInt(),
-                                (nodo.yNormalizado * heightPx).toInt(),
+                                (node.normalizedX * widthPx).toInt(),
+                                (node.normalizedY * heightPx).toInt(),
                             )
                         }
                         .size(if (isSelected) 22.dp else 14.dp)
-                        .background(nodo.estado.color(), CircleShape)
+                        .background(node.status.color(), CircleShape)
                         .then(if (isSelected) Modifier.border(2.dp, Color.White, CircleShape) else Modifier)
-                        .clickable { onNodoClick(nodo.id) },
+                        .clickable { onNodeClick(node.id) },
                 )
             }
         }
@@ -155,7 +155,7 @@ private fun LegendDot(label: String, color: Color) {
 }
 
 @Composable
-private fun NodeInfoCard(nodo: NodoSensor, onVerHistorial: () -> Unit) {
+private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
@@ -164,17 +164,17 @@ private fun NodeInfoCard(nodo: NodoSensor, onVerHistorial: () -> Unit) {
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(nodo.nombre, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+            Text(node.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
             StatusChip(text = "Conectado", containerColor = StateClosedContainer, contentColor = StateClosedText)
         }
-        Text("${nodo.pk} · ${nodo.sitio}", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text("${node.pk} · ${node.site}", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            InfoStat("TIPO", nodo.tipoSensor)
-            InfoStat("BATERÍA", "${nodo.bateriaPorcentaje}%")
-            InfoStat("ÚLT. COMUNICACIÓN", nodo.ultimaComunicacion)
+            InfoStat("TIPO", node.sensorType)
+            InfoStat("BATERÍA", "${node.batteryPercentage}%")
+            InfoStat("ÚLT. COMUNICACIÓN", node.lastCommunication)
         }
         Button(
-            onClick = onVerHistorial,
+            onClick = onViewHistory,
             colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
             modifier = Modifier.fillMaxWidth(),
         ) {
@@ -191,8 +191,8 @@ private fun InfoStat(label: String, value: String) {
     }
 }
 
-private fun NivelAlerta.color(): Color = when (this) {
-    NivelAlerta.ROJO -> NodeCritical
-    NivelAlerta.AMARILLO -> NodeAlert
-    NivelAlerta.VERDE -> NodeNormal
+private fun AlertLevel.color(): Color = when (this) {
+    AlertLevel.RED -> NodeCritical
+    AlertLevel.YELLOW -> NodeAlert
+    AlertLevel.GREEN -> NodeNormal
 }

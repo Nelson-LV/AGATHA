@@ -36,7 +36,7 @@ app/src/main/java/com/hivend/agatha/
 │   └── util/                   # Utilidades pequeñas y puras (p. ej. FileProvider para fotos)
 │
 ├── domain/                     # Capa de dominio: NO depende de Android ni de Compose
-│   ├── model/                  # Alerta, Inspeccion, NodoSensor, EventoHistorial, enums…
+│   ├── model/                  # Alert, Inspection, SensorNode, HistoryEvent, enums…
 │   └── repository/             # Interfaces (puertos) que la UI consume
 │
 ├── data/                       # Implementaciones concretas de los puertos de dominio
@@ -77,10 +77,10 @@ de login) debe replicar esta misma forma.
 |---|---|---|
 | **Repository** | `domain/repository/*Repository` (interfaces) + `data/repository/InMemory*Repository` (implementación) | La UI y los ViewModels dependen de una interfaz, nunca de Room/Retrofit directamente. Cambiar el origen de datos (memoria → Room+API real) no requiere tocar `ui/`. Es el patrón que más impacto tendrá cuando se conecte la API central en el sprint 3. |
 | **Singleton** (vía DI) | Todas las clases `InMemory*Repository` están anotadas `@Singleton` y se enlazan en `core/di/RepositoryModule.kt` | Todas las pantallas deben observar el **mismo** estado de alertas/sincronización; si cada pantalla creara su propia instancia del repositorio, un cambio de estado en una pantalla no se reflejaría en otra. Con Hilt nunca se escribe manualmente `object` ni `getInstance()`: el contenedor de Hilt garantiza una única instancia por proceso. |
-| **Inyección de dependencias (Dependency Inversion)** | Hilt (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@Module`/`@Binds`) | Desacopla la construcción de un objeto de su uso. Facilita además las pruebas unitarias: un test puede inyectar un `AlertaRepository` falso sin tocar Hilt. |
+| **Inyección de dependencias (Dependency Inversion)** | Hilt (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@Module`/`@Binds`) | Desacopla la construcción de un objeto de su uso. Facilita además las pruebas unitarias: un test puede inyectar un `AlertRepository` falso sin tocar Hilt. |
 | **MVVM (Model-View-ViewModel)** | Cada `*ViewModel.kt` expone `StateFlow<UiState>`; el `Screen.kt` solo lo colecta con `collectAsStateWithLifecycle()` | Separa el estado de pantalla (sobrevive rotaciones, se testea sin Compose) de su representación visual. Es el patrón de arquitectura recomendado oficialmente para Compose. |
-| **Observer** | `kotlinx.coroutines.flow.StateFlow`/`Flow` en repositorios y ViewModels | Cuando `InMemoryAlertaRepository` cambia una alerta, **todas** las pantallas suscritas (bandeja, detalle, notificación) se recomponen solas — nadie hace polling ni recarga manual. |
-| **Máquina de estados (State Machine)** | `EstadoAlerta` (`GENERADA → RECIBIDA → EN_INSPECCION → CLASIFICADA → CERRADA`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). |
+| **Observer** | `kotlinx.coroutines.flow.StateFlow`/`Flow` en repositorios y ViewModels | Cuando `InMemoryAlertRepository` cambia una alerta, **todas** las pantallas suscritas (bandeja, detalle, notificación) se recomponen solas — nadie hace polling ni recarga manual. |
+| **Máquina de estados (State Machine)** | `AlertStatus` (`GENERATED → RECEIVED → IN_INSPECTION → CLASSIFIED → CLOSED`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). |
 | **Adapter implícito (mapper)** | Punto de extensión reservado en `data/remote` (DTO → `domain.model`) y `data/local` (Entity → `domain.model`) | Ningún DTO/Entity debe llegar nunca a `ui/`. Cuando se implemente, cada repositorio real mapea explícitamente. |
 | **Factory** (delegado a Hilt) | `@HiltViewModel` + `hiltViewModel()` en cada `Screen.kt` | Hilt genera la fábrica de cada ViewModel (incluida la inyección de argumentos de navegación vía `SavedStateHandle`), evitando `ViewModelProvider.Factory` manuales. |
 
@@ -98,11 +98,38 @@ de login) debe replicar esta misma forma.
 ## 3. Buenas prácticas de desarrollo
 
 **Nomenclatura**
-- Paquetes en inglés técnico (`ui`, `domain`, `data`), pero **nombres de dominio en
-  español** (`Alerta`, `EstadoAlerta`, `registrarInspeccion`) porque así habla el negocio
-  (0G Colombia, HIVEND, el backlog) — evita una capa de traducción mental constante.
+- Paquetes en inglés técnico (`ui`, `domain`, `data`) y también **nombres de dominio en
+  inglés** (`Alert`, `AlertStatus`, `registerInspection`) — ver "Convención de idioma"
+  abajo. El backlog y las conversaciones con 0G Colombia/HIVEND siguen en español; solo el
+  código pasa a inglés.
 - `Screen` para composables de pantalla completa, `ViewModel` para su estado, nunca
   abreviados (`VM`, `Scr`).
+
+**Convención de idioma**
+- Todo el código (clases, interfaces, enums, propiedades, parámetros, funciones,
+  constantes de enum) se escribe en **inglés**, en las cuatro capas (`domain`, `data`,
+  `ui`, `core`). Ejemplo del refactor de vocabulario hecho sobre HE-04..HE-08:
+
+  | Antes (español) | Ahora (inglés) |
+  |---|---|
+  | `Alerta`, `EstadoAlerta`, `NivelAlerta`, `TelemetriaAlerta` | `Alert`, `AlertStatus`, `AlertLevel`, `AlertTelemetry` |
+  | `Inspeccion`, `ResultadoInspeccion`, `CategoriaEvento` | `Inspection`, `InspectionResult`, `EventCategory` |
+  | `EvidenciaFoto`, `NodoSensor`, `EventoHistorial`, `TipoEvento` | `PhotoEvidence`, `SensorNode`, `HistoryEvent`, `EventType` |
+  | `EstadoSincronizacion`, `RegistroPendiente`, `ConflictoSincronizacion` | `SyncStatus`, `PendingRecord`, `SyncConflict` |
+  | `AlertaRepository`, `HistorialRepository`, `NodoSensorRepository`, `SincronizacionRepository` | `AlertRepository`, `HistoryRepository`, `SensorNodeRepository`, `SyncRepository` |
+  | `registrarInspeccion`, `observarAlertas`, `actualizarEstado`, `sincronizarAhora` | `registerInspection`, `observeAlerts`, `updateStatus`, `syncNow` |
+
+- **Excepción — comentarios y KDoc**: pueden quedarse en español (es el idioma de trabajo
+  del equipo). No se traducen como efecto secundario de un cambio no relacionado.
+- **Excepción — cadenas de texto de la UI**: lo que ve el usuario de campo (`Text(...)`,
+  `contentDescription`, mensajes) sigue siendo principalmente español, pero debe terminar
+  soportando **español e inglés** vía recursos de Android
+  (`res/values/strings.xml` en español por defecto + `res/values-en/strings.xml` en
+  inglés) en vez de literales embebidos en el Composable. Esa migración a recursos
+  bilingües **todavía no se hizo** — las pantallas actuales siguen con texto en español
+  embebido — y queda como trabajo futuro, fuera del alcance del refactor de vocabulario de
+  clases. Al tocar una pantalla existente, preferir mover sus literales a recursos en vez
+  de agregar más texto embebido.
 
 **Compose**
 - Un composable de pantalla jamás recibe un `NavController`: recibe funciones lambda
@@ -122,7 +149,7 @@ de login) debe replicar esta misma forma.
 **Offline-first (HE-07)**
 - Cualquier pantalla que escriba datos de campo (inspección, evidencia) debe poder
   guardar sin conexión y mostrarlo de inmediato en la UI local — nunca esperar una
-  respuesta de red para dar feedback. `InMemoryAlertaRepository` ya modela esto: escribe
+  respuesta de red para dar feedback. `InMemoryAlertRepository` ya modela esto: escribe
   primero en el estado local, la sincronización es un paso aparte (`data/sync`, futuro).
 
 **Seguridad**
@@ -178,7 +205,7 @@ photo_evidence/{alertId}
 Decisión de diseño relevante: el prototipo de Figma dibuja **"Detalle de Alerta"** dos
 veces (`Recibida` y `En inspección`) como si fueran pantallas distintas. En código es
 **una sola** `AlertDetailScreen`, cuyos botones principales cambian según
-`Alerta.estado` (`PrimaryActions` en el archivo). Duplicar la pantalla por cada estado
+`Alert.status` (`PrimaryActions` en el archivo). Duplicar la pantalla por cada estado
 posible (5 estados) habría significado 5 composables casi idénticos y un bug garantizado
 el día que alguien actualice uno y olvide los otros cuatro.
 
@@ -220,8 +247,8 @@ propio archivo para cuando se agregue la fuente variable real en `res/font/`.
 botones, 14dp tarjetas — medidos directamente del archivo de diseño.
 
 **Mapa de nodos: mock-up vs. SDK real.** La pantalla `SensorMapScreen` dibuja los nodos con
-un `Canvas`/`Box` posicionado por coordenadas normalizadas (`NodoSensor.xNormalizado/
-yNormalizado`), igual de fiel visualmente al prototipo (que tampoco usa un mapa real, sino
+un `Canvas`/`Box` posicionado por coordenadas normalizadas (`SensorNode.normalizedX/
+normalizedY`), igual de fiel visualmente al prototipo (que tampoco usa un mapa real, sino
 un fondo verde con puntos de color). `com.google.maps.android:maps-compose` ya está en el
 catálogo de versiones para cuando existan coordenadas lat/lng reales de los nodos AGATHA —
 no se activó todavía porque su versión actual exige `compileSdk 37`/AGP 9.1+, un salto que
@@ -288,8 +315,8 @@ Esto es intencional para esta fase del proyecto (pantallas + navegación + palet
 integración con la API central todavía). El contrato para el sprint de integración es
 simple porque ya está trazado por interfaces:
 
-1. Implementar `AlertaRepository`, `NodoSensorRepository`, `HistorialRepository` y
-   `SincronizacionRepository` respaldadas por Room (cache local) + Retrofit (API central) +
+1. Implementar `AlertRepository`, `SensorNodeRepository`, `HistoryRepository` y
+   `SyncRepository` respaldadas por Room (cache local) + Retrofit (API central) +
    WorkManager (sincronización diferida).
 2. Enlazarlas en `core/di/RepositoryModule.kt` en lugar de las `InMemory*`.
 3. Ninguna pantalla ni ViewModel cambia — es exactamente el problema que el patrón

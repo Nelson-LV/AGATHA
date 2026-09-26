@@ -34,12 +34,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.EstadoAlerta
-import com.hivend.agatha.domain.model.NivelAlerta
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertStatus
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.EstadoAlertaChip
+import com.hivend.agatha.ui.components.AlertStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.theme.AlertGreen
@@ -68,20 +68,20 @@ fun AlertInboxScreen(
     modifier: Modifier = Modifier,
     viewModel: AlertInboxViewModel = hiltViewModel(),
 ) {
-    val alertas by viewModel.alertas.collectAsStateWithLifecycle()
+    val alerts by viewModel.alerts.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader {
             StatusChip(text = "CONECTADO", containerColor = StateClosedContainer, contentColor = StateClosedText)
         }
-        ConnectivityBar(conectado = true, mensaje = "Conectado · Sincronizado hace 2 min")
+        ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(sitio = alertas.firstOrNull()?.sitio ?: "—") }
+            item { SitePill(site = alerts.firstOrNull()?.site ?: "—") }
 
             item {
                 Column(
@@ -97,16 +97,16 @@ fun AlertInboxScreen(
                     ) {
                         Text("Mis alertas", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                         StatusChip(
-                            text = "${alertas.count { it.estado != EstadoAlerta.CERRADA }} activas",
+                            text = "${alerts.count { it.status != AlertStatus.CLOSED }} activas",
                             containerColor = NeutralSurfaceVariant,
                             contentColor = TextSecondary,
                         )
                     }
-                    alertas.forEachIndexed { index, alerta ->
+                    alerts.forEachIndexed { index, alert ->
                         AlertRow(
-                            alerta = alerta,
-                            showDivider = index != alertas.lastIndex,
-                            onClick = { onAlertClick(alerta.id) },
+                            alert = alert,
+                            showDivider = index != alerts.lastIndex,
+                            onClick = { onAlertClick(alert.id) },
                         )
                     }
                 }
@@ -124,7 +124,7 @@ fun AlertInboxScreen(
 }
 
 @Composable
-private fun AlertRow(alerta: Alerta, showDivider: Boolean, onClick: () -> Unit) {
+private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
     Column {
         Row(
             verticalAlignment = Alignment.Top,
@@ -137,14 +137,14 @@ private fun AlertRow(alerta: Alerta, showDivider: Boolean, onClick: () -> Unit) 
                 modifier = Modifier
                     .padding(top = 4.dp)
                     .size(10.dp)
-                    .background(alerta.nivel.color(), CircleShape),
+                    .background(alert.level.color(), CircleShape),
             )
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text("${alerta.punto} · Sensor ${alerta.sensorId}", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
-                Text(alerta.descripcion, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                Text(alerta.tiempoRelativo, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                Text("${alert.point} · Sensor ${alert.sensorId}", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+                Text(alert.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
+                Text(alert.relativeTime, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
             }
-            EstadoAlertaChip(estado = alerta.estado)
+            AlertStatusChip(status = alert.status)
         }
         if (showDivider) {
             HorizontalDivider(color = NeutralBorder)
@@ -167,8 +167,8 @@ private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier 
     }
 }
 
-private fun NivelAlerta.color(): Color = when (this) {
-    NivelAlerta.ROJO -> AlertRed
-    NivelAlerta.AMARILLO -> StateInspectionText
-    NivelAlerta.VERDE -> AlertGreen
+private fun AlertLevel.color(): Color = when (this) {
+    AlertLevel.RED -> AlertRed
+    AlertLevel.YELLOW -> StateInspectionText
+    AlertLevel.GREEN -> AlertGreen
 }

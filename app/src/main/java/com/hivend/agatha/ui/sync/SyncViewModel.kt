@@ -2,8 +2,8 @@ package com.hivend.agatha.ui.sync
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hivend.agatha.domain.model.EstadoSincronizacion
-import com.hivend.agatha.domain.repository.SincronizacionRepository
+import com.hivend.agatha.domain.model.SyncStatus
+import com.hivend.agatha.domain.repository.SyncRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -13,21 +13,21 @@ import kotlinx.coroutines.launch
 
 @HiltViewModel
 class SyncViewModel @Inject constructor(
-    private val sincronizacionRepository: SincronizacionRepository,
+    private val syncRepository: SyncRepository,
 ) : ViewModel() {
 
-    val estado: StateFlow<EstadoSincronizacion?> = sincronizacionRepository.observarEstado()
+    val status: StateFlow<SyncStatus?> = syncRepository.observeStatus()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
-    fun sincronizarAhora() {
-        viewModelScope.launch { sincronizacionRepository.sincronizarAhora() }
+    fun syncNow() {
+        viewModelScope.launch { syncRepository.syncNow() }
     }
 
-    fun reintentar(registroId: String) {
-        viewModelScope.launch { sincronizacionRepository.reintentar(registroId) }
+    fun retry(recordId: String) {
+        viewModelScope.launch { syncRepository.retry(recordId) }
     }
 
-    fun confirmarConflicto(alertaId: String) {
-        viewModelScope.launch { sincronizacionRepository.confirmarConflicto(alertaId) }
+    fun confirmConflict(alertId: String) {
+        viewModelScope.launch { syncRepository.confirmConflict(alertId) }
     }
 }

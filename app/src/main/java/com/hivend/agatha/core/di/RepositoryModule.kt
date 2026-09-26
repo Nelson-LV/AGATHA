@@ -1,13 +1,13 @@
 package com.hivend.agatha.core.di
 
-import com.hivend.agatha.data.repository.InMemoryAlertaRepository
-import com.hivend.agatha.data.repository.InMemoryHistorialRepository
-import com.hivend.agatha.data.repository.InMemoryNodoSensorRepository
-import com.hivend.agatha.data.repository.InMemorySincronizacionRepository
-import com.hivend.agatha.domain.repository.AlertaRepository
-import com.hivend.agatha.domain.repository.HistorialRepository
-import com.hivend.agatha.domain.repository.NodoSensorRepository
-import com.hivend.agatha.domain.repository.SincronizacionRepository
+import com.hivend.agatha.data.repository.InMemoryAlertRepository
+import com.hivend.agatha.data.repository.InMemoryHistoryRepository
+import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
+import com.hivend.agatha.data.repository.InMemorySyncRepository
+import com.hivend.agatha.domain.repository.AlertRepository
+import com.hivend.agatha.domain.repository.HistoryRepository
+import com.hivend.agatha.domain.repository.SensorNodeRepository
+import com.hivend.agatha.domain.repository.SyncRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -26,17 +26,17 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindAlertaRepository(impl: InMemoryAlertaRepository): AlertaRepository
+    abstract fun bindAlertRepository(impl: InMemoryAlertRepository): AlertRepository
 
     @Binds
     @Singleton
-    abstract fun bindNodoSensorRepository(impl: InMemoryNodoSensorRepository): NodoSensorRepository
+    abstract fun bindSensorNodeRepository(impl: InMemorySensorNodeRepository): SensorNodeRepository
 
     @Binds
     @Singleton
-    abstract fun bindHistorialRepository(impl: InMemoryHistorialRepository): HistorialRepository
+    abstract fun bindHistoryRepository(impl: InMemoryHistoryRepository): HistoryRepository
 
     @Binds
     @Singleton
-    abstract fun bindSincronizacionRepository(impl: InMemorySincronizacionRepository): SincronizacionRepository
+    abstract fun bindSyncRepository(impl: InMemorySyncRepository): SyncRepository
 }

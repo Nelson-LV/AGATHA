@@ -20,8 +20,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.EventoHistorial
-import com.hivend.agatha.domain.model.TipoEvento
+import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
@@ -46,21 +46,21 @@ fun DeviceHistoryScreen(
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
-    val eventos by viewModel.eventos.collectAsStateWithLifecycle()
+    val events by viewModel.events.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader()
-        ConnectivityBar(conectado = false, mensaje = "Sin conexión · mostrando datos locales")
+        ConnectivityBar(connected = false, message = "Sin conexión · mostrando datos locales")
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(sitio = "Güepsa – San José de Pare") }
+            item { SitePill(site = "Güepsa – San José de Pare") }
             item {
                 Text(
-                    "Historial de: Sensor ${viewModel.dispositivoId}",
+                    "Historial de: Sensor ${viewModel.deviceId}",
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
@@ -76,9 +76,9 @@ fun DeviceHistoryScreen(
                         .background(NeutralSurface, RoundedCornerShape(14.dp))
                         .padding(horizontal = 14.dp),
                 ) {
-                    eventos.forEachIndexed { index, evento ->
-                        HistoryRow(evento)
-                        if (index != eventos.lastIndex) HorizontalDivider(color = NeutralBorder)
+                    events.forEachIndexed { index, event ->
+                        HistoryRow(event)
+                        if (index != events.lastIndex) HorizontalDivider(color = NeutralBorder)
                     }
                 }
             }
@@ -87,14 +87,14 @@ fun DeviceHistoryScreen(
 }
 
 @Composable
-private fun HistoryRow(evento: EventoHistorial) {
+private fun HistoryRow(event: HistoryEvent) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Text(evento.tipo.emoji(), style = MaterialTheme.typography.titleMedium)
+        Text(event.type.emoji(), style = MaterialTheme.typography.titleMedium)
         Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text("${evento.hora}  ${evento.tipo.etiqueta()}", color = evento.tipo.color(), style = MaterialTheme.typography.labelSmall)
-            Text(evento.titulo, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-            Text(evento.detalle, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
-            evento.etiquetaEstado?.let {
+            Text("${event.time}  ${event.type.label()}", color = event.type.color(), style = MaterialTheme.typography.labelSmall)
+            Text(event.title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+            Text(event.detail, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+            event.statusLabel?.let {
                 StatusChip(
                     text = it,
                     containerColor = NeutralSurfaceVariant,
@@ -106,29 +106,29 @@ private fun HistoryRow(evento: EventoHistorial) {
     }
 }
 
-private fun TipoEvento.emoji(): String = when (this) {
-    TipoEvento.ALERTA -> "🔴"
-    TipoEvento.INSPECCION -> "🔧"
-    TipoEvento.CLASIFICACION -> "🏷"
-    TipoEvento.EVIDENCIA -> "📷"
-    TipoEvento.OBSERVACION -> "📝"
-    TipoEvento.MANTENIMIENTO -> "✅"
+private fun EventType.emoji(): String = when (this) {
+    EventType.ALERT -> "🔴"
+    EventType.INSPECTION -> "🔧"
+    EventType.CLASSIFICATION -> "🏷"
+    EventType.EVIDENCE -> "📷"
+    EventType.OBSERVATION -> "📝"
+    EventType.MAINTENANCE -> "✅"
 }
 
-private fun TipoEvento.etiqueta(): String = when (this) {
-    TipoEvento.ALERTA -> "ALERTA"
-    TipoEvento.INSPECCION -> "INSPECCIÓN"
-    TipoEvento.CLASIFICACION -> "CLASIFICACIÓN"
-    TipoEvento.EVIDENCIA -> "EVIDENCIA"
-    TipoEvento.OBSERVACION -> "OBSERVACIÓN"
-    TipoEvento.MANTENIMIENTO -> "MANTENIMIENTO"
+private fun EventType.label(): String = when (this) {
+    EventType.ALERT -> "ALERTA"
+    EventType.INSPECTION -> "INSPECCIÓN"
+    EventType.CLASSIFICATION -> "CLASIFICACIÓN"
+    EventType.EVIDENCE -> "EVIDENCIA"
+    EventType.OBSERVATION -> "OBSERVACIÓN"
+    EventType.MAINTENANCE -> "MANTENIMIENTO"
 }
 
-private fun TipoEvento.color(): androidx.compose.ui.graphics.Color = when (this) {
-    TipoEvento.ALERTA -> AlertRed
-    TipoEvento.INSPECCION -> AgathaBlue
-    TipoEvento.CLASIFICACION -> StateInspectionText
-    TipoEvento.EVIDENCIA -> AgathaBlue
-    TipoEvento.OBSERVACION -> TextSecondary
-    TipoEvento.MANTENIMIENTO -> AlertGreen
+private fun EventType.color(): androidx.compose.ui.graphics.Color = when (this) {
+    EventType.ALERT -> AlertRed
+    EventType.INSPECTION -> AgathaBlue
+    EventType.CLASSIFICATION -> StateInspectionText
+    EventType.EVIDENCE -> AgathaBlue
+    EventType.OBSERVATION -> TextSecondary
+    EventType.MAINTENANCE -> AlertGreen
 }

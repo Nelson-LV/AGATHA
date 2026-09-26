@@ -6,15 +6,15 @@ package com.hivend.agatha.domain.model
  * SDK de Google Maps real (coordenadas lat/lng) no reemplaza el mock-up estático — ver
  * docs/ARQUITECTURA_Y_DISENO.md § "Mapa de nodos: mock-up vs. SDK real".
  */
-data class NodoSensor(
+data class SensorNode(
     val id: String,
-    val nombre: String,
+    val name: String,
     val pk: String,
-    val sitio: String,
-    val tipoSensor: String,
-    val estado: NivelAlerta,
-    val bateriaPorcentaje: Int,
-    val ultimaComunicacion: String,
-    val xNormalizado: Float,
-    val yNormalizado: Float,
+    val site: String,
+    val sensorType: String,
+    val status: AlertLevel,
+    val batteryPercentage: Int,
+    val lastCommunication: String,
+    val normalizedX: Float,
+    val normalizedY: Float,
 )

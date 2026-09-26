@@ -26,8 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.ConflictoSincronizacion
-import com.hivend.agatha.domain.model.RegistroPendiente
+import com.hivend.agatha.domain.model.SyncConflict
+import com.hivend.agatha.domain.model.PendingRecord
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
@@ -56,44 +56,44 @@ fun SyncScreen(
     modifier: Modifier = Modifier,
     viewModel: SyncViewModel = hiltViewModel(),
 ) {
-    val estado by viewModel.estado.collectAsStateWithLifecycle()
+    val status by viewModel.status.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader()
         ConnectivityBar(
-            conectado = estado?.conectado ?: false,
-            mensaje = if (estado?.conectado == true) {
-                "Conectado · Sincronizado ${estado?.ultimaSincronizacionExitosa}"
+            connected = status?.connected ?: false,
+            message = if (status?.connected == true) {
+                "Conectado · Sincronizado ${status?.lastSuccessfulSync}"
             } else {
-                "Sin conexión · ${estado?.pendientes?.size ?: 0} pendientes por sincronizar"
+                "Sin conexión · ${status?.pending?.size ?: 0} pendientes por sincronizar"
             },
         )
 
-        val actual = estado
-        if (actual != null) {
+        val current = status
+        if (current != null) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                item { SitePill(sitio = "Güepsa – San José de Pare") }
+                item { SitePill(site = "Güepsa – San José de Pare") }
 
-                if (!actual.conectado) {
+                if (!current.connected) {
                     item { OfflineBanner() }
                 }
 
-                if (actual.pendientes.isNotEmpty()) {
-                    item { PendingSyncCard(pendientes = actual.pendientes, onReintentar = viewModel::reintentar) }
+                if (current.pending.isNotEmpty()) {
+                    item { PendingSyncCard(pending = current.pending, onRetry = viewModel::retry) }
                 }
 
-                actual.conflicto?.let { conflicto ->
-                    item { ConflictCard(conflicto = conflicto, onEntendido = { viewModel.confirmarConflicto(conflicto.alertaId) }) }
+                current.conflict?.let { conflict ->
+                    item { ConflictCard(conflict = conflict, onUnderstood = { viewModel.confirmConflict(conflict.alertId) }) }
                 }
 
                 item {
                     SyncFooter(
-                        ultimaSincronizacion = actual.ultimaSincronizacionExitosa,
-                        onSincronizarAhora = viewModel::sincronizarAhora,
+                        lastSync = current.lastSuccessfulSync,
+                        onSyncNow = viewModel::syncNow,
                     )
                 }
             }
@@ -124,7 +124,7 @@ private fun OfflineBanner() {
 }
 
 @Composable
-private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (String) -> Unit) {
+private fun PendingSyncCard(pending: List<PendingRecord>, onRetry: (String) -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
@@ -132,8 +132,8 @@ private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (
             .background(NeutralSurface, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("Pendientes por sincronizar (${pendientes.size})", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-        pendientes.forEach { registro ->
+        Text("Pendientes por sincronizar (${pending.size})", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+        pending.forEach { record ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
@@ -142,8 +142,8 @@ private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(registro.titulo, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                    Text(registro.detalle, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                    Text(record.title, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text(record.detail, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                 }
                 StatusChip(text = "Pendiente", containerColor = StateInspectionContainer, contentColor = StateInspectionText)
                 Text(
@@ -151,7 +151,7 @@ private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
-                        .clickable { onReintentar(registro.id) }
+                        .clickable { onRetry(record.id) }
                         .padding(start = 8.dp),
                 )
             }
@@ -160,7 +160,7 @@ private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (
 }
 
 @Composable
-private fun ConflictCard(conflicto: ConflictoSincronizacion, onEntendido: () -> Unit) {
+private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
@@ -169,14 +169,14 @@ private fun ConflictCard(conflicto: ConflictoSincronizacion, onEntendido: () -> 
             .border(1.3.dp, ConflictBorder, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("⚠ ${conflicto.tituloConflicto}", color = ConflictText, style = MaterialTheme.typography.titleSmall)
-        Text(conflicto.descripcion, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text("⚠ ${conflict.conflictTitle}", color = ConflictText, style = MaterialTheme.typography.titleSmall)
+        Text(conflict.description, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ConflictVersion("TU CAMBIO (LOCAL)", conflicto.cambioLocal, Modifier.weight(1f))
-            ConflictVersion("CAMBIO DEL SERVIDOR", conflicto.cambioServidor, Modifier.weight(1f))
+            ConflictVersion("TU CAMBIO (LOCAL)", conflict.localChange, Modifier.weight(1f))
+            ConflictVersion("CAMBIO DEL SERVIDOR", conflict.serverChange, Modifier.weight(1f))
         }
         OutlinedButton(
-            onClick = onEntendido,
+            onClick = onUnderstood,
             border = BorderStroke(1.2.dp, ConflictBorder),
             colors = ButtonDefaults.outlinedButtonColors(contentColor = ConflictText),
             modifier = Modifier.fillMaxWidth(),
@@ -187,29 +187,29 @@ private fun ConflictCard(conflicto: ConflictoSincronizacion, onEntendido: () -> 
 }
 
 @Composable
-private fun ConflictVersion(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
+private fun ConflictVersion(label: String, valor: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
             .background(NeutralSurface, RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text(etiqueta, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
         Text(valor, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
-private fun SyncFooter(ultimaSincronizacion: String, onSincronizarAhora: () -> Unit) {
+private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Button(
-            onClick = onSincronizarAhora,
+            onClick = onSyncNow,
             colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text("🔄 Sincronizar ahora")
         }
         Text(
-            "Última sincronización correcta: $ultimaSincronizacion",
+            "Última sincronización correcta: $lastSync",
             color = TextSecondary,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,

@@ -2,8 +2,8 @@ package com.hivend.agatha.ui.alerts
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.repository.AlertaRepository
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.flow.SharingStarted
@@ -17,9 +17,9 @@ import kotlinx.coroutines.flow.stateIn
  */
 @HiltViewModel
 class AlertInboxViewModel @Inject constructor(
-    alertaRepository: AlertaRepository,
+    alertRepository: AlertRepository,
 ) : ViewModel() {
 
-    val alertas: StateFlow<List<Alerta>> = alertaRepository.observarAlertas()
+    val alerts: StateFlow<List<Alert>> = alertRepository.observeAlerts()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 }

@@ -9,7 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.hivend.agatha.domain.model.EstadoAlerta
+import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.ui.theme.StateClassifiedContainer
 import com.hivend.agatha.ui.theme.StateClassifiedText
 import com.hivend.agatha.ui.theme.StateClosedContainer
@@ -37,25 +37,25 @@ fun StatusChip(
     )
 }
 
-private fun EstadoAlerta.etiqueta() = when (this) {
-    EstadoAlerta.GENERADA -> "Generada"
-    EstadoAlerta.RECIBIDA -> "Recibida"
-    EstadoAlerta.EN_INSPECCION -> "En inspección"
-    EstadoAlerta.CLASIFICADA -> "Clasificada"
-    EstadoAlerta.CERRADA -> "Cerrada"
+private fun AlertStatus.label() = when (this) {
+    AlertStatus.GENERATED -> "Generada"
+    AlertStatus.RECEIVED -> "Recibida"
+    AlertStatus.IN_INSPECTION -> "En inspección"
+    AlertStatus.CLASSIFIED -> "Clasificada"
+    AlertStatus.CLOSED -> "Cerrada"
 }
 
-private fun EstadoAlerta.colores(): Pair<Color, Color> = when (this) {
-    EstadoAlerta.GENERADA -> StateInspectionContainer to StateInspectionText
-    EstadoAlerta.RECIBIDA -> StateReceivedContainer to StateReceivedText
-    EstadoAlerta.EN_INSPECCION -> StateInspectionContainer to StateInspectionText
-    EstadoAlerta.CLASIFICADA -> StateClassifiedContainer to StateClassifiedText
-    EstadoAlerta.CERRADA -> StateClosedContainer to StateClosedText
+private fun AlertStatus.statusColors(): Pair<Color, Color> = when (this) {
+    AlertStatus.GENERATED -> StateInspectionContainer to StateInspectionText
+    AlertStatus.RECEIVED -> StateReceivedContainer to StateReceivedText
+    AlertStatus.IN_INSPECTION -> StateInspectionContainer to StateInspectionText
+    AlertStatus.CLASSIFIED -> StateClassifiedContainer to StateClassifiedText
+    AlertStatus.CLOSED -> StateClosedContainer to StateClosedText
 }
 
 /** Chip de estado de alerta (Recibida / En inspección / Clasificada / Cerrada). */
 @Composable
-fun EstadoAlertaChip(estado: EstadoAlerta, modifier: Modifier = Modifier) {
-    val (container, content) = estado.colores()
-    StatusChip(text = estado.etiqueta(), containerColor = container, contentColor = content, modifier = modifier)
+fun AlertStatusChip(status: AlertStatus, modifier: Modifier = Modifier) {
+    val (container, content) = status.statusColors()
+    StatusChip(text = status.label(), containerColor = container, contentColor = content, modifier = modifier)
 }
