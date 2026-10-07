@@ -182,18 +182,20 @@ de login) debe replicar esta misma forma.
 ## 4. Navegación
 
 Un solo `NavHost` (`core/navigation/AgathaApp.kt`), con una barra inferior que **solo se
-muestra en las 4 pantallas raíz** — igual que en el prototipo de Figma, donde las pantallas
-de detalle/formulario reemplazan la barra por una flecha de regreso.
+muestra en las 5 pantallas raíz** — igual que en el prototipo de Figma, donde las pantallas
+de detalle/formulario reemplazan la barra por una flecha de regreso. La pestaña
+**Dispositivos** no estaba en el prototipo: lista todos los nodos con la misma ficha que el
+mapa (`ui/components/DeviceInfoCard.kt`).
 
 ```
-┌─── alerts ───┬─── map ───┬─── history/{deviceId} ───┬─── sync ───┐   ← bottom bar
-│   (Alertas)  │  (Mapa)   │       (Historial)        │  (Sync)    │
-└──────┬───────┴─────┬─────┴───────────────────────────┴────────────┘
-       │ tap alerta   │ tap nodo → "Ver historial completo"
-       ▼              └──────────────┐
-alert_detail/{alertId}                ▼
-       │ "Registrar inspección"   history/{deviceId}
-       ▼
+┌─ alerts ─┬─ devices ──┬─ map ─┬─ history/{deviceId} ─┬─ sync ─┐   ← bottom bar
+│ (Alertas)│(Dispositivos)│(Mapa)│     (Historial)     │ (Sync) │
+└────┬─────┴─────┬──────┴───┬───┴──────────────────────┴────────┘
+     │ tap alerta │ "Ver historial completo" (lista o nodo del mapa)
+     ▼            └──────────┴──────────► history/{deviceId}
+alert_detail/{alertId}  ── "Cerrar alerta" → diálogo de confirmación → Cerrada
+     │ botón verde "Iniciar / Continuar inspección"
+     ▼
 inspection_form/{alertId}
        │ "Guardar inspección"
        ▼
@@ -209,6 +211,22 @@ veces (`Recibida` y `En inspección`) como si fueran pantallas distintas. En có
 `Alert.status` (`PrimaryActions` en el archivo). Duplicar la pantalla por cada estado
 posible (5 estados) habría significado 5 composables casi idénticos y un bug garantizado
 el día que alguien actualice uno y olvide los otros cuatro.
+
+**Reglas del flujo de una alerta** (acordadas con el equipo de campo):
+
+- **Solo naranja y rojo son alertas.** El verde indica normalidad: esos nodos siguen en el
+  mapa y en Dispositivos, pero no aparecen en la bandeja (`AlertLevel.requiresAttention`).
+- **El botón verde siempre lleva a la inspección.** "Iniciar inspección" pasa la alerta a
+  `IN_INSPECTION` y abre el formulario; "Continuar inspección" lo reabre. La alerta solo pasa
+  a `CLASSIFIED` al guardar la inspección, nunca con un botón suelto.
+- **Se puede cerrar sin inspección**, con un diálogo de confirmación. Las observaciones
+  pendientes se guardan antes de cerrar.
+- **Las observaciones viven en el detalle**, al mismo nivel que la información de la alerta
+  (`Alert.observations`), no dentro del formulario de inspección.
+- **La inspección es visual y superficial.** El personal de campo no tiene acceso directo a
+  la tubería: el formulario prioriza clasificar la alerta y solo registra lo observado en
+  superficie y en el dispositivo. Por eso no existe "Fuga confirmada" sino "Indicios de
+  fuga", que confirma el operador.
 
 ---
 
@@ -237,8 +255,8 @@ mismo fondo para que no haya destello al abrir.
 | `surface` | `#FFFFFF` | `#161B22` | Tarjetas, encabezados, barra inferior |
 | `textPrimary` / `textSecondary` | `#0F172A` / `#5A6474` | `#E7EBF0` / `#A8B1BD` | Texto |
 | `critical` | `#C62828` | `#FF8A80` | Alerta roja, "Cerrar alerta" |
-| `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta amarilla, "En inspección", "Pendiente" |
-| `positive` | `#15803D` | `#5BD68A` | "Actualizar estado", "Guardar", conectado |
+| `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta naranja, "En inspección", "Pendiente" |
+| `positive` | `#15803D` | `#5BD68A` | "Iniciar/Continuar inspección", "Guardar", conectado |
 | `stateClassified` | `#6D3FC0` | `#C8B5FF` | Chip "Clasificada" |
 
 Los valores partieron de los prototipos de Figma (`AGATHA — Prototipos App Móvil`, nodos
@@ -325,8 +343,14 @@ Todas las pantallas ya son **interactivas** (no son solo maquetas estáticas): n
 actualizan estado, guardan formularios y reflejan esos cambios donde corresponda. Lo hacen
 contra `data/repository/InMemory*Repository`, que mantiene el estado en un
 `MutableStateFlow` sembrado con `SampleAgathaData` (los mismos 4 sensores, sitio y textos
-exactos del prototipo de Figma: `MP-1156`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
+del prototipo de Figma: `MP-1156`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
 "Güepsa – San José de Pare").
+
+Los datos de ejemplo **también se traducen**: sus textos son claves `sample_*` en
+`values/` y `values-en/strings.xml`, envueltas en `LocalizedText.Resource`, y lo
+estructurado (tiempos, tipo de sensor, aceleración) son minutos o enums que la UI formatea.
+Así la demo se ve completa en el idioma del dispositivo. Cuando llegue la API real, el texto
+escrito por personas (observaciones, notas del operador) viajará como `LocalizedText.Plain`.
 
 Esto es intencional para esta fase del proyecto (pantallas + navegación + paleta, sin
 integración con la API central todavía). El contrato para el sprint de integración es

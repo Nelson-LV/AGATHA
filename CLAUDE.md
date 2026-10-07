@@ -45,9 +45,16 @@ Rules:
   not duplicated in `values-en`.
 - Locale-dependent formats (dates) go through a translatable pattern resource and the
   Compose locale (`LocalConfiguration.current.locales[0]`), never a hardcoded `Locale`.
-- Not in scope: sample/mock content in `data/repository/` (alert descriptions, history
-  entries, pending records). It stands in for data the central API will send and is not
-  translated by the app.
+- **Sample data is translated too.** The mock content in `data/repository/` (alert
+  descriptions, history entries, pending records) never holds a literal: free text is a
+  `LocalizedText.Resource(R.string.sample_*, args)` and structured values are enums
+  (`SensorType`, `AccelerationLevel`) or numbers (`minutesAgo`, `pointNumber`) that the UI
+  formats. Add every `sample_*` key to both string files.
+- Domain models never store display text. Free text the domain cannot avoid is a
+  `LocalizedText` (`Plain` for text a person wrote, `Resource` for app text), resolved in
+  Compose with `.resolve()`; relative times are minutes rendered with `relativeTimeAgo()` /
+  `shortDuration()` (`ui/components/Texts.kt`). Text separators such as `·` go through
+  `common_dot_separated`, not string templates.
 - To check English on a device/emulator:
   `adb shell cmd locale set-app-locales com.hivend.agatha.debug --locales en-US`
   (empty `--locales ""` resets to the system language).
