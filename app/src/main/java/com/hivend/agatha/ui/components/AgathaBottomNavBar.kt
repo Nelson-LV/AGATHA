@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -20,12 +21,13 @@ import androidx.compose.ui.res.stringResource
 
 private fun BottomTab.icon(): ImageVector = when (this) {
     BottomTab.Alerts -> Icons.Filled.Notifications
+    BottomTab.Devices -> Icons.Filled.Sensors
     BottomTab.Map -> Icons.Filled.Map
     BottomTab.History -> Icons.AutoMirrored.Filled.Assignment
     BottomTab.Sync -> Icons.Filled.Sync
 }
 
-/** Barra inferior de 4 pestañas persistente en las pantallas raíz, igual que en Figma. */
+/** Barra inferior de 5 pestañas persistente en las pantallas raíz (Figma + Dispositivos). */
 @Composable
 fun AgathaBottomNavBar(
     currentTab: BottomTab,

@@ -21,6 +21,7 @@ import com.hivend.agatha.ui.alertdetail.AlertDetailScreen
 import com.hivend.agatha.ui.alerts.AlertInboxScreen
 import com.hivend.agatha.ui.components.AgathaBottomNavBar
 import com.hivend.agatha.ui.components.rootRoute
+import com.hivend.agatha.ui.devices.DeviceListScreen
 import com.hivend.agatha.ui.evidence.PhotoEvidenceScreen
 import com.hivend.agatha.ui.history.DeviceHistoryScreen
 import com.hivend.agatha.ui.inspection.InspectionFormScreen
@@ -28,7 +29,7 @@ import com.hivend.agatha.ui.map.SensorMapScreen
 import com.hivend.agatha.ui.sync.SyncScreen
 
 /**
- * Composición raíz de AGATHA: un único [NavHost] con barra inferior condicional. Las 4
+ * Composición raíz de AGATHA: un único [NavHost] con barra inferior condicional. Las 5
  * pestañas ([BottomTab]) muestran [AgathaBottomNavBar]; el resto de pantallas se apilan a
  * pantalla completa, igual que en el prototipo Figma. Ver
  * docs/ARQUITECTURA_Y_DISENO.md § "Navegación" para el diagrama completo de rutas.
@@ -57,6 +58,12 @@ fun AgathaApp() {
                     onNavigateToMap = { navController.navigateToTab(BottomTab.Map) },
                     onNavigateToHistory = { navController.navigateToTab(BottomTab.History) },
                     onNavigateToSync = { navController.navigateToTab(BottomTab.Sync) },
+                )
+            }
+
+            composable(BottomTab.Devices.route) {
+                DeviceListScreen(
+                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
                 )
             }
 

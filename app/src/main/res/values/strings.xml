@@ -26,6 +26,7 @@
 
     <!-- Pestañas inferiores -->
     <string name="tab_alerts">Alertas</string>
+    <string name="tab_devices">Dispositivos</string>
     <string name="tab_map">Mapa</string>
     <string name="tab_history">Historial</string>
     <string name="tab_sync">Sync</string>
@@ -152,8 +153,17 @@
     <string name="evidence_pick_gallery">Elegir de galería</string>
     <string name="evidence_add_hint">Tomar foto o elegir de galería</string>
 
+    <!-- Dispositivos -->
+    <string name="devices_title">Dispositivos del tramo</string>
+    <plurals name="devices_count">
+        <item quantity="one">%d nodo</item>
+        <item quantity="other">%d nodos</item>
+    </plurals>
+    <string name="device_status_normal">Normal</string>
+    <string name="device_status_alert">Alerta</string>
+    <string name="device_status_critical">Crítico</string>
+
     <!-- Mapa de nodos -->
-    <string name="map_node_connected">Conectado</string>
     <string name="map_node_type">TIPO</string>
     <string name="map_node_battery">BATERÍA</string>
     <string name="map_node_last_communication">ÚLT. COMUNICACIÓN</string>

@@ -16,6 +16,7 @@
 
     <!-- Bottom tabs -->
     <string name="tab_alerts">Alerts</string>
+    <string name="tab_devices">Devices</string>
     <string name="tab_map">Map</string>
     <string name="tab_history">History</string>
     <string name="tab_sync">Sync</string>
@@ -142,8 +143,17 @@
     <string name="evidence_pick_gallery">Choose from gallery</string>
     <string name="evidence_add_hint">Take a photo or choose from gallery</string>
 
+    <!-- Devices -->
+    <string name="devices_title">Section devices</string>
+    <plurals name="devices_count">
+        <item quantity="one">%d node</item>
+        <item quantity="other">%d nodes</item>
+    </plurals>
+    <string name="device_status_normal">Normal</string>
+    <string name="device_status_alert">Alert</string>
+    <string name="device_status_critical">Critical</string>
+
     <!-- Node map -->
-    <string name="map_node_connected">Online</string>
     <string name="map_node_type">TYPE</string>
     <string name="map_node_battery">BATTERY</string>
     <string name="map_node_last_communication">LAST CONTACT</string>

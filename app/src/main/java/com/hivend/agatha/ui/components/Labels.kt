@@ -33,6 +33,14 @@ fun AlertLevel.labelRes(): Int = when (this) {
     AlertLevel.GREEN -> R.string.alert_level_green
 }
 
+/** Estado de un dispositivo según el nivel de su último reporte (verde = normal). */
+@StringRes
+fun AlertLevel.deviceStatusRes(): Int = when (this) {
+    AlertLevel.RED -> R.string.device_status_critical
+    AlertLevel.ORANGE -> R.string.device_status_alert
+    AlertLevel.GREEN -> R.string.device_status_normal
+}
+
 @StringRes
 fun EventType.labelRes(): Int = when (this) {
     EventType.ALERT -> R.string.event_type_alert
@@ -93,6 +101,7 @@ fun SensorType.labelRes(): Int = when (this) {
 @StringRes
 fun BottomTab.labelRes(): Int = when (this) {
     BottomTab.Alerts -> R.string.tab_alerts
+    BottomTab.Devices -> R.string.tab_devices
     BottomTab.Map -> R.string.tab_map
     BottomTab.History -> R.string.tab_history
     BottomTab.Sync -> R.string.tab_sync

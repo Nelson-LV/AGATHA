@@ -5,7 +5,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material3.Icon
-import androidx.compose.runtime.ReadOnlyComposable
 import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -22,8 +21,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,14 +32,12 @@ import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
-import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.components.labelRes
-import com.hivend.agatha.ui.components.relativeTimeAgo
+import com.hivend.agatha.ui.components.DeviceInfoCard
+import com.hivend.agatha.ui.components.nodeColor
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 
@@ -79,7 +74,7 @@ fun SensorMapScreen(
             }
 
             uiState.selectedNode?.let { node ->
-                NodeInfoCard(node = node, onViewHistory = { onViewHistory(node.id) })
+                DeviceInfoCard(node = node, onViewHistory = { onViewHistory(node.id) })
             }
         }
     }
@@ -110,7 +105,7 @@ private fun MapCanvas(
                             )
                         }
                         .size(if (isSelected) 22.dp else 14.dp)
-                        .background(node.status.color(), CircleShape)
+                        .background(node.status.nodeColor(), CircleShape)
                         .then(if (isSelected) Modifier.border(2.dp, AgathaTheme.colors.nodeOutline, CircleShape) else Modifier)
                         .clickable { onNodeClick(node.id) },
                 )
@@ -157,47 +152,3 @@ private fun LegendDot(label: String, color: Color) {
     }
 }
 
-@Composable
-private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
-            .padding(16.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(stringResource(R.string.node_name, node.id), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
-            StatusChip(text = stringResource(R.string.map_node_connected), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
-        }
-        Text(stringResource(R.string.common_dot_separated, node.pk, node.site), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            InfoStat(stringResource(R.string.map_node_type), stringResource(node.sensorType.labelRes()))
-            InfoStat(stringResource(R.string.map_node_battery), stringResource(R.string.common_percent, node.batteryPercentage))
-            InfoStat(stringResource(R.string.map_node_last_communication), relativeTimeAgo(node.lastCommunicationMinutesAgo))
-        }
-        Button(
-            onClick = onViewHistory,
-            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.map_view_full_history))
-        }
-    }
-}
-
-@Composable
-private fun InfoStat(label: String, value: String) {
-    Column {
-        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
-        Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
-    }
-}
-
-@Composable
-@ReadOnlyComposable
-private fun AlertLevel.color(): Color = when (this) {
-    AlertLevel.RED -> AgathaTheme.colors.nodeCritical
-    AlertLevel.ORANGE -> AgathaTheme.colors.nodeAlert
-    AlertLevel.GREEN -> AgathaTheme.colors.nodeNormal
-}

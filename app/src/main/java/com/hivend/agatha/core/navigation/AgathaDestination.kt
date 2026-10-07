@@ -2,14 +2,15 @@ package com.hivend.agatha.core.navigation
 
 /**
  * Rutas de navegación de AGATHA como una jerarquía sellada (en vez de strings sueltos
- * repetidos por toda la UI). [BottomTab] son los 4 destinos con barra inferior visible en
- * el prototipo (Alertas, Mapa, Historial, Sync); el resto se apilan a pantalla completa con
+ * repetidos por toda la UI). [BottomTab] son los 5 destinos con barra inferior visible
+ * (Alertas, Dispositivos, Mapa, Historial, Sync); el resto se apilan a pantalla completa con
  * flecha de regreso, igual que en Figma. Ver docs/ARQUITECTURA_Y_DISENO.md § "Navegación".
  */
 sealed class AgathaDestination(val route: String) {
 
     sealed class BottomTab(route: String) : AgathaDestination(route) {
         data object Alerts : BottomTab("alerts")
+        data object Devices : BottomTab("devices")
         data object Map : BottomTab("map")
         data object History : BottomTab("history/{deviceId}") {
             const val ARG_DEVICE_ID = "deviceId"
@@ -18,7 +19,7 @@ sealed class AgathaDestination(val route: String) {
         data object Sync : BottomTab("sync")
 
         companion object {
-            val all = listOf(Alerts, Map, History, Sync)
+            val all = listOf(Alerts, Devices, Map, History, Sync)
         }
     }
 
