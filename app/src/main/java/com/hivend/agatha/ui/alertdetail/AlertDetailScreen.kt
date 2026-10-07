@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -29,7 +30,9 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,7 +89,7 @@ fun AlertDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val alert = uiState.alert
 
-    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
         ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
@@ -107,6 +110,15 @@ fun AlertDetailScreen(
                     alert = alert,
                     onAdvance = { viewModel.advanceStatus(it) },
                     onRegisterInspection = { onRegisterInspection(alert.id) },
+                )
+            }
+            item {
+                ObservationsCard(
+                    text = uiState.observations,
+                    dirty = uiState.observationsDirty,
+                    hasSaved = alert.observations.isNotBlank(),
+                    onTextChange = viewModel::onObservationsChange,
+                    onSave = viewModel::saveObservations,
                 )
             }
             item {
@@ -227,6 +239,53 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
             contentColor = AgathaTheme.colors.textSecondary,
             modifier = Modifier.fillMaxWidth(),
         )
+    }
+}
+
+/**
+ * Observaciones de campo al mismo nivel que la información de la alerta: el técnico las
+ * escribe sin tener que entrar a la inspección (y también si cierra la alerta sin ella).
+ */
+@Composable
+private fun ObservationsCard(
+    text: String,
+    dirty: Boolean,
+    hasSaved: Boolean,
+    onTextChange: (String) -> Unit,
+    onSave: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Filled.EditNote, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(20.dp))
+            Text(stringResource(R.string.alert_detail_observations_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        }
+        OutlinedTextField(
+            value = text,
+            onValueChange = onTextChange,
+            placeholder = { Text(stringResource(R.string.alert_detail_observations_placeholder)) },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            if (hasSaved && !dirty) {
+                Text(stringResource(R.string.alert_detail_observations_saved), color = AgathaTheme.colors.positive, style = MaterialTheme.typography.bodySmall)
+            } else {
+                Box(Modifier)
+            }
+            OutlinedButton(onClick = onSave, enabled = dirty) {
+                Text(stringResource(R.string.alert_detail_observations_save))
+            }
+        }
     }
 }
 

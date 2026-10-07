@@ -79,6 +79,10 @@
     <string name="alert_detail_pending_operator_close">Waiting for operator to close</string>
     <string name="alert_detail_status">Status: %1$s</string>
     <string name="alert_detail_view_status_history">View status change history</string>
+    <string name="alert_detail_observations_title">Field notes</string>
+    <string name="alert_detail_observations_placeholder">Describe what you see on site (saved even when offline)…</string>
+    <string name="alert_detail_observations_save">Save notes</string>
+    <string name="alert_detail_observations_saved">Notes saved</string>
     <string name="alert_detail_acceleration_chart">24H ACCELERATION CHART</string>
     <string name="alert_detail_device_history">DEVICE HISTORY</string>
     <string name="telemetry_confidence">CONFIDENCE</string>
@@ -110,17 +114,19 @@
     <string name="inspection_top_bar_title">Log Inspection</string>
     <string name="inspection_title">Log inspection</string>
     <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
-    <string name="inspection_result_title">Inspection result</string>
-    <string name="inspection_result_subtitle">Select the condition found on the device or sensor.</string>
+    <string name="inspection_scope_title">Surface visual inspection</string>
+    <string name="inspection_scope_body">Log only what you can see on the surface and on the device. There is no direct access to the gas pipe.</string>
+    <string name="inspection_result_title">Surface observations</string>
+    <string name="inspection_result_subtitle">Select what you see on the ground, the surroundings or the device.</string>
     <string name="inspection_category_title">Event classification</string>
     <string name="inspection_category_subtitle">What actually triggered the alert?</string>
-    <string name="inspection_observations_title">Field notes</string>
-    <string name="inspection_observations_placeholder">Describe anything the categories do not cover (saved even when offline)…</string>
+    <string name="inspection_observations_hint">Field notes are written in the alert detail.</string>
     <string name="inspection_save">Save inspection</string>
-    <string name="inspection_result_no_issue">No issues</string>
-    <string name="inspection_result_maintenance_required">Maintenance required</string>
-    <string name="inspection_result_device_issue">Device/sensor problem</string>
-    <string name="inspection_result_physical_damage">Physical damage</string>
+    <string name="inspection_result_no_visible_issue">No visible issues</string>
+    <string name="inspection_result_ground_alteration">Visible ground change (cracks, sinking)</string>
+    <string name="inspection_result_surface_gas_signs">Surface signs of gas (odor, dead vegetation, bubbling)</string>
+    <string name="inspection_result_visible_device_damage">Visible damage to the device or its mount</string>
+    <string name="inspection_result_maintenance_required">Device maintenance required</string>
     <string name="inspection_result_low_battery">Low battery</string>
     <string name="inspection_result_no_communication">No communication</string>
     <string name="inspection_result_other">Other</string>
@@ -130,8 +136,8 @@
     <string name="event_category_heavy_vehicle_traffic">Heavy vehicle traffic</string>
     <string name="event_category_no_anomalies">No anomalies</string>
     <string name="event_category_scheduled_maintenance">Scheduled maintenance</string>
-    <string name="event_category_confirmed_leak">Confirmed leak</string>
-    <string name="event_category_other">Other (specify)</string>
+    <string name="event_category_suspected_leak">Signs of a leak (needs operator verification)</string>
+    <string name="event_category_other">Other (describe it in field notes)</string>
 
     <!-- Photo evidence -->
     <string name="evidence_top_bar_title">Photo Evidence</string>
@@ -220,9 +226,9 @@
     <string name="sample_sync_evidence_title">Photo evidence · Point %1$d</string>
     <string name="sample_sync_evidence_detail">%1$d images · logged %2$s</string>
     <string name="sample_sync_classification_title">Classification · Point %1$d</string>
-    <string name="sample_sync_classification_detail">Confirmed leak · failed to send</string>
+    <string name="sample_sync_classification_detail">Leak signs · failed to send</string>
     <string name="sample_sync_conflict_title">Conflict detected · Point %1$d</string>
     <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
-    <string name="sample_sync_conflict_local">Classification: Confirmed leak · %1$s</string>
+    <string name="sample_sync_conflict_local">Classification: Leak signs · %1$s</string>
     <string name="sample_sync_conflict_server">Status: Closed by web operator · %1$s</string>
 </resources>

@@ -38,6 +38,12 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
         }
     }
 
+    override suspend fun saveObservations(alertId: String, observations: String) {
+        alerts.update { list ->
+            list.map { if (it.id == alertId) it.copy(observations = observations) else it }
+        }
+    }
+
     override suspend fun registerInspection(inspection: Inspection) {
         updateStatus(inspection.alertId, AlertStatus.CLASSIFIED)
     }

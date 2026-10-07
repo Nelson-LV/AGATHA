@@ -59,4 +59,6 @@ data class Alert(
     /** Minutos transcurridos desde que se generó la alerta. */
     val minutesAgo: Int,
     val telemetry: AlertTelemetry,
+    /** Observaciones de campo escritas por el técnico (texto libre, no se traduce). */
+    val observations: String = "",
 )

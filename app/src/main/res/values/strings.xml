@@ -89,6 +89,10 @@
     <string name="alert_detail_pending_operator_close">Pendiente de cierre por operador</string>
     <string name="alert_detail_status">Estado: %1$s</string>
     <string name="alert_detail_view_status_history">Ver historial de cambios de estado</string>
+    <string name="alert_detail_observations_title">Observaciones de campo</string>
+    <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio (se guarda incluso sin conexión)…</string>
+    <string name="alert_detail_observations_save">Guardar observaciones</string>
+    <string name="alert_detail_observations_saved">Observaciones guardadas</string>
     <string name="alert_detail_acceleration_chart">GRÁFICA ACELERACIÓN 24H</string>
     <string name="alert_detail_device_history">HISTORIAL DEL DISPOSITIVO</string>
     <string name="telemetry_confidence">CONFIANZA</string>
@@ -120,17 +124,19 @@
     <string name="inspection_top_bar_title">Registrar Inspección</string>
     <string name="inspection_title">Registrar inspección</string>
     <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
-    <string name="inspection_result_title">Resultado de la inspección</string>
-    <string name="inspection_result_subtitle">Selecciona el estado encontrado en el dispositivo o sensor.</string>
+    <string name="inspection_scope_title">Inspección visual superficial</string>
+    <string name="inspection_scope_body">Registra solo lo que se observa en superficie y en el dispositivo. No hay acceso directo a la tubería de gas.</string>
+    <string name="inspection_result_title">Lo observado en superficie</string>
+    <string name="inspection_result_subtitle">Selecciona lo que ves en el terreno, el entorno o el dispositivo.</string>
     <string name="inspection_category_title">Clasificación del evento</string>
     <string name="inspection_category_subtitle">¿Qué originó realmente la alerta?</string>
-    <string name="inspection_observations_title">Observaciones de campo</string>
-    <string name="inspection_observations_placeholder">Escribe aquí situaciones no contempladas en las categorías (se guarda incluso sin conexión)…</string>
+    <string name="inspection_observations_hint">Las observaciones de campo se escriben en el detalle de la alerta.</string>
     <string name="inspection_save">Guardar inspección</string>
-    <string name="inspection_result_no_issue">Sin novedad</string>
-    <string name="inspection_result_maintenance_required">Mantenimiento requerido</string>
-    <string name="inspection_result_device_issue">Problema del dispositivo/sensor</string>
-    <string name="inspection_result_physical_damage">Daño físico</string>
+    <string name="inspection_result_no_visible_issue">Sin novedad visible</string>
+    <string name="inspection_result_ground_alteration">Alteración visible del terreno (grietas, hundimiento)</string>
+    <string name="inspection_result_surface_gas_signs">Indicios de gas en superficie (olor, vegetación seca, burbujeo)</string>
+    <string name="inspection_result_visible_device_damage">Daño visible en el dispositivo o su soporte</string>
+    <string name="inspection_result_maintenance_required">Mantenimiento del dispositivo requerido</string>
     <string name="inspection_result_low_battery">Batería baja</string>
     <string name="inspection_result_no_communication">Sin comunicación</string>
     <string name="inspection_result_other">Otra</string>
@@ -140,8 +146,8 @@
     <string name="event_category_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
     <string name="event_category_no_anomalies">Sin anomalías</string>
     <string name="event_category_scheduled_maintenance">Mantenimiento programado</string>
-    <string name="event_category_confirmed_leak">Fuga confirmada</string>
-    <string name="event_category_other">Otro (especificar)</string>
+    <string name="event_category_suspected_leak">Indicios de fuga (requiere verificación del operador)</string>
+    <string name="event_category_other">Otro (detállalo en observaciones)</string>
 
     <!-- Evidencia fotográfica -->
     <string name="evidence_top_bar_title">Evidencia Fotográfica</string>
@@ -236,9 +242,9 @@
     <string name="sample_sync_evidence_title">Foto evidencia · Punto %1$d</string>
     <string name="sample_sync_evidence_detail">%1$d imágenes · registradas %2$s</string>
     <string name="sample_sync_classification_title">Clasificación · Punto %1$d</string>
-    <string name="sample_sync_classification_detail">Fuga confirmada · error al enviar</string>
+    <string name="sample_sync_classification_detail">Indicios de fuga · error al enviar</string>
     <string name="sample_sync_conflict_title">Conflicto detectado · Punto %1$d</string>
     <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
-    <string name="sample_sync_conflict_local">Clasificación: Fuga confirmada · %1$s</string>
+    <string name="sample_sync_conflict_local">Clasificación: Indicios de fuga · %1$s</string>
     <string name="sample_sync_conflict_server">Estado: Cerrada por Operador Web · %1$s</string>
 </resources>

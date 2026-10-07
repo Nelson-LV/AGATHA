@@ -22,8 +22,7 @@ import kotlinx.coroutines.launch
 data class InspectionFormUiState(
     val alert: Alert? = null,
     val result: InspectionResult? = null,
-    val category: EventCategory? = EventCategory.GROUND_MOVEMENT,
-    val observations: String = "",
+    val category: EventCategory? = null,
     val saving: Boolean = false,
     val savedSuccessfully: Boolean = false,
 ) {
@@ -54,10 +53,6 @@ class InspectionFormViewModel @Inject constructor(
         formState.update { it.copy(category = category) }
     }
 
-    fun onObservationsChange(text: String) {
-        formState.update { it.copy(observations = text) }
-    }
-
     fun saveInspection() {
         val state = uiState.value
         if (!state.canSave || state.saving) return
@@ -69,7 +64,6 @@ class InspectionFormViewModel @Inject constructor(
                     alertId = alertId,
                     result = state.result!!,
                     category = state.category!!,
-                    observations = state.observations,
                     recordedOffline = true,
                 )
             )

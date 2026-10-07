@@ -16,6 +16,7 @@ interface AlertRepository {
     fun observeAlerts(): Flow<List<Alert>>
     fun observeAlert(alertId: String): Flow<Alert?>
     suspend fun updateStatus(alertId: String, newStatus: AlertStatus)
+    suspend fun saveObservations(alertId: String, observations: String)
     suspend fun registerInspection(inspection: Inspection)
     suspend fun registerEvidence(alertId: String, evidence: List<PhotoEvidence>)
 }

@@ -2,6 +2,7 @@ package com.hivend.agatha.ui.inspection
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.size
 import com.hivend.agatha.ui.theme.AgathaTheme
@@ -13,7 +14,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -23,7 +23,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
@@ -74,6 +73,8 @@ fun InspectionFormScreen(
         ) {
             item { SitePill(site = uiState.alert?.site ?: stringResource(R.string.common_empty_value)) }
 
+            item { InspectionScopeBanner() }
+
             item {
                 Column(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
@@ -91,17 +92,7 @@ fun InspectionFormScreen(
                         )
                     }
 
-                    RadioSection(
-                        title = stringResource(R.string.inspection_result_title),
-                        subtitle = stringResource(R.string.inspection_result_subtitle),
-                        options = InspectionResult.entries,
-                        optionLabel = { it.labelRes() },
-                        selected = uiState.result,
-                        onSelected = viewModel::onResultSelected,
-                    )
-
-                    HorizontalDivider(color = AgathaTheme.colors.border)
-
+                    // La clasificación va primero: es el objetivo principal de la inspección.
                     RadioSection(
                         title = stringResource(R.string.inspection_category_title),
                         subtitle = stringResource(R.string.inspection_category_subtitle),
@@ -113,15 +104,20 @@ fun InspectionFormScreen(
 
                     HorizontalDivider(color = AgathaTheme.colors.border)
 
-                    Column {
-                        Text(stringResource(R.string.inspection_observations_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
-                        OutlinedTextField(
-                            value = uiState.observations,
-                            onValueChange = viewModel::onObservationsChange,
-                            placeholder = { Text(stringResource(R.string.inspection_observations_placeholder)) },
-                            modifier = Modifier.fillMaxWidth().height(90.dp).padding(top = 6.dp),
-                        )
-                    }
+                    RadioSection(
+                        title = stringResource(R.string.inspection_result_title),
+                        subtitle = stringResource(R.string.inspection_result_subtitle),
+                        options = InspectionResult.entries,
+                        optionLabel = { it.labelRes() },
+                        selected = uiState.result,
+                        onSelected = viewModel::onResultSelected,
+                    )
+
+                    Text(
+                        stringResource(R.string.inspection_observations_hint),
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
 
                     Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
                         Button(
@@ -139,6 +135,24 @@ fun InspectionFormScreen(
                     }
                 }
             }
+        }
+    }
+}
+
+/** Recuerda que la inspección es solo visual: el técnico no tiene acceso a la tubería. */
+@Composable
+private fun InspectionScopeBanner() {
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AgathaTheme.colors.brandContainer, RoundedCornerShape(12.dp))
+            .padding(14.dp),
+    ) {
+        Icon(Icons.Filled.Visibility, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(22.dp))
+        Column {
+            Text(stringResource(R.string.inspection_scope_title), color = AgathaTheme.colors.brand, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.inspection_scope_body), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         }
     }
 }

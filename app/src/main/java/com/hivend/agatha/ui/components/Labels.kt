@@ -53,10 +53,11 @@ fun EventType.labelRes(): Int = when (this) {
 
 @StringRes
 fun InspectionResult.labelRes(): Int = when (this) {
-    InspectionResult.NO_ISSUE -> R.string.inspection_result_no_issue
+    InspectionResult.NO_VISIBLE_ISSUE -> R.string.inspection_result_no_visible_issue
+    InspectionResult.GROUND_ALTERATION -> R.string.inspection_result_ground_alteration
+    InspectionResult.SURFACE_GAS_SIGNS -> R.string.inspection_result_surface_gas_signs
+    InspectionResult.VISIBLE_DEVICE_DAMAGE -> R.string.inspection_result_visible_device_damage
     InspectionResult.MAINTENANCE_REQUIRED -> R.string.inspection_result_maintenance_required
-    InspectionResult.DEVICE_ISSUE -> R.string.inspection_result_device_issue
-    InspectionResult.PHYSICAL_DAMAGE -> R.string.inspection_result_physical_damage
     InspectionResult.LOW_BATTERY -> R.string.inspection_result_low_battery
     InspectionResult.NO_COMMUNICATION -> R.string.inspection_result_no_communication
     InspectionResult.OTHER -> R.string.inspection_result_other
@@ -70,7 +71,7 @@ fun EventCategory.labelRes(): Int = when (this) {
     EventCategory.HEAVY_VEHICLE_TRAFFIC -> R.string.event_category_heavy_vehicle_traffic
     EventCategory.NO_ANOMALIES -> R.string.event_category_no_anomalies
     EventCategory.SCHEDULED_MAINTENANCE -> R.string.event_category_scheduled_maintenance
-    EventCategory.CONFIRMED_LEAK -> R.string.event_category_confirmed_leak
+    EventCategory.SUSPECTED_LEAK -> R.string.event_category_suspected_leak
     EventCategory.OTHER -> R.string.event_category_other
 }
 
