@@ -16,7 +16,6 @@ import androidx.navigation.compose.composable
 import com.hivend.agatha.core.navigation.AgathaDestination.AlertDetail
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.AgathaDestination.InspectionForm
-import com.hivend.agatha.core.navigation.AgathaDestination.NotificationPreview
 import com.hivend.agatha.core.navigation.AgathaDestination.PhotoEvidence
 import com.hivend.agatha.ui.alertdetail.AlertDetailScreen
 import com.hivend.agatha.ui.alerts.AlertInboxScreen
@@ -26,7 +25,6 @@ import com.hivend.agatha.ui.evidence.PhotoEvidenceScreen
 import com.hivend.agatha.ui.history.DeviceHistoryScreen
 import com.hivend.agatha.ui.inspection.InspectionFormScreen
 import com.hivend.agatha.ui.map.SensorMapScreen
-import com.hivend.agatha.ui.notification.NotificationPreviewScreen
 import com.hivend.agatha.ui.sync.SyncScreen
 
 /**
@@ -50,18 +48,9 @@ fun AgathaApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NotificationPreview.route,
+            startDestination = BottomTab.Alerts.route,
             modifier = Modifier.padding(innerPadding),
         ) {
-            composable(NotificationPreview.route) {
-                NotificationPreviewScreen(
-                    onOpenDetail = { alertId ->
-                        navController.navigate(BottomTab.Alerts.route)
-                        navController.navigate(AlertDetail.buildRoute(alertId))
-                    },
-                )
-            }
-
             composable(BottomTab.Alerts.route) {
                 AlertInboxScreen(
                     onAlertClick = { alertId -> navController.navigate(AlertDetail.buildRoute(alertId)) },

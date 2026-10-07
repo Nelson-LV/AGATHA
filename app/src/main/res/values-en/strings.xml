@@ -103,11 +103,6 @@
     <string name="event_type_observation">OBSERVATION</string>
     <string name="event_type_maintenance">MAINTENANCE</string>
 
-    <!-- Simulated notification -->
-    <string name="notification_date_pattern">EEEE, MMMM d</string>
-    <string name="notification_source">AGATHA · now</string>
-    <string name="notification_red_alert_title">Red alert — Sensor %1$s</string>
-    <string name="notification_body">%1$s · %2$s · %3$s. Tap to see the details.</string>
 
     <!-- Inspection form -->
     <string name="inspection_top_bar_title">Log Inspection</string>

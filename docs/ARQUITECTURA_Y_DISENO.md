@@ -186,9 +186,6 @@ muestra en las 4 pantallas raíz** — igual que en el prototipo de Figma, donde
 de detalle/formulario reemplazan la barra por una flecha de regreso.
 
 ```
-notification_preview (inicio)
-        │  tap en la notificación
-        ▼
 ┌─── alerts ───┬─── map ───┬─── history/{deviceId} ───┬─── sync ───┐   ← bottom bar
 │   (Alertas)  │  (Mapa)   │       (Historial)        │  (Sync)    │
 └──────┬───────┴─────┬─────┴───────────────────────────┴────────────┘
@@ -258,12 +255,11 @@ catálogo de versiones para cuando existan coordenadas lat/lng reales de los nod
 no se activó todavía porque su versión actual exige `compileSdk 37`/AGP 9.1+, un salto que
 este proyecto evita por ahora (§6).
 
-**Notificaciones push: simulación vs. FCM real.** `NotificationPreviewScreen` reproduce
-visualmente una notificación de Android (reloj, tarjeta blanca, punto rojo) para poder
-navegar el flujo "notificación → detalle" (HU-4.1/4.2) sin depender todavía de un proyecto
-Firebase real. Cuando se configure Firebase Cloud Messaging (HE-04, RNF-MOV-06), esta
-pantalla deja de ser el punto de entrada de la app: la notificación la posta el sistema
-operativo y su `PendingIntent` abrirá `alert_detail/{alertId}` directamente.
+**Notificaciones push: pendiente de FCM real.** La app arranca directamente en la Bandeja
+de alertas (`alerts`). Hubo una pantalla que simulaba visualmente una notificación de
+Android (nodo 34:2 de Figma), pero se retiró: la notificación debe implementarse de verdad
+con Firebase Cloud Messaging (HE-04, RNF-MOV-06), donde la posta el sistema operativo y su
+`PendingIntent` abre `alert_detail/{alertId}` directamente.
 
 ---
 

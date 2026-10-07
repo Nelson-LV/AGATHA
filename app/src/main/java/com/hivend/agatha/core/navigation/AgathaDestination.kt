@@ -8,8 +8,6 @@ package com.hivend.agatha.core.navigation
  */
 sealed class AgathaDestination(val route: String) {
 
-    data object NotificationPreview : AgathaDestination("notification_preview")
-
     sealed class BottomTab(route: String) : AgathaDestination(route) {
         data object Alerts : BottomTab("alerts")
         data object Map : BottomTab("map")
