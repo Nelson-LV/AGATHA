@@ -45,6 +45,9 @@ import com.hivend.agatha.ui.theme.StateInspectionContainer
 import com.hivend.agatha.ui.theme.StateInspectionText
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.hivend.agatha.R
 
 /**
  * Sincronización offline-first (HE-07, RNF-MOV-02/03/04). Corresponde al nodo 34:398 de
@@ -63,9 +66,10 @@ fun SyncScreen(
         ConnectivityBar(
             connected = status?.connected ?: false,
             message = if (status?.connected == true) {
-                "Conectado · Sincronizado ${status?.lastSuccessfulSync}"
+                stringResource(R.string.connectivity_connected_synced, status?.lastSuccessfulSync.orEmpty())
             } else {
-                "Sin conexión · ${status?.pending?.size ?: 0} pendientes por sincronizar"
+                val pendingCount = status?.pending?.size ?: 0
+                pluralStringResource(R.plurals.connectivity_offline_pending, pendingCount, pendingCount)
             },
         )
 
@@ -76,7 +80,7 @@ fun SyncScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.weight(1f),
             ) {
-                item { SitePill(site = "Güepsa – San José de Pare") }
+                item { SitePill(site = stringResource(R.string.common_default_site)) }
 
                 if (!current.connected) {
                     item { OfflineBanner() }
@@ -113,9 +117,9 @@ private fun OfflineBanner() {
     ) {
         Text("📴", style = MaterialTheme.typography.titleMedium)
         Column {
-            Text("Trabajando sin conexión", color = StateInspectionText, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.sync_offline_title), color = StateInspectionText, style = MaterialTheme.typography.titleSmall)
             Text(
-                "Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.",
+                stringResource(R.string.sync_offline_body),
                 color = TextSecondary,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -132,7 +136,7 @@ private fun PendingSyncCard(pending: List<PendingRecord>, onRetry: (String) -> U
             .background(NeutralSurface, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("Pendientes por sincronizar (${pending.size})", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.sync_pending_title, pending.size), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
         pending.forEach { record ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
@@ -145,9 +149,9 @@ private fun PendingSyncCard(pending: List<PendingRecord>, onRetry: (String) -> U
                     Text(record.title, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
                     Text(record.detail, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
                 }
-                StatusChip(text = "Pendiente", containerColor = StateInspectionContainer, contentColor = StateInspectionText)
+                StatusChip(text = stringResource(R.string.sync_pending_chip), containerColor = StateInspectionContainer, contentColor = StateInspectionText)
                 Text(
-                    "↻ Reintentar",
+                    stringResource(R.string.sync_retry),
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
@@ -169,11 +173,11 @@ private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
             .border(1.3.dp, ConflictBorder, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("⚠ ${conflict.conflictTitle}", color = ConflictText, style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.sync_conflict_title, conflict.conflictTitle), color = ConflictText, style = MaterialTheme.typography.titleSmall)
         Text(conflict.description, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ConflictVersion("TU CAMBIO (LOCAL)", conflict.localChange, Modifier.weight(1f))
-            ConflictVersion("CAMBIO DEL SERVIDOR", conflict.serverChange, Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange, Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange, Modifier.weight(1f))
         }
         OutlinedButton(
             onClick = onUnderstood,
@@ -181,7 +185,7 @@ private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
             colors = ButtonDefaults.outlinedButtonColors(contentColor = ConflictText),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Entendido")
+            Text(stringResource(R.string.sync_understood))
         }
     }
 }
@@ -206,10 +210,10 @@ private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
             colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("🔄 Sincronizar ahora")
+            Text(stringResource(R.string.sync_now))
         }
         Text(
-            "Última sincronización correcta: $lastSync",
+            stringResource(R.string.sync_last_success, lastSync),
             color = TextSecondary,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,

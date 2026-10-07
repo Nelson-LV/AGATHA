@@ -13,12 +13,14 @@ import androidx.compose.ui.unit.dp
 import com.hivend.agatha.ui.theme.NeutralBorder
 import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
 import com.hivend.agatha.ui.theme.TextOnMuted
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
 
 /** Recordatorio persistente del sitio/tramo que el usuario de campo está atendiendo. */
 @Composable
 fun SitePill(site: String, modifier: Modifier = Modifier) {
     Text(
-        text = "Sitio: $site",
+        text = stringResource(R.string.site_pill, site),
         color = TextOnMuted,
         style = MaterialTheme.typography.bodyMedium,
         modifier = modifier

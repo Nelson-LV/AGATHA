@@ -54,6 +54,9 @@ import com.hivend.agatha.ui.theme.StateInspectionText
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
 import com.hivend.agatha.ui.theme.TextTertiary
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.hivend.agatha.R
 
 /**
  * Bandeja de alertas (HE-04): pantalla raíz de la app y punto de entrada a la atención de
@@ -72,16 +75,16 @@ fun AlertInboxScreen(
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader {
-            StatusChip(text = "CONECTADO", containerColor = StateClosedContainer, contentColor = StateClosedText)
+            StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = StateClosedContainer, contentColor = StateClosedText)
         }
-        ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
+        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(site = alerts.firstOrNull()?.site ?: "—") }
+            item { SitePill(site = alerts.firstOrNull()?.site ?: stringResource(R.string.common_empty_value)) }
 
             item {
                 Column(
@@ -95,9 +98,9 @@ fun AlertInboxScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text("Mis alertas", style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                        Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
                         StatusChip(
-                            text = "${alerts.count { it.status != AlertStatus.CLOSED }} activas",
+                            text = alerts.count { it.status != AlertStatus.CLOSED }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
                             containerColor = NeutralSurfaceVariant,
                             contentColor = TextSecondary,
                         )
@@ -114,9 +117,9 @@ fun AlertInboxScreen(
 
             item {
                 Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                    QuickNavButton("Mapa de nodos", Icons.Filled.Map, Modifier.weight(1f), onNavigateToMap)
-                    QuickNavButton("Historial", Icons.AutoMirrored.Filled.Assignment, Modifier.weight(1f), onNavigateToHistory)
-                    QuickNavButton("Sincronización", Icons.Filled.Sync, Modifier.weight(1f), onNavigateToSync)
+                    QuickNavButton(stringResource(R.string.inbox_nav_map), Icons.Filled.Map, Modifier.weight(1f), onNavigateToMap)
+                    QuickNavButton(stringResource(R.string.inbox_nav_history), Icons.AutoMirrored.Filled.Assignment, Modifier.weight(1f), onNavigateToHistory)
+                    QuickNavButton(stringResource(R.string.inbox_nav_sync), Icons.Filled.Sync, Modifier.weight(1f), onNavigateToSync)
                 }
             }
         }
@@ -140,7 +143,7 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                     .background(alert.level.color(), CircleShape),
             )
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text("${alert.point} · Sensor ${alert.sensorId}", style = MaterialTheme.typography.labelLarge, color = TextPrimary)
+                Text(stringResource(R.string.inbox_alert_title, alert.point, alert.sensorId), style = MaterialTheme.typography.labelLarge, color = TextPrimary)
                 Text(alert.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
                 Text(alert.relativeTime, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
             }

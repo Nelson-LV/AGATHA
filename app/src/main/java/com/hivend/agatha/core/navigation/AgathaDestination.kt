@@ -10,14 +10,14 @@ sealed class AgathaDestination(val route: String) {
 
     data object NotificationPreview : AgathaDestination("notification_preview")
 
-    sealed class BottomTab(route: String, val label: String) : AgathaDestination(route) {
-        data object Alerts : BottomTab("alerts", "Alertas")
-        data object Map : BottomTab("map", "Mapa")
-        data object History : BottomTab("history/{deviceId}", "Historial") {
+    sealed class BottomTab(route: String) : AgathaDestination(route) {
+        data object Alerts : BottomTab("alerts")
+        data object Map : BottomTab("map")
+        data object History : BottomTab("history/{deviceId}") {
             const val ARG_DEVICE_ID = "deviceId"
             fun buildRoute(deviceId: String) = "history/$deviceId"
         }
-        data object Sync : BottomTab("sync", "Sync")
+        data object Sync : BottomTab("sync")
 
         companion object {
             val all = listOf(Alerts, Map, History, Sync)

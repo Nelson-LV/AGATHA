@@ -63,6 +63,12 @@ android {
         compose = true
     }
 
+    // Genera el locale_config a partir de res/values(-en): habilita el selector de idioma por
+    // app de Android 13+. El idioma por defecto (res/values) es español, ver res/resources.properties.
+    androidResources {
+        generateLocaleConfig = true
+    }
+
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"

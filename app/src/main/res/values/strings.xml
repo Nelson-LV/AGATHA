@@ -1,6 +1,180 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Textos visibles de AGATHA. Este archivo es el idioma por defecto (español, ver
+    res/resources.properties). Toda clave nueva debe agregarse también en
+    res/values-en/strings.xml con su traducción al inglés. Convención de nombres:
+    <pantalla o componente>_<qué es>, en snake_case y en inglés.
+-->
 <resources>
-    <string name="app_name">AGATHA</string>
+    <string name="app_name" translatable="false">AGATHA</string>
     <!-- google_maps_key is generated at build time from local.properties (MAPS_API_KEY);
          see the resValue() call in app/build.gradle.kts. -->
+
+    <!-- Comunes -->
+    <string name="common_back">Volver</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_saving">Guardando…</string>
+    <string name="common_empty_value" translatable="false">—</string>
+    <string name="common_percent">%1$d%%</string>
+    <string name="common_sensor">Sensor %1$s</string>
+    <!-- Sitio por defecto mientras la API no entrega el sitio asignado al técnico (nombre propio). -->
+    <string name="common_default_site" translatable="false">Güepsa – San José de Pare</string>
+
+    <!-- Encabezado de marca -->
+    <string name="header_tagline">ALERTAS TEMPRANAS · GASODUCTO OTERO-SANTANA</string>
+
+    <!-- Pestañas inferiores -->
+    <string name="tab_alerts">Alertas</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_history">Historial</string>
+    <string name="tab_sync">Sync</string>
+
+    <!-- Barra de conectividad -->
+    <string name="connectivity_connected_recent">Conectado · Sincronizado hace 2 min</string>
+    <string name="connectivity_connected_synced">Conectado · Sincronizado %1$s</string>
+    <string name="connectivity_offline_local_data">Sin conexión · mostrando datos locales</string>
+    <string name="connectivity_offline_saved_locally">Sin conexión · se guarda localmente</string>
+    <plurals name="connectivity_offline_pending">
+        <item quantity="one">Sin conexión · %d pendiente por sincronizar</item>
+        <item quantity="other">Sin conexión · %d pendientes por sincronizar</item>
+    </plurals>
+
+    <!-- Pastilla de sitio -->
+    <string name="site_pill">Sitio: %1$s</string>
+
+    <!-- Estados de alerta -->
+    <string name="alert_status_generated">Generada</string>
+    <string name="alert_status_received">Recibida</string>
+    <string name="alert_status_in_inspection">En inspección</string>
+    <string name="alert_status_classified">Clasificada</string>
+    <string name="alert_status_closed">Cerrada</string>
+
+    <!-- Niveles de alerta -->
+    <string name="alert_level_red">ALERTA ROJA</string>
+    <string name="alert_level_yellow">ALERTA AMARILLA</string>
+    <string name="alert_level_green">ALERTA VERDE</string>
+
+    <!-- Leyendas de mapa y gráfica -->
+    <string name="legend_normal">Normal</string>
+    <string name="legend_connected">Conectado</string>
+    <string name="legend_alert">Alerta</string>
+    <string name="legend_critical">Crítico</string>
+
+    <!-- Bandeja de alertas -->
+    <string name="inbox_connected_chip">CONECTADO</string>
+    <string name="inbox_my_alerts">Mis alertas</string>
+    <plurals name="inbox_active_count">
+        <item quantity="one">%d activa</item>
+        <item quantity="other">%d activas</item>
+    </plurals>
+    <string name="inbox_alert_title">%1$s · Sensor %2$s</string>
+    <string name="inbox_nav_map">Mapa de nodos</string>
+    <string name="inbox_nav_history">Historial</string>
+    <string name="inbox_nav_sync">Sincronización</string>
+
+    <!-- Detalle de alerta -->
+    <string name="alert_detail_title">Detalle de Alerta</string>
+    <string name="alert_detail_not_found">Alerta no encontrada</string>
+    <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
+    <string name="alert_detail_scheduled_maintenance">Mantenimiento programado</string>
+    <string name="alert_detail_next_step">📝  Siguiente paso</string>
+    <string name="alert_detail_start_inspection">Iniciar inspección</string>
+    <string name="alert_detail_mark_false">Marcar como falsa</string>
+    <string name="alert_detail_update_status">Actualizar estado</string>
+    <string name="alert_detail_close_alert">Cerrar alerta</string>
+    <string name="alert_detail_no_pending_actions">Sin acciones pendientes</string>
+    <string name="alert_detail_pending_operator_close">Pendiente de cierre por operador</string>
+    <string name="alert_detail_status">Estado: %1$s</string>
+    <string name="alert_detail_view_status_history">⬇  Ver historial de cambios de estado</string>
+    <string name="alert_detail_acceleration_chart">🗺  GRÁFICA ACELERACIÓN 24H</string>
+    <string name="alert_detail_device_history">📰  HISTORIAL DEL DISPOSITIVO</string>
+    <string name="telemetry_confidence">CONFIANZA</string>
+    <string name="telemetry_acceleration">ACELERACIÓN</string>
+    <string name="telemetry_time_ago">HACE</string>
+    <string name="telemetry_battery">BATERÍA</string>
+    <string name="telemetry_real_data">Dato real</string>
+    <string name="telemetry_simulated_data">Dato simulado</string>
+    <string name="sensor_motion_title">Movimiento y orientación (detecta deslizamiento)</string>
+    <string name="sensor_motion_detail">Acelerómetro + giroscopio triaxial. Umbral de alerta: 3 cm de desplazamiento.</string>
+    <string name="sensor_acoustic_title">Acústica (detecta fuga de gas)</string>
+    <string name="sensor_acoustic_detail">Micrófono de contacto sobre la tubería. Detecta el patrón acústico de una fuga.</string>
+    <string name="sensor_environment_title">Condiciones ambientales</string>
+    <string name="sensor_environment_detail">Temperatura y humedad relativa alrededor del punto de monitoreo.</string>
+    <string name="sensor_power_title">Energía del dispositivo</string>
+    <string name="sensor_power_detail">Nivel de batería y estado del panel solar del nodo.</string>
+
+    <!-- Historial del dispositivo -->
+    <string name="history_device">Historial de: Sensor %1$s</string>
+    <string name="event_type_alert">ALERTA</string>
+    <string name="event_type_inspection">INSPECCIÓN</string>
+    <string name="event_type_classification">CLASIFICACIÓN</string>
+    <string name="event_type_evidence">EVIDENCIA</string>
+    <string name="event_type_observation">OBSERVACIÓN</string>
+    <string name="event_type_maintenance">MANTENIMIENTO</string>
+
+    <!-- Notificación simulada -->
+    <string name="notification_date_pattern">EEEE, d \'de\' MMMM</string>
+    <string name="notification_source">AGATHA · ahora</string>
+    <string name="notification_red_alert_title">Alerta roja — Sensor %1$s</string>
+    <string name="notification_body">%1$s · %2$s · %3$s. Toca para ver el detalle.</string>
+
+    <!-- Formulario de inspección -->
+    <string name="inspection_top_bar_title">Registrar Inspección</string>
+    <string name="inspection_title">Registrar inspección</string>
+    <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
+    <string name="inspection_result_title">Resultado de la inspección</string>
+    <string name="inspection_result_subtitle">Selecciona el estado encontrado en el dispositivo o sensor.</string>
+    <string name="inspection_category_title">Clasificación del evento</string>
+    <string name="inspection_category_subtitle">¿Qué originó realmente la alerta?</string>
+    <string name="inspection_observations_title">Observaciones de campo</string>
+    <string name="inspection_observations_placeholder">Escribe aquí situaciones no contempladas en las categorías (se guarda incluso sin conexión)…</string>
+    <string name="inspection_save">✓ Guardar inspección</string>
+    <string name="inspection_result_no_issue">Sin novedad</string>
+    <string name="inspection_result_maintenance_required">Mantenimiento requerido</string>
+    <string name="inspection_result_device_issue">Problema del dispositivo/sensor</string>
+    <string name="inspection_result_physical_damage">Daño físico</string>
+    <string name="inspection_result_low_battery">Batería baja</string>
+    <string name="inspection_result_no_communication">Sin comunicación</string>
+    <string name="inspection_result_other">Otra</string>
+    <string name="event_category_ground_movement">Movimiento de tierra o desprendimiento menor</string>
+    <string name="event_category_machinery_intervention">Intervención de maquinaria ajena</string>
+    <string name="event_category_weather_conditions">Condiciones climáticas externas</string>
+    <string name="event_category_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
+    <string name="event_category_no_anomalies">Sin anomalías</string>
+    <string name="event_category_scheduled_maintenance">Mantenimiento programado</string>
+    <string name="event_category_confirmed_leak">Fuga confirmada</string>
+    <string name="event_category_other">Otro (especificar)</string>
+
+    <!-- Evidencia fotográfica -->
+    <string name="evidence_top_bar_title">Evidencia Fotográfica</string>
+    <string name="evidence_title">Evidencia fotográfica</string>
+    <string name="evidence_subtitle">Sensor %1$s · Inspección en curso · Adjunta cuantas fotos necesites</string>
+    <string name="evidence_save">✓ Guardar evidencias</string>
+    <string name="evidence_add_description">Agregar descripción…</string>
+    <string name="evidence_take_photo">📷 Tomar foto</string>
+    <string name="evidence_pick_gallery">🖼 Elegir de galería</string>
+    <string name="evidence_add_hint">Tomar foto o elegir de galería</string>
+
+    <!-- Mapa de nodos -->
+    <string name="map_node_connected">Conectado</string>
+    <string name="map_node_type">TIPO</string>
+    <string name="map_node_battery">BATERÍA</string>
+    <string name="map_node_last_communication">ÚLT. COMUNICACIÓN</string>
+    <string name="map_view_full_history">Ver historial completo →</string>
+    <string name="map_zoom_in" translatable="false">+</string>
+    <string name="map_zoom_out" translatable="false">–</string>
+    <string name="map_recenter" translatable="false">◎</string>
+
+    <!-- Sincronización -->
+    <string name="sync_offline_title">Trabajando sin conexión</string>
+    <string name="sync_offline_body">Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.</string>
+    <string name="sync_pending_title">Pendientes por sincronizar (%1$d)</string>
+    <string name="sync_pending_chip">Pendiente</string>
+    <string name="sync_retry">↻ Reintentar</string>
+    <string name="sync_conflict_title">⚠ %1$s</string>
+    <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
+    <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
+    <string name="sync_understood">Entendido</string>
+    <string name="sync_now">🔄 Sincronizar ahora</string>
+    <string name="sync_last_success">Última sincronización correcta: %1$s</string>
 </resources>

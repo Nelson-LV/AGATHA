@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    English translations of res/values/strings.xml (Spanish is the default locale).
+    Every translatable key in values/strings.xml must also exist here.
+-->
+<resources>
+    <!-- Common -->
+    <string name="common_back">Back</string>
+    <string name="common_cancel">Cancel</string>
+    <string name="common_saving">Saving…</string>
+    <string name="common_percent">%1$d%%</string>
+    <string name="common_sensor">Sensor %1$s</string>
+
+    <!-- Brand header -->
+    <string name="header_tagline">EARLY WARNINGS · OTERO-SANTANA PIPELINE</string>
+
+    <!-- Bottom tabs -->
+    <string name="tab_alerts">Alerts</string>
+    <string name="tab_map">Map</string>
+    <string name="tab_history">History</string>
+    <string name="tab_sync">Sync</string>
+
+    <!-- Connectivity bar -->
+    <string name="connectivity_connected_recent">Online · Synced 2 min ago</string>
+    <string name="connectivity_connected_synced">Online · Synced %1$s</string>
+    <string name="connectivity_offline_local_data">Offline · showing local data</string>
+    <string name="connectivity_offline_saved_locally">Offline · saved on this device</string>
+    <plurals name="connectivity_offline_pending">
+        <item quantity="one">Offline · %d item waiting to sync</item>
+        <item quantity="other">Offline · %d items waiting to sync</item>
+    </plurals>
+
+    <!-- Site pill -->
+    <string name="site_pill">Site: %1$s</string>
+
+    <!-- Alert statuses -->
+    <string name="alert_status_generated">Generated</string>
+    <string name="alert_status_received">Received</string>
+    <string name="alert_status_in_inspection">In inspection</string>
+    <string name="alert_status_classified">Classified</string>
+    <string name="alert_status_closed">Closed</string>
+
+    <!-- Alert levels -->
+    <string name="alert_level_red">RED ALERT</string>
+    <string name="alert_level_yellow">YELLOW ALERT</string>
+    <string name="alert_level_green">GREEN ALERT</string>
+
+    <!-- Map and chart legends -->
+    <string name="legend_normal">Normal</string>
+    <string name="legend_connected">Online</string>
+    <string name="legend_alert">Alert</string>
+    <string name="legend_critical">Critical</string>
+
+    <!-- Alert inbox -->
+    <string name="inbox_connected_chip">ONLINE</string>
+    <string name="inbox_my_alerts">My alerts</string>
+    <plurals name="inbox_active_count">
+        <item quantity="one">%d active</item>
+        <item quantity="other">%d active</item>
+    </plurals>
+    <string name="inbox_alert_title">%1$s · Sensor %2$s</string>
+    <string name="inbox_nav_map">Node map</string>
+    <string name="inbox_nav_history">History</string>
+    <string name="inbox_nav_sync">Sync</string>
+
+    <!-- Alert detail -->
+    <string name="alert_detail_title">Alert Detail</string>
+    <string name="alert_detail_not_found">Alert not found</string>
+    <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
+    <string name="alert_detail_scheduled_maintenance">Scheduled maintenance</string>
+    <string name="alert_detail_next_step">📝  Next step</string>
+    <string name="alert_detail_start_inspection">Start inspection</string>
+    <string name="alert_detail_mark_false">Mark as false alarm</string>
+    <string name="alert_detail_update_status">Update status</string>
+    <string name="alert_detail_close_alert">Close alert</string>
+    <string name="alert_detail_no_pending_actions">No pending actions</string>
+    <string name="alert_detail_pending_operator_close">Waiting for operator to close</string>
+    <string name="alert_detail_status">Status: %1$s</string>
+    <string name="alert_detail_view_status_history">⬇  View status change history</string>
+    <string name="alert_detail_acceleration_chart">🗺  24H ACCELERATION CHART</string>
+    <string name="alert_detail_device_history">📰  DEVICE HISTORY</string>
+    <string name="telemetry_confidence">CONFIDENCE</string>
+    <string name="telemetry_acceleration">ACCELERATION</string>
+    <string name="telemetry_time_ago">AGO</string>
+    <string name="telemetry_battery">BATTERY</string>
+    <string name="telemetry_real_data">Real data</string>
+    <string name="telemetry_simulated_data">Simulated data</string>
+    <string name="sensor_motion_title">Motion and orientation (detects landslides)</string>
+    <string name="sensor_motion_detail">Triaxial accelerometer + gyroscope. Alert threshold: 3 cm of displacement.</string>
+    <string name="sensor_acoustic_title">Acoustic (detects gas leaks)</string>
+    <string name="sensor_acoustic_detail">Contact microphone on the pipe. Detects the acoustic pattern of a leak.</string>
+    <string name="sensor_environment_title">Environmental conditions</string>
+    <string name="sensor_environment_detail">Temperature and relative humidity around the monitoring point.</string>
+    <string name="sensor_power_title">Device power</string>
+    <string name="sensor_power_detail">Battery level and solar panel status of the node.</string>
+
+    <!-- Device history -->
+    <string name="history_device">History of: Sensor %1$s</string>
+    <string name="event_type_alert">ALERT</string>
+    <string name="event_type_inspection">INSPECTION</string>
+    <string name="event_type_classification">CLASSIFICATION</string>
+    <string name="event_type_evidence">EVIDENCE</string>
+    <string name="event_type_observation">OBSERVATION</string>
+    <string name="event_type_maintenance">MAINTENANCE</string>
+
+    <!-- Simulated notification -->
+    <string name="notification_date_pattern">EEEE, MMMM d</string>
+    <string name="notification_source">AGATHA · now</string>
+    <string name="notification_red_alert_title">Red alert — Sensor %1$s</string>
+    <string name="notification_body">%1$s · %2$s · %3$s. Tap to see the details.</string>
+
+    <!-- Inspection form -->
+    <string name="inspection_top_bar_title">Log Inspection</string>
+    <string name="inspection_title">Log inspection</string>
+    <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
+    <string name="inspection_result_title">Inspection result</string>
+    <string name="inspection_result_subtitle">Select the condition found on the device or sensor.</string>
+    <string name="inspection_category_title">Event classification</string>
+    <string name="inspection_category_subtitle">What actually triggered the alert?</string>
+    <string name="inspection_observations_title">Field notes</string>
+    <string name="inspection_observations_placeholder">Describe anything the categories do not cover (saved even when offline)…</string>
+    <string name="inspection_save">✓ Save inspection</string>
+    <string name="inspection_result_no_issue">No issues</string>
+    <string name="inspection_result_maintenance_required">Maintenance required</string>
+    <string name="inspection_result_device_issue">Device/sensor problem</string>
+    <string name="inspection_result_physical_damage">Physical damage</string>
+    <string name="inspection_result_low_battery">Low battery</string>
+    <string name="inspection_result_no_communication">No communication</string>
+    <string name="inspection_result_other">Other</string>
+    <string name="event_category_ground_movement">Ground movement or minor landslide</string>
+    <string name="event_category_machinery_intervention">Third-party machinery work</string>
+    <string name="event_category_weather_conditions">External weather conditions</string>
+    <string name="event_category_heavy_vehicle_traffic">Heavy vehicle traffic</string>
+    <string name="event_category_no_anomalies">No anomalies</string>
+    <string name="event_category_scheduled_maintenance">Scheduled maintenance</string>
+    <string name="event_category_confirmed_leak">Confirmed leak</string>
+    <string name="event_category_other">Other (specify)</string>
+
+    <!-- Photo evidence -->
+    <string name="evidence_top_bar_title">Photo Evidence</string>
+    <string name="evidence_title">Photo evidence</string>
+    <string name="evidence_subtitle">Sensor %1$s · Inspection in progress · Attach as many photos as you need</string>
+    <string name="evidence_save">✓ Save evidence</string>
+    <string name="evidence_add_description">Add a description…</string>
+    <string name="evidence_take_photo">📷 Take photo</string>
+    <string name="evidence_pick_gallery">🖼 Choose from gallery</string>
+    <string name="evidence_add_hint">Take a photo or choose from gallery</string>
+
+    <!-- Node map -->
+    <string name="map_node_connected">Online</string>
+    <string name="map_node_type">TYPE</string>
+    <string name="map_node_battery">BATTERY</string>
+    <string name="map_node_last_communication">LAST CONTACT</string>
+    <string name="map_view_full_history">View full history →</string>
+
+    <!-- Sync -->
+    <string name="sync_offline_title">Working offline</string>
+    <string name="sync_offline_body">Your records (inspections, classifications, notes and photos) are saved on this device and will sync automatically when the signal returns.</string>
+    <string name="sync_pending_title">Waiting to sync (%1$d)</string>
+    <string name="sync_pending_chip">Pending</string>
+    <string name="sync_retry">↻ Retry</string>
+    <string name="sync_conflict_title">⚠ %1$s</string>
+    <string name="sync_conflict_local">YOUR CHANGE (LOCAL)</string>
+    <string name="sync_conflict_server">SERVER CHANGE</string>
+    <string name="sync_understood">Got it</string>
+    <string name="sync_now">🔄 Sync now</string>
+    <string name="sync_last_success">Last successful sync: %1$s</string>
+</resources>

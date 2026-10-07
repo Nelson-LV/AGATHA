@@ -18,6 +18,7 @@ import com.hivend.agatha.ui.theme.StateInspectionContainer
 import com.hivend.agatha.ui.theme.StateInspectionText
 import com.hivend.agatha.ui.theme.StateReceivedContainer
 import com.hivend.agatha.ui.theme.StateReceivedText
+import androidx.compose.ui.res.stringResource
 
 /** Pastilla de texto genérica (contador, etiqueta de historial, tag "Pendiente", etc.). */
 @Composable
@@ -37,14 +38,6 @@ fun StatusChip(
     )
 }
 
-private fun AlertStatus.label() = when (this) {
-    AlertStatus.GENERATED -> "Generada"
-    AlertStatus.RECEIVED -> "Recibida"
-    AlertStatus.IN_INSPECTION -> "En inspección"
-    AlertStatus.CLASSIFIED -> "Clasificada"
-    AlertStatus.CLOSED -> "Cerrada"
-}
-
 private fun AlertStatus.statusColors(): Pair<Color, Color> = when (this) {
     AlertStatus.GENERATED -> StateInspectionContainer to StateInspectionText
     AlertStatus.RECEIVED -> StateReceivedContainer to StateReceivedText
@@ -57,5 +50,5 @@ private fun AlertStatus.statusColors(): Pair<Color, Color> = when (this) {
 @Composable
 fun AlertStatusChip(status: AlertStatus, modifier: Modifier = Modifier) {
     val (container, content) = status.statusColors()
-    StatusChip(text = status.label(), containerColor = container, contentColor = content, modifier = modifier)
+    StatusChip(text = stringResource(status.labelRes()), containerColor = container, contentColor = content, modifier = modifier)
 }

@@ -30,7 +30,9 @@ import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
-import java.util.Locale
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
 
 /**
  * Simula la notificación push de una alerta roja recién generada (HE-04, HU-4.1/4.2),
@@ -46,6 +48,7 @@ fun NotificationPreviewScreen(
 ) {
     val alert by viewModel.featuredAlert.collectAsStateWithLifecycle()
     val now = remember { LocalDateTime.now() }
+    val locale = LocalConfiguration.current.locales[0]
 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -61,7 +64,7 @@ fun NotificationPreviewScreen(
             fontWeight = FontWeight.Light,
         )
         Text(
-            now.format(DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale.forLanguageTag("es-CO"))),
+            now.format(DateTimeFormatter.ofPattern(stringResource(R.string.notification_date_pattern), locale)),
             color = Color.White.copy(alpha = 0.85f),
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 4.dp, bottom = 32.dp),
@@ -79,15 +82,20 @@ fun NotificationPreviewScreen(
             ) {
                 Box(Modifier.padding(top = 4.dp).size(10.dp).background(AlertRed, CircleShape))
                 Column {
-                    Text("AGATHA · ahora", color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+                    Text(stringResource(R.string.notification_source), color = TextSecondary, style = MaterialTheme.typography.labelSmall)
                     Text(
-                        "Alerta roja — Sensor ${featured.sensorId}",
+                        stringResource(R.string.notification_red_alert_title, featured.sensorId),
                         color = TextPrimary,
                         style = MaterialTheme.typography.titleSmall,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                     Text(
-                        "${featured.pk} · ${featured.site} · ${featured.description.substringAfter("— ").ifBlank { featured.description }}. Toca para ver el detalle.",
+                        stringResource(
+                            R.string.notification_body,
+                            featured.pk,
+                            featured.site,
+                            featured.description.substringAfter("— ").ifBlank { featured.description },
+                        ),
                         color = TextSecondary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier = Modifier.padding(top = 2.dp),

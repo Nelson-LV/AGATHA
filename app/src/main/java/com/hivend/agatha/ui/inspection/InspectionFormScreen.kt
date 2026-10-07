@@ -43,6 +43,9 @@ import com.hivend.agatha.ui.theme.NeutralSurface
 import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
+import com.hivend.agatha.ui.components.labelRes
 
 /**
  * Formulario de inspección (HE-05, HU-5.1/5.2/5.3). Corresponde al nodo 34:134 de Figma.
@@ -64,15 +67,15 @@ fun InspectionFormScreen(
     }
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
-        BackTopBar(title = "Registrar Inspección", onBack = onBack)
-        ConnectivityBar(connected = false, message = "Sin conexión · se guarda localmente")
+        BackTopBar(title = stringResource(R.string.inspection_top_bar_title), onBack = onBack)
+        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_saved_locally))
 
         LazyColumn(
             contentPadding = androidx.compose.foundation.layout.PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(site = uiState.alert?.site ?: "—") }
+            item { SitePill(site = uiState.alert?.site ?: stringResource(R.string.common_empty_value)) }
 
             item {
                 Column(
@@ -83,19 +86,19 @@ fun InspectionFormScreen(
                         .padding(16.dp),
                 ) {
                     Column {
-                        Text("Registrar inspección", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.inspection_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Sensor ${uiState.alert?.sensorId ?: viewModel.alertId} · ${uiState.alert?.pk ?: ""}",
+                            stringResource(R.string.inspection_sensor_subtitle, uiState.alert?.sensorId ?: viewModel.alertId, uiState.alert?.pk ?: ""),
                             color = TextSecondary,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
 
                     RadioSection(
-                        title = "Resultado de la inspección",
-                        subtitle = "Selecciona el estado encontrado en el dispositivo o sensor.",
+                        title = stringResource(R.string.inspection_result_title),
+                        subtitle = stringResource(R.string.inspection_result_subtitle),
                         options = InspectionResult.entries,
-                        optionLabel = { it.label },
+                        optionLabel = { it.labelRes() },
                         selected = uiState.result,
                         onSelected = viewModel::onResultSelected,
                     )
@@ -103,10 +106,10 @@ fun InspectionFormScreen(
                     HorizontalDivider(color = NeutralBorder)
 
                     RadioSection(
-                        title = "Clasificación del evento",
-                        subtitle = "¿Qué originó realmente la alerta?",
+                        title = stringResource(R.string.inspection_category_title),
+                        subtitle = stringResource(R.string.inspection_category_subtitle),
                         options = EventCategory.entries,
-                        optionLabel = { it.label },
+                        optionLabel = { it.labelRes() },
                         selected = uiState.category,
                         onSelected = viewModel::onCategorySelected,
                     )
@@ -114,11 +117,11 @@ fun InspectionFormScreen(
                     HorizontalDivider(color = NeutralBorder)
 
                     Column {
-                        Text("Observaciones de campo", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.inspection_observations_title), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
                         OutlinedTextField(
                             value = uiState.observations,
                             onValueChange = viewModel::onObservationsChange,
-                            placeholder = { Text("Escribe aquí situaciones no contempladas en las categorías (se guarda incluso sin conexión)…") },
+                            placeholder = { Text(stringResource(R.string.inspection_observations_placeholder)) },
                             modifier = Modifier.fillMaxWidth().height(90.dp).padding(top = 6.dp),
                         )
                     }
@@ -130,10 +133,10 @@ fun InspectionFormScreen(
                             colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                             modifier = Modifier.weight(1f),
                         ) {
-                            Text(if (uiState.saving) "Guardando…" else "✓ Guardar inspección")
+                            Text(stringResource(if (uiState.saving) R.string.common_saving else R.string.inspection_save))
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) {
-                            Text("Cancelar")
+                            Text(stringResource(R.string.common_cancel))
                         }
                     }
                 }
@@ -147,7 +150,7 @@ private fun <T> RadioSection(
     title: String,
     subtitle: String,
     options: List<T>,
-    optionLabel: (T) -> String,
+    optionLabel: (T) -> Int,
     selected: T?,
     onSelected: (T) -> Unit,
 ) {
@@ -174,7 +177,7 @@ private fun <T> RadioSection(
                         onClick = { onSelected(option) },
                         colors = RadioButtonDefaults.colors(selectedColor = AgathaBlue),
                     )
-                    Text(optionLabel(option), color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(optionLabel(option)), color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

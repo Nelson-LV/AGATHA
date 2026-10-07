@@ -46,6 +46,8 @@ import com.hivend.agatha.ui.theme.StateClosedContainer
 import com.hivend.agatha.ui.theme.StateClosedText
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
 
 /**
  * Mapa de nodos (HE-08). Corresponde al nodo 34:530 de Figma. El lienzo es un
@@ -63,10 +65,10 @@ fun SensorMapScreen(
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader()
-        ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
+        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
         Column(modifier = Modifier.weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SitePill(site = uiState.nodes.firstOrNull()?.site ?: "—")
+            SitePill(site = uiState.nodes.firstOrNull()?.site ?: stringResource(R.string.common_empty_value))
 
             Box(modifier = Modifier.weight(1f)) {
                 MapCanvas(
@@ -126,9 +128,9 @@ private fun ZoomControls(modifier: Modifier = Modifier) {
         modifier = modifier
             .background(NeutralSurface, RoundedCornerShape(6.dp)),
     ) {
-        listOf("+", "–", "◎").forEach {
+        listOf(R.string.map_zoom_in, R.string.map_zoom_out, R.string.map_recenter).forEach {
             Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                Text(it, color = TextSecondary, style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(it), color = TextSecondary, style = MaterialTheme.typography.titleSmall)
             }
         }
     }
@@ -140,9 +142,9 @@ private fun Legend(modifier: Modifier = Modifier) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         modifier = modifier.background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 4.dp),
     ) {
-        LegendDot("Conectado", NodeNormal)
-        LegendDot("Alerta", NodeAlert)
-        LegendDot("Crítico", NodeCritical)
+        LegendDot(stringResource(R.string.legend_connected), NodeNormal)
+        LegendDot(stringResource(R.string.legend_alert), NodeAlert)
+        LegendDot(stringResource(R.string.legend_critical), NodeCritical)
     }
 }
 
@@ -165,20 +167,20 @@ private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
     ) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(node.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-            StatusChip(text = "Conectado", containerColor = StateClosedContainer, contentColor = StateClosedText)
+            StatusChip(text = stringResource(R.string.map_node_connected), containerColor = StateClosedContainer, contentColor = StateClosedText)
         }
         Text("${node.pk} · ${node.site}", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            InfoStat("TIPO", node.sensorType)
-            InfoStat("BATERÍA", "${node.batteryPercentage}%")
-            InfoStat("ÚLT. COMUNICACIÓN", node.lastCommunication)
+            InfoStat(stringResource(R.string.map_node_type), node.sensorType)
+            InfoStat(stringResource(R.string.map_node_battery), stringResource(R.string.common_percent, node.batteryPercentage))
+            InfoStat(stringResource(R.string.map_node_last_communication), node.lastCommunication)
         }
         Button(
             onClick = onViewHistory,
             colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Ver historial completo →")
+            Text(stringResource(R.string.map_view_full_history))
         }
     }
 }

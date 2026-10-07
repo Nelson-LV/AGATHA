@@ -21,6 +21,9 @@ import com.hivend.agatha.ui.theme.ConnectedContainer
 import com.hivend.agatha.ui.theme.ConnectedText
 import com.hivend.agatha.ui.theme.OfflineContainer
 import com.hivend.agatha.ui.theme.OfflineText
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.hivend.agatha.R
 
 /**
  * Franja de conectividad presente en todas las pantallas raíz (HE-07): comunica en todo
@@ -66,8 +69,8 @@ private fun Dot(color: Color) {
 private fun ConnectivityBarPreview() {
     AgathaTheme {
         Column {
-            ConnectivityBar(connected = true, message = "Conectado · Sincronizado hace 2 min")
-            ConnectivityBar(connected = false, message = "Sin conexión · 3 pendientes por sincronizar")
+            ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+            ConnectivityBar(connected = false, message = pluralStringResource(R.plurals.connectivity_offline_pending, 3, 3))
         }
     }
 }

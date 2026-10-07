@@ -17,6 +17,7 @@ import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
 import com.hivend.agatha.ui.theme.AgathaBlue
 import com.hivend.agatha.ui.theme.TextTertiary
+import androidx.compose.ui.res.stringResource
 
 private fun BottomTab.icon(): ImageVector = when (this) {
     BottomTab.Alerts -> Icons.Filled.Notifications
@@ -36,8 +37,8 @@ fun AgathaBottomNavBar(
             NavigationBarItem(
                 selected = tab == currentTab,
                 onClick = { onTabSelected(tab) },
-                icon = { Icon(tab.icon(), contentDescription = tab.label) },
-                label = { Text(tab.label) },
+                icon = { Icon(tab.icon(), contentDescription = stringResource(tab.labelRes())) },
+                label = { Text(stringResource(tab.labelRes())) },
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = AgathaBlue,
                     selectedTextColor = AgathaBlue,

@@ -57,6 +57,8 @@ import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
 
 /**
  * Evidencia fotográfica (HE-06, opcional). Corresponde al nodo 34:266 de Figma. La captura
@@ -88,14 +90,14 @@ fun PhotoEvidenceScreen(
     ) { uri -> uri?.let { viewModel.onPhotoAdded(it.toString()) } }
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
-        BackTopBar(title = "Evidencia Fotográfica", onBack = onBack)
-        ConnectivityBar(connected = false, message = "Sin conexión · se guarda localmente")
+        BackTopBar(title = stringResource(R.string.evidence_top_bar_title), onBack = onBack)
+        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_saved_locally))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f).padding(16.dp),
         ) {
-            SitePill(site = uiState.alert?.site ?: "—")
+            SitePill(site = uiState.alert?.site ?: stringResource(R.string.common_empty_value))
 
             Column(
                 modifier = Modifier
@@ -104,9 +106,9 @@ fun PhotoEvidenceScreen(
                     .background(NeutralSurface, RoundedCornerShape(14.dp))
                     .padding(16.dp),
             ) {
-                Text("Evidencia fotográfica", color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.evidence_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
                 Text(
-                    "Sensor ${uiState.alert?.sensorId ?: viewModel.alertId} · Inspección en curso · Adjunta cuantas fotos necesites",
+                    stringResource(R.string.evidence_subtitle, uiState.alert?.sensorId ?: viewModel.alertId),
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 10.dp),
@@ -143,7 +145,7 @@ fun PhotoEvidenceScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 ) {
-                    Text(if (uiState.saving) "Guardando…" else "✓ Guardar evidencias")
+                    Text(stringResource(if (uiState.saving) R.string.common_saving else R.string.evidence_save))
                 }
             }
         }
@@ -165,7 +167,7 @@ private fun EvidenceTile(evidence: PhotoEvidence, onDescriptionChanged: (String,
         OutlinedTextField(
             value = evidence.description,
             onValueChange = { onDescriptionChanged(evidence.uri, it) },
-            placeholder = { Text("Agregar descripción…", style = MaterialTheme.typography.bodySmall) },
+            placeholder = { Text(stringResource(R.string.evidence_add_description), style = MaterialTheme.typography.bodySmall) },
             textStyle = MaterialTheme.typography.bodySmall,
             singleLine = true,
             modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
@@ -189,13 +191,13 @@ private fun AddEvidenceTile(onTakePhoto: () -> Unit, onPickFromGallery: () -> Un
         if (showOptions) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    "📷 Tomar foto",
+                    stringResource(R.string.evidence_take_photo),
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.clickable { showOptions = false; onTakePhoto() }.padding(6.dp),
                 )
                 Text(
-                    "🖼 Elegir de galería",
+                    stringResource(R.string.evidence_pick_gallery),
                     color = AgathaBlue,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.clickable { showOptions = false; onPickFromGallery() }.padding(6.dp),
@@ -204,7 +206,7 @@ private fun AddEvidenceTile(onTakePhoto: () -> Unit, onPickFromGallery: () -> Un
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = AgathaBlue)
-                Text("Tomar foto o elegir de galería", color = AgathaBlue, style = MaterialTheme.typography.labelMedium)
+                Text(stringResource(R.string.evidence_add_hint), color = AgathaBlue, style = MaterialTheme.typography.labelMedium)
             }
         }
     }

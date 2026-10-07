@@ -36,6 +36,9 @@ import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
 import com.hivend.agatha.ui.theme.StateInspectionText
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
+import com.hivend.agatha.ui.components.labelRes
 
 /**
  * Historial trazable de un dispositivo (HU-8.3, RNF-MOV-07). Corresponde al nodo 34:662 de
@@ -50,17 +53,17 @@ fun DeviceHistoryScreen(
 
     Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
         AgathaHeader()
-        ConnectivityBar(connected = false, message = "Sin conexión · mostrando datos locales")
+        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_local_data))
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
-            item { SitePill(site = "Güepsa – San José de Pare") }
+            item { SitePill(site = stringResource(R.string.common_default_site)) }
             item {
                 Text(
-                    "Historial de: Sensor ${viewModel.deviceId}",
+                    stringResource(R.string.history_device, viewModel.deviceId),
                     color = TextSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
@@ -91,7 +94,7 @@ private fun HistoryRow(event: HistoryEvent) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
         Text(event.type.emoji(), style = MaterialTheme.typography.titleMedium)
         Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text("${event.time}  ${event.type.label()}", color = event.type.color(), style = MaterialTheme.typography.labelSmall)
+            Text("${event.time}  ${stringResource(event.type.labelRes())}", color = event.type.color(), style = MaterialTheme.typography.labelSmall)
             Text(event.title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
             Text(event.detail, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
             event.statusLabel?.let {
@@ -113,15 +116,6 @@ private fun EventType.emoji(): String = when (this) {
     EventType.EVIDENCE -> "📷"
     EventType.OBSERVATION -> "📝"
     EventType.MAINTENANCE -> "✅"
-}
-
-private fun EventType.label(): String = when (this) {
-    EventType.ALERT -> "ALERTA"
-    EventType.INSPECTION -> "INSPECCIÓN"
-    EventType.CLASSIFICATION -> "CLASIFICACIÓN"
-    EventType.EVIDENCE -> "EVIDENCIA"
-    EventType.OBSERVATION -> "OBSERVACIÓN"
-    EventType.MAINTENANCE -> "MANTENIMIENTO"
 }
 
 private fun EventType.color(): androidx.compose.ui.graphics.Color = when (this) {

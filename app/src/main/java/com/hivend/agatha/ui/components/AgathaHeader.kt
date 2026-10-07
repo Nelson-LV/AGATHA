@@ -19,6 +19,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.hivend.agatha.ui.theme.TextPrimary
 import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.R
 
 /** Encabezado de marca mostrado en las 4 pantallas raíz (Alertas, Mapa, Historial, Sync). */
 @Composable
@@ -35,9 +37,9 @@ fun AgathaHeader(
     ) {
         AgathaLogoMark()
         Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
-            Text("AGATHA", color = TextPrimary, style = MaterialTheme.typography.titleLarge)
+            Text(stringResource(R.string.app_name), color = TextPrimary, style = MaterialTheme.typography.titleLarge)
             Text(
-                "ALERTAS TEMPRANAS · GASODUCTO OTERO-SANTANA",
+                stringResource(R.string.header_tagline),
                 color = TextSecondary,
                 style = MaterialTheme.typography.labelSmall,
                 modifier = Modifier.width(180.dp),
@@ -62,7 +64,7 @@ fun BackTopBar(
             .padding(16.dp),
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Volver", tint = TextPrimary)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = TextPrimary)
         }
         Text(
             title,
