@@ -52,7 +52,7 @@
 
     <!-- Niveles de alerta -->
     <string name="alert_level_red">ALERTA ROJA</string>
-    <string name="alert_level_yellow">ALERTA AMARILLA</string>
+    <string name="alert_level_orange">ALERTA NARANJA</string>
     <string name="alert_level_green">ALERTA VERDE</string>
 
     <!-- Leyendas de mapa y gráfica -->
@@ -68,6 +68,7 @@
         <item quantity="one">%d activa</item>
         <item quantity="other">%d activas</item>
     </plurals>
+    <string name="inbox_empty">Sin alertas naranjas ni rojas. Todos los puntos están en condiciones normales.</string>
     <string name="inbox_alert_title">%1$s · Sensor %2$s</string>
     <string name="inbox_nav_map">Mapa de nodos</string>
     <string name="inbox_nav_history">Historial</string>

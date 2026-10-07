@@ -2,12 +2,17 @@ package com.hivend.agatha.domain.model
 
 /**
  * Nivel de severidad de una alerta, tal como lo codifica el color del punto de monitoreo
- * en la plataforma web y en la app móvil (HE-01 / HE-04).
+ * en la plataforma web y en la app móvil (HE-01 / HE-04). [GREEN] indica normalidad: el
+ * nodo sigue visible en el mapa y en dispositivos, pero no cuenta como alerta.
  */
 enum class AlertLevel {
     GREEN,
-    YELLOW,
+    ORANGE,
     RED,
+    ;
+
+    /** Solo naranja y rojo requieren atención en campo y aparecen en la bandeja de alertas. */
+    val requiresAttention: Boolean get() = this != GREEN
 }
 
 /**

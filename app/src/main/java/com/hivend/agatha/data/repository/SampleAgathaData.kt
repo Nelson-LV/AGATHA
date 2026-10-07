@@ -55,7 +55,7 @@ internal object SampleAgathaData {
             pk = "PK22+300",
             site = SITE,
             description = text(R.string.sample_alert_possible_gas_leak),
-            level = AlertLevel.YELLOW,
+            level = AlertLevel.ORANGE,
             status = AlertStatus.RECEIVED,
             minutesAgo = 40,
             telemetry = AlertTelemetry(
@@ -118,7 +118,7 @@ internal object SampleAgathaData {
             pk = "PK22+300",
             site = SITE,
             sensorType = SensorType.ACOUSTIC,
-            status = AlertLevel.YELLOW,
+            status = AlertLevel.ORANGE,
             batteryPercentage = 64,
             lastCommunicationMinutesAgo = 40,
             normalizedX = 0.45f,

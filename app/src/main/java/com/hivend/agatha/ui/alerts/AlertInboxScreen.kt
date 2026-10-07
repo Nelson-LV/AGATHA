@@ -97,6 +97,14 @@ fun AlertInboxScreen(
                             contentColor = AgathaTheme.colors.textSecondary,
                         )
                     }
+                    if (alerts.isEmpty()) {
+                        Text(
+                            stringResource(R.string.inbox_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AgathaTheme.colors.textSecondary,
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
+                    }
                     alerts.forEachIndexed { index, alert ->
                         AlertRow(
                             alert = alert,
@@ -170,6 +178,6 @@ private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier 
 @ReadOnlyComposable
 private fun AlertLevel.color(): Color = when (this) {
     AlertLevel.RED -> AgathaTheme.colors.critical
-    AlertLevel.YELLOW -> AgathaTheme.colors.warning
+    AlertLevel.ORANGE -> AgathaTheme.colors.warning
     AlertLevel.GREEN -> AgathaTheme.colors.positive
 }

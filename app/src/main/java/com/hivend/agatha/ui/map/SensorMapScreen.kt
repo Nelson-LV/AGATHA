@@ -198,6 +198,6 @@ private fun InfoStat(label: String, value: String) {
 @ReadOnlyComposable
 private fun AlertLevel.color(): Color = when (this) {
     AlertLevel.RED -> AgathaTheme.colors.nodeCritical
-    AlertLevel.YELLOW -> AgathaTheme.colors.nodeAlert
+    AlertLevel.ORANGE -> AgathaTheme.colors.nodeAlert
     AlertLevel.GREEN -> AgathaTheme.colors.nodeNormal
 }

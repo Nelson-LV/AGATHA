@@ -29,7 +29,7 @@ fun AlertStatus.labelRes(): Int = when (this) {
 @StringRes
 fun AlertLevel.labelRes(): Int = when (this) {
     AlertLevel.RED -> R.string.alert_level_red
-    AlertLevel.YELLOW -> R.string.alert_level_yellow
+    AlertLevel.ORANGE -> R.string.alert_level_orange
     AlertLevel.GREEN -> R.string.alert_level_green
 }
 
