@@ -43,6 +43,7 @@ import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.resolve
 
 /**
  * Historial trazable de un dispositivo (HU-8.3, RNF-MOV-07). Corresponde al nodo 34:662 de
@@ -105,12 +106,16 @@ private fun HistoryRow(event: HistoryEvent) {
             Icon(event.type.icon(), contentDescription = null, tint = event.type.color(), modifier = Modifier.size(18.dp))
         }
         Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text("${event.time}  ${stringResource(event.type.labelRes())}", color = event.type.color(), style = MaterialTheme.typography.labelSmall)
-            Text(event.title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
-            Text(event.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+            Text(
+                stringResource(R.string.common_dot_separated, event.time, stringResource(event.type.labelRes())),
+                color = event.type.color(),
+                style = MaterialTheme.typography.labelSmall,
+            )
+            Text(event.title.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+            Text(event.detail.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
             event.statusLabel?.let {
                 StatusChip(
-                    text = it,
+                    text = it.resolve(),
                     containerColor = AgathaTheme.colors.surfaceVariant,
                     contentColor = AgathaTheme.colors.textSecondary,
                     modifier = Modifier.padding(top = 4.dp),

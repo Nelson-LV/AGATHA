@@ -22,11 +22,17 @@ enum class AlertStatus {
     CLOSED,
 }
 
+/** Intensidad de la aceleración medida por el sensor de movimiento. */
+enum class AccelerationLevel {
+    LOW,
+    MEDIUM,
+    HIGH,
+}
+
 /** Confianza reportada por el motor de reglas/IA y variables de telemetría más recientes. */
 data class AlertTelemetry(
     val confidencePercentage: Int,
-    val acceleration: String,
-    val relativeTime: String,
+    val acceleration: AccelerationLevel,
     val batteryPercentage: Int,
     val isRealData: Boolean,
 )
@@ -38,14 +44,14 @@ data class AlertTelemetry(
  */
 data class Alert(
     val id: String,
-    val point: String,
+    val pointNumber: Int,
     val sensorId: String,
     val pk: String,
     val site: String,
-    val description: String,
+    val description: LocalizedText,
     val level: AlertLevel,
     val status: AlertStatus,
-    val relativeTime: String,
+    /** Minutos transcurridos desde que se generó la alerta. */
+    val minutesAgo: Int,
     val telemetry: AlertTelemetry,
-    val nextStep: String,
 )

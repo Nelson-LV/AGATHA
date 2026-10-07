@@ -17,7 +17,7 @@ enum class EventType {
 data class HistoryEvent(
     val time: String,
     val type: EventType,
-    val title: String,
-    val detail: String,
-    val statusLabel: String? = null,
+    val title: LocalizedText,
+    val detail: LocalizedText,
+    val statusLabel: LocalizedText? = null,
 )

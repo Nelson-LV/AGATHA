@@ -64,6 +64,9 @@ import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import androidx.annotation.StringRes
 import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.nextStepRes
+import com.hivend.agatha.ui.components.resolve
+import com.hivend.agatha.ui.components.shortDuration
 
 /**
  * Detalle de alerta (HE-04). Corresponde a los nodos 1:4 ("En inspección") y 27:2
@@ -134,7 +137,7 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
             color = AgathaTheme.colors.critical,
             style = MaterialTheme.typography.labelLarge,
         )
-        Text(alert.description, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
+        Text(alert.description.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
 
         PrimaryActions(status = alert.status, onAdvance = onAdvance)
 
@@ -169,7 +172,7 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
                 .clickable(onClick = onRegisterInspection)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
-            Text(alert.nextStep, color = AgathaTheme.colors.brand, style = MaterialTheme.typography.bodyMedium)
+            Text(stringResource(alert.status.nextStepRes()), color = AgathaTheme.colors.brand, style = MaterialTheme.typography.bodyMedium)
             Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = AgathaTheme.colors.textSecondary)
         }
     }
@@ -239,8 +242,8 @@ private fun TelemetryRow(alert: Alert) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             TelemetryStat(stringResource(R.string.telemetry_confidence), stringResource(R.string.common_percent, alert.telemetry.confidencePercentage))
-            TelemetryStat(stringResource(R.string.telemetry_acceleration), alert.telemetry.acceleration)
-            TelemetryStat(stringResource(R.string.telemetry_time_ago), alert.telemetry.relativeTime)
+            TelemetryStat(stringResource(R.string.telemetry_acceleration), stringResource(alert.telemetry.acceleration.labelRes()))
+            TelemetryStat(stringResource(R.string.telemetry_time_ago), shortDuration(alert.minutesAgo))
             TelemetryStat(stringResource(R.string.telemetry_battery), stringResource(R.string.common_percent, alert.telemetry.batteryPercentage))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
@@ -354,11 +357,15 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
         Text(stringResource(R.string.alert_detail_device_history), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)
         events.forEach { event ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("${event.time} · ${event.title}", color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
-                Text(event.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    stringResource(R.string.common_dot_separated, event.time, event.title.resolve()),
+                    color = AgathaTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(event.detail.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
                 event.statusLabel?.let {
                     StatusChip(
-                        text = it,
+                        text = it.resolve(),
                         containerColor = AgathaTheme.colors.surfaceVariant,
                         contentColor = AgathaTheme.colors.textSecondary,
                         modifier = Modifier.padding(top = 2.dp),

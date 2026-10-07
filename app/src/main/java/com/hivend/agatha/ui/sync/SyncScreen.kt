@@ -39,6 +39,8 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
+import com.hivend.agatha.ui.components.relativeTimeAgo
+import com.hivend.agatha.ui.components.resolve
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -60,7 +62,7 @@ fun SyncScreen(
         ConnectivityBar(
             connected = status?.connected ?: false,
             message = if (status?.connected == true) {
-                stringResource(R.string.connectivity_connected_synced, status?.lastSuccessfulSync.orEmpty())
+                stringResource(R.string.connectivity_connected_synced, relativeTimeAgo(status?.lastSuccessfulSyncMinutesAgo ?: 0))
             } else {
                 val pendingCount = status?.pending?.size ?: 0
                 pluralStringResource(R.plurals.connectivity_offline_pending, pendingCount, pendingCount)
@@ -90,7 +92,7 @@ fun SyncScreen(
 
                 item {
                     SyncFooter(
-                        lastSync = current.lastSuccessfulSync,
+                        lastSync = relativeTimeAgo(current.lastSuccessfulSyncMinutesAgo),
                         onSyncNow = viewModel::syncNow,
                     )
                 }
@@ -140,8 +142,8 @@ private fun PendingSyncCard(pending: List<PendingRecord>, onRetry: (String) -> U
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(record.title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
-                    Text(record.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+                    Text(record.title.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text(record.detail.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
                 }
                 StatusChip(text = stringResource(R.string.sync_pending_chip), containerColor = AgathaTheme.colors.stateInspectionContainer, contentColor = AgathaTheme.colors.stateInspection)
                 Text(
@@ -169,12 +171,12 @@ private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
             Icon(Icons.Filled.Warning, contentDescription = null, tint = AgathaTheme.colors.conflict, modifier = Modifier.size(18.dp))
-            Text(stringResource(R.string.sync_conflict_title, conflict.conflictTitle), color = AgathaTheme.colors.conflict, style = MaterialTheme.typography.titleSmall)
+            Text(conflict.conflictTitle.resolve(), color = AgathaTheme.colors.conflict, style = MaterialTheme.typography.titleSmall)
         }
-        Text(conflict.description, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text(conflict.description.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange, Modifier.weight(1f))
-            ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange, Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange.resolve(), Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange.resolve(), Modifier.weight(1f))
         }
         OutlinedButton(
             onClick = onUnderstood,

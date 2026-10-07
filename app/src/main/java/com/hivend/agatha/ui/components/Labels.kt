@@ -3,7 +3,9 @@ package com.hivend.agatha.ui.components
 import androidx.annotation.StringRes
 import com.hivend.agatha.R
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
+import com.hivend.agatha.domain.model.AccelerationLevel
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.SensorType
 import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.EventCategory
 import com.hivend.agatha.domain.model.EventType
@@ -62,6 +64,30 @@ fun EventCategory.labelRes(): Int = when (this) {
     EventCategory.SCHEDULED_MAINTENANCE -> R.string.event_category_scheduled_maintenance
     EventCategory.CONFIRMED_LEAK -> R.string.event_category_confirmed_leak
     EventCategory.OTHER -> R.string.event_category_other
+}
+
+/** Qué debe hacer el técnico a continuación según el estado de la alerta. */
+@StringRes
+fun AlertStatus.nextStepRes(): Int = when (this) {
+    AlertStatus.GENERATED, AlertStatus.RECEIVED -> R.string.alert_next_step_start_inspection
+    AlertStatus.IN_INSPECTION -> R.string.alert_next_step_register_inspection
+    AlertStatus.CLASSIFIED -> R.string.alert_next_step_review_classification
+    AlertStatus.CLOSED -> R.string.alert_next_step_none
+}
+
+@StringRes
+fun AccelerationLevel.labelRes(): Int = when (this) {
+    AccelerationLevel.LOW -> R.string.acceleration_low
+    AccelerationLevel.MEDIUM -> R.string.acceleration_medium
+    AccelerationLevel.HIGH -> R.string.acceleration_high
+}
+
+@StringRes
+fun SensorType.labelRes(): Int = when (this) {
+    SensorType.MOTION -> R.string.sensor_type_motion
+    SensorType.ACOUSTIC -> R.string.sensor_type_acoustic
+    SensorType.ENVIRONMENT -> R.string.sensor_type_environment
+    SensorType.POWER -> R.string.sensor_type_power
 }
 
 @StringRes

@@ -17,6 +17,7 @@
     <string name="common_empty_value" translatable="false">—</string>
     <string name="common_percent">%1$d%%</string>
     <string name="common_sensor">Sensor %1$s</string>
+    <string name="common_dot_separated" translatable="false">%1$s · %2$s</string>
     <!-- Sitio por defecto mientras la API no entrega el sitio asignado al técnico (nombre propio). -->
     <string name="common_default_site" translatable="false">Güepsa – San José de Pare</string>
 
@@ -166,10 +167,67 @@
     <string name="sync_pending_title">Pendientes por sincronizar (%1$d)</string>
     <string name="sync_pending_chip">Pendiente</string>
     <string name="sync_retry">Reintentar</string>
-    <string name="sync_conflict_title">%1$s</string>
     <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
     <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
     <string name="sync_understood">Entendido</string>
     <string name="sync_now">Sincronizar ahora</string>
     <string name="sync_last_success">Última sincronización correcta: %1$s</string>
+
+    <!-- Tiempos relativos (el dominio entrega minutos; ver ui/components/Texts.kt) -->
+    <string name="time_just_now">justo ahora</string>
+    <string name="time_minutes_ago">hace %1$d min</string>
+    <string name="time_hours_ago">hace %1$d h</string>
+    <string name="duration_minutes" translatable="false">%1$d min</string>
+    <string name="duration_hours" translatable="false">%1$d h</string>
+
+    <!-- Valores del dominio (enums y números que la UI formatea) -->
+    <string name="alert_point">Punto %1$d</string>
+    <string name="node_name">Nodo %1$s</string>
+    <string name="acceleration_low">Baja</string>
+    <string name="acceleration_medium">Media</string>
+    <string name="acceleration_high">Alta</string>
+    <string name="sensor_type_motion">Acelerómetro + giroscopio</string>
+    <string name="sensor_type_acoustic">Acústico</string>
+    <string name="sensor_type_environment">Condiciones ambientales</string>
+    <string name="sensor_type_power">Energía / batería</string>
+    <string name="alert_next_step_start_inspection">Iniciar inspección</string>
+    <string name="alert_next_step_register_inspection">Registrar inspección de campo</string>
+    <string name="alert_next_step_review_classification">Revisar clasificación</string>
+    <string name="alert_next_step_none">Sin acción pendiente</string>
+
+    <!--
+        Datos de ejemplo de los repositorios en memoria (data/repository/SampleAgathaData.kt
+        e InMemorySyncRepository.kt). También se traducen: la demo debe verse completa en el
+        idioma del dispositivo. Desaparecen cuando la API central entregue datos reales.
+    -->
+    <string name="sample_alert_landslide_risk">Riesgo de deslizamiento — El tubo se movió %1$d cm de su posición original</string>
+    <string name="sample_alert_possible_gas_leak">Posible fuga de gas</string>
+    <string name="sample_alert_test_scenario">Escenario de prueba — simulación</string>
+    <string name="sample_normal_conditions">Condiciones normales</string>
+    <string name="sample_history_red_alert_title">Alerta roja generada</string>
+    <string name="sample_history_red_alert_detail">Riesgo de deslizamiento — el tubo se movió %1$d cm</string>
+    <string name="sample_history_pending_confirmation">Pendiente de confirmar</string>
+    <string name="sample_history_inspection_title">Inspección registrada</string>
+    <string name="sample_history_inspection_detail">Resultado: mantenimiento requerido</string>
+    <string name="sample_history_classification_title">Clasificación del evento</string>
+    <string name="sample_history_evidence_title">Evidencia adjunta</string>
+    <string name="sample_history_evidence_detail">%1$d fotografías con descripción</string>
+    <string name="sample_history_observation_title">Observación de campo</string>
+    <string name="sample_history_observation_detail">Se detecta erosión leve en el talud norte</string>
+    <string name="sample_history_maintenance_title">Mantenimiento realizado</string>
+    <string name="sample_history_maintenance_detail">Ajuste de anclaje y limpieza del sensor</string>
+    <string name="sample_history_completed">Completado</string>
+    <string name="sample_history_alert_closed_title">Alerta cerrada</string>
+    <string name="sample_history_alert_closed_detail">Estado final: Clasificada — sin anomalías adicionales</string>
+    <string name="sample_history_all_points_stable">Todos los puntos estables</string>
+    <string name="sample_sync_inspection_title">Inspección · Punto %1$d</string>
+    <string name="sample_sync_inspection_detail">Registrada %1$s · esperando conexión</string>
+    <string name="sample_sync_evidence_title">Foto evidencia · Punto %1$d</string>
+    <string name="sample_sync_evidence_detail">%1$d imágenes · registradas %2$s</string>
+    <string name="sample_sync_classification_title">Clasificación · Punto %1$d</string>
+    <string name="sample_sync_classification_detail">Fuga confirmada · error al enviar</string>
+    <string name="sample_sync_conflict_title">Conflicto detectado · Punto %1$d</string>
+    <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
+    <string name="sample_sync_conflict_local">Clasificación: Fuga confirmada · %1$s</string>
+    <string name="sample_sync_conflict_server">Estado: Cerrada por Operador Web · %1$s</string>
 </resources>

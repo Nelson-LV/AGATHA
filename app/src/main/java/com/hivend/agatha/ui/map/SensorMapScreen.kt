@@ -41,6 +41,8 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
+import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.relativeTimeAgo
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 
@@ -165,14 +167,14 @@ private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(node.name, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.node_name, node.id), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
             StatusChip(text = stringResource(R.string.map_node_connected), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
         }
-        Text("${node.pk} · ${node.site}", color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.common_dot_separated, node.pk, node.site), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
-            InfoStat(stringResource(R.string.map_node_type), node.sensorType)
+            InfoStat(stringResource(R.string.map_node_type), stringResource(node.sensorType.labelRes()))
             InfoStat(stringResource(R.string.map_node_battery), stringResource(R.string.common_percent, node.batteryPercentage))
-            InfoStat(stringResource(R.string.map_node_last_communication), node.lastCommunication)
+            InfoStat(stringResource(R.string.map_node_last_communication), relativeTimeAgo(node.lastCommunicationMinutesAgo))
         }
         Button(
             onClick = onViewHistory,

@@ -44,6 +44,8 @@ import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.AlertStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
+import com.hivend.agatha.ui.components.relativeTimeAgo
+import com.hivend.agatha.ui.components.resolve
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -133,9 +135,13 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                     .background(alert.level.color(), CircleShape),
             )
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(stringResource(R.string.inbox_alert_title, alert.point, alert.sensorId), style = MaterialTheme.typography.labelLarge, color = AgathaTheme.colors.textPrimary)
-                Text(alert.description, style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
-                Text(alert.relativeTime, style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
+                Text(
+                    stringResource(R.string.inbox_alert_title, stringResource(R.string.alert_point, alert.pointNumber), alert.sensorId),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = AgathaTheme.colors.textPrimary,
+                )
+                Text(alert.description.resolve(), style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
+                Text(relativeTimeAgo(alert.minutesAgo), style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
             }
             AlertStatusChip(status = alert.status)
         }

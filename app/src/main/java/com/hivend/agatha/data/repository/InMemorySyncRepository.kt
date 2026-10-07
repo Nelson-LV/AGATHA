@@ -1,5 +1,8 @@
 package com.hivend.agatha.data.repository
 
+import androidx.annotation.StringRes
+import com.hivend.agatha.R
+import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.model.SyncConflict
 import com.hivend.agatha.domain.model.SyncStatus
 import com.hivend.agatha.domain.model.PendingRecord
@@ -23,27 +26,42 @@ class InMemorySyncRepository @Inject constructor() : SyncRepository {
         SyncStatus(
             connected = false,
             pending = listOf(
-                PendingRecord("p1", "Inspección · Punto 3", "Registrada 12:58 · esperando conexión"),
-                PendingRecord("p2", "Foto evidencia · Punto 2", "2 imágenes · registradas 13:04"),
-                PendingRecord("p3", "Clasificación · Punto 1", "Fuga confirmada · error al enviar", error = true),
+                PendingRecord(
+                    "p1",
+                    text(R.string.sample_sync_inspection_title, 3),
+                    text(R.string.sample_sync_inspection_detail, "12:58"),
+                ),
+                PendingRecord(
+                    "p2",
+                    text(R.string.sample_sync_evidence_title, 2),
+                    text(R.string.sample_sync_evidence_detail, 2, "13:04"),
+                ),
+                PendingRecord(
+                    "p3",
+                    text(R.string.sample_sync_classification_title, 1),
+                    text(R.string.sample_sync_classification_detail),
+                    error = true,
+                ),
             ),
             conflict = SyncConflict(
                 alertId = "MP-1122",
-                conflictTitle = "Conflicto detectado · Punto 1",
-                description = "Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.",
-                localChange = "Clasificación: Fuga confirmada · 13:10",
-                serverChange = "Estado: Cerrada por Operador Web · 13:12",
+                conflictTitle = text(R.string.sample_sync_conflict_title, 1),
+                description = text(R.string.sample_sync_conflict_description),
+                localChange = text(R.string.sample_sync_conflict_local, "13:10"),
+                serverChange = text(R.string.sample_sync_conflict_server, "13:12"),
             ),
-            lastSuccessfulSync = "hace 2 h",
+            lastSuccessfulSyncMinutesAgo = 120,
         )
     )
+
+    private fun text(@StringRes id: Int, vararg args: Any) = LocalizedText.Resource(id, args.toList())
 
     override fun observeStatus() = status
 
     override suspend fun syncNow() {
         delay(600) // Simula la latencia de red mientras no hay WorkManager real.
         status.update {
-            it.copy(connected = true, pending = emptyList(), lastSuccessfulSync = "justo ahora")
+            it.copy(connected = true, pending = emptyList(), lastSuccessfulSyncMinutesAgo = 0)
         }
     }
 

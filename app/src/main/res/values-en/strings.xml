@@ -157,10 +157,61 @@
     <string name="sync_pending_title">Waiting to sync (%1$d)</string>
     <string name="sync_pending_chip">Pending</string>
     <string name="sync_retry">Retry</string>
-    <string name="sync_conflict_title">%1$s</string>
     <string name="sync_conflict_local">YOUR CHANGE (LOCAL)</string>
     <string name="sync_conflict_server">SERVER CHANGE</string>
     <string name="sync_understood">Got it</string>
     <string name="sync_now">Sync now</string>
     <string name="sync_last_success">Last successful sync: %1$s</string>
+
+    <!-- Relative times -->
+    <string name="time_just_now">just now</string>
+    <string name="time_minutes_ago">%1$d min ago</string>
+    <string name="time_hours_ago">%1$d h ago</string>
+
+    <!-- Domain values -->
+    <string name="alert_point">Point %1$d</string>
+    <string name="node_name">Node %1$s</string>
+    <string name="acceleration_low">Low</string>
+    <string name="acceleration_medium">Medium</string>
+    <string name="acceleration_high">High</string>
+    <string name="sensor_type_motion">Accelerometer + gyroscope</string>
+    <string name="sensor_type_acoustic">Acoustic</string>
+    <string name="sensor_type_environment">Environmental conditions</string>
+    <string name="sensor_type_power">Power / battery</string>
+    <string name="alert_next_step_start_inspection">Start inspection</string>
+    <string name="alert_next_step_register_inspection">Log field inspection</string>
+    <string name="alert_next_step_review_classification">Review classification</string>
+    <string name="alert_next_step_none">No pending action</string>
+
+    <!-- Sample data (in-memory repositories, until the central API is integrated) -->
+    <string name="sample_alert_landslide_risk">Landslide risk — The pipe moved %1$d cm from its original position</string>
+    <string name="sample_alert_possible_gas_leak">Possible gas leak</string>
+    <string name="sample_alert_test_scenario">Test scenario — simulation</string>
+    <string name="sample_normal_conditions">Normal conditions</string>
+    <string name="sample_history_red_alert_title">Red alert generated</string>
+    <string name="sample_history_red_alert_detail">Landslide risk — the pipe moved %1$d cm</string>
+    <string name="sample_history_pending_confirmation">Pending confirmation</string>
+    <string name="sample_history_inspection_title">Inspection logged</string>
+    <string name="sample_history_inspection_detail">Result: maintenance required</string>
+    <string name="sample_history_classification_title">Event classification</string>
+    <string name="sample_history_evidence_title">Evidence attached</string>
+    <string name="sample_history_evidence_detail">%1$d photos with description</string>
+    <string name="sample_history_observation_title">Field observation</string>
+    <string name="sample_history_observation_detail">Slight erosion detected on the north slope</string>
+    <string name="sample_history_maintenance_title">Maintenance performed</string>
+    <string name="sample_history_maintenance_detail">Anchor adjustment and sensor cleaning</string>
+    <string name="sample_history_completed">Completed</string>
+    <string name="sample_history_alert_closed_title">Alert closed</string>
+    <string name="sample_history_alert_closed_detail">Final status: Classified — no further anomalies</string>
+    <string name="sample_history_all_points_stable">All points stable</string>
+    <string name="sample_sync_inspection_title">Inspection · Point %1$d</string>
+    <string name="sample_sync_inspection_detail">Logged %1$s · waiting for connection</string>
+    <string name="sample_sync_evidence_title">Photo evidence · Point %1$d</string>
+    <string name="sample_sync_evidence_detail">%1$d images · logged %2$s</string>
+    <string name="sample_sync_classification_title">Classification · Point %1$d</string>
+    <string name="sample_sync_classification_detail">Confirmed leak · failed to send</string>
+    <string name="sample_sync_conflict_title">Conflict detected · Point %1$d</string>
+    <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
+    <string name="sample_sync_conflict_local">Classification: Confirmed leak · %1$s</string>
+    <string name="sample_sync_conflict_server">Status: Closed by web operator · %1$s</string>
 </resources>
