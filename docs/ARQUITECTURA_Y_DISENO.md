@@ -122,14 +122,14 @@ de login) debe replicar esta misma forma.
 - **Excepción — comentarios y KDoc**: pueden quedarse en español (es el idioma de trabajo
   del equipo). No se traducen como efecto secundario de un cambio no relacionado.
 - **Excepción — cadenas de texto de la UI**: lo que ve el usuario de campo (`Text(...)`,
-  `contentDescription`, mensajes) sigue siendo principalmente español, pero debe terminar
-  soportando **español e inglés** vía recursos de Android
-  (`res/values/strings.xml` en español por defecto + `res/values-en/strings.xml` en
-  inglés) en vez de literales embebidos en el Composable. Esa migración a recursos
-  bilingües **todavía no se hizo** — las pantallas actuales siguen con texto en español
-  embebido — y queda como trabajo futuro, fuera del alcance del refactor de vocabulario de
-  clases. Al tocar una pantalla existente, preferir mover sus literales a recursos en vez
-  de agregar más texto embebido.
+  `contentDescription`, mensajes) está en **español (idioma por defecto) e inglés** vía
+  recursos de Android: `res/values/strings.xml` (español) + `res/values-en/strings.xml`
+  (inglés). Ningún Composable ni ViewModel escribe texto visible como literal: se usa
+  `stringResource(R.string.…)` / `pluralStringResource(...)`, y toda clave nueva se agrega
+  en los dos archivos en el mismo cambio. Los enums del dominio no llevan texto; la UI los
+  traduce a `@StringRes` en `ui/components/Labels.kt`. Las reglas completas están en
+  `CLAUDE.md` § "User-facing strings". Los datos de ejemplo de `data/repository/` simulan
+  contenido que enviará la API y no se traducen en la app.
 
 **Compose**
 - Un composable de pantalla jamás recibe un `NavController`: recibe funciones lambda
@@ -166,6 +166,10 @@ de login) debe replicar esta misma forma.
   incremento de sprint.
 - Nunca commitear `local.properties`, `google-services.json` ni cualquier `*.jks` de firma
   (ver `.gitignore`).
+- **Commit por tarea, push por trabajo terminado**: al terminar cada tarea se verifica que
+  compila y funciona (`./gradlew assembleDebug lintDebug testDebugUnitTest`, y prueba en
+  emulador si toca UI) y se hace commit; cuando se termina la tarea grande completa se hace
+  `git push`. Detalle en `CLAUDE.md` § "Git workflow".
 
 **Verificación antes de dar por completada una tarea**
 - Antes de decir que una pantalla o cambio "funciona", correr como mínimo
