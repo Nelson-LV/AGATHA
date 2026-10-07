@@ -1,5 +1,10 @@
 package com.hivend.agatha.ui.inspection
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -35,14 +40,6 @@ import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import com.hivend.agatha.ui.components.labelRes
@@ -66,7 +63,7 @@ fun InspectionFormScreen(
         if (uiState.savedSuccessfully) onSaved(viewModel.alertId)
     }
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         BackTopBar(title = stringResource(R.string.inspection_top_bar_title), onBack = onBack)
         ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_saved_locally))
 
@@ -82,14 +79,14 @@ fun InspectionFormScreen(
                     verticalArrangement = Arrangement.spacedBy(14.dp),
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(NeutralSurface, RoundedCornerShape(14.dp))
+                        .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
                         .padding(16.dp),
                 ) {
                     Column {
-                        Text(stringResource(R.string.inspection_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                        Text(stringResource(R.string.inspection_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
                         Text(
                             stringResource(R.string.inspection_sensor_subtitle, uiState.alert?.sensorId ?: viewModel.alertId, uiState.alert?.pk ?: ""),
-                            color = TextSecondary,
+                            color = AgathaTheme.colors.textSecondary,
                             style = MaterialTheme.typography.bodySmall,
                         )
                     }
@@ -103,7 +100,7 @@ fun InspectionFormScreen(
                         onSelected = viewModel::onResultSelected,
                     )
 
-                    HorizontalDivider(color = NeutralBorder)
+                    HorizontalDivider(color = AgathaTheme.colors.border)
 
                     RadioSection(
                         title = stringResource(R.string.inspection_category_title),
@@ -114,10 +111,10 @@ fun InspectionFormScreen(
                         onSelected = viewModel::onCategorySelected,
                     )
 
-                    HorizontalDivider(color = NeutralBorder)
+                    HorizontalDivider(color = AgathaTheme.colors.border)
 
                     Column {
-                        Text(stringResource(R.string.inspection_observations_title), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                        Text(stringResource(R.string.inspection_observations_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
                         OutlinedTextField(
                             value = uiState.observations,
                             onValueChange = viewModel::onObservationsChange,
@@ -130,9 +127,10 @@ fun InspectionFormScreen(
                         Button(
                             onClick = viewModel::saveInspection,
                             enabled = uiState.canSave && !uiState.saving,
-                            colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
+                            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
                             modifier = Modifier.weight(1f),
                         ) {
+                            if (!uiState.saving) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
                             Text(stringResource(if (uiState.saving) R.string.common_saving else R.string.inspection_save))
                         }
                         OutlinedButton(onClick = onBack, modifier = Modifier.weight(1f)) {
@@ -155,8 +153,8 @@ private fun <T> RadioSection(
     onSelected: (T) -> Unit,
 ) {
     Column {
-        Text(title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-        Text(subtitle, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+        Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(subtitle, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
         Column(modifier = Modifier.padding(top = 8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             options.forEach { option ->
                 val isSelected = option == selected
@@ -165,19 +163,19 @@ private fun <T> RadioSection(
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(
-                            if (isSelected) AgathaBlue.copy(alpha = 0.08f) else NeutralSurfaceVariant,
+                            if (isSelected) AgathaTheme.colors.brand.copy(alpha = 0.08f) else AgathaTheme.colors.surfaceVariant,
                             RoundedCornerShape(10.dp),
                         )
-                        .border(1.dp, if (isSelected) AgathaBlue else NeutralBorder, RoundedCornerShape(10.dp))
+                        .border(1.dp, if (isSelected) AgathaTheme.colors.brand else AgathaTheme.colors.border, RoundedCornerShape(10.dp))
                         .clickable { onSelected(option) }
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 ) {
                     RadioButton(
                         selected = isSelected,
                         onClick = { onSelected(option) },
-                        colors = RadioButtonDefaults.colors(selectedColor = AgathaBlue),
+                        colors = RadioButtonDefaults.colors(selectedColor = AgathaTheme.colors.brand),
                     )
-                    Text(stringResource(optionLabel(option)), color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+                    Text(stringResource(optionLabel(option)), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
                 }
             }
         }

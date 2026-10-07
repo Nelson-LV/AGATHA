@@ -1,5 +1,13 @@
 package com.hivend.agatha.ui.alertdetail
 
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.ui.graphics.vector.ImageVector
+import com.hivend.agatha.ui.theme.AgathaColors
+import androidx.compose.material.icons.filled.Sensors
+import androidx.compose.material.icons.filled.GraphicEq
+import androidx.compose.material.icons.filled.Thermostat
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -52,26 +60,6 @@ import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.AlertStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AgathaBlueContainer
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.AlertRed
-import com.hivend.agatha.ui.theme.AlertRedBorder
-import com.hivend.agatha.ui.theme.AlertRedSurface
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.MapCanvasBackground
-import com.hivend.agatha.ui.theme.NodeAlert
-import com.hivend.agatha.ui.theme.NodeCritical
-import com.hivend.agatha.ui.theme.NodeNormal
-import com.hivend.agatha.ui.theme.StateClosedText
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextOnMuted
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
-import com.hivend.agatha.ui.theme.TextTertiary
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import androidx.annotation.StringRes
@@ -95,13 +83,13 @@ fun AlertDetailScreen(
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val alert = uiState.alert
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
         ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
         if (alert == null) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.alert_detail_not_found), color = TextSecondary)
+                Text(stringResource(R.string.alert_detail_not_found), color = AgathaTheme.colors.textSecondary)
             }
             return@Column
         }
@@ -137,16 +125,16 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AlertRedSurface, RoundedCornerShape(14.dp))
-            .border(1.5.dp, AlertRedBorder, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.criticalSurface, RoundedCornerShape(14.dp))
+            .border(1.5.dp, AgathaTheme.colors.criticalBorder, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
         Text(
             text = stringResource(R.string.alert_detail_header, stringResource(alert.level.labelRes()), alert.sensorId, alert.pk),
-            color = AlertRed,
+            color = AgathaTheme.colors.critical,
             style = MaterialTheme.typography.labelLarge,
         )
-        Text(alert.description, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+        Text(alert.description, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
 
         PrimaryActions(status = alert.status, onAdvance = onAdvance)
 
@@ -155,14 +143,14 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier
                 .fillMaxWidth()
-                .background(AgathaBlueContainer, RoundedCornerShape(10.dp))
-                .border(1.3.dp, AgathaBlueContainer, RoundedCornerShape(10.dp))
+                .background(AgathaTheme.colors.brandContainer, RoundedCornerShape(10.dp))
+                .border(1.3.dp, AgathaTheme.colors.brandContainer, RoundedCornerShape(10.dp))
                 .padding(10.dp),
         ) {
-            Text("🔧", style = MaterialTheme.typography.bodyLarge)
+            Icon(Icons.Filled.Build, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(18.dp))
             Text(
                 stringResource(R.string.alert_detail_scheduled_maintenance),
-                color = AgathaBlue,
+                color = AgathaTheme.colors.brand,
                 style = MaterialTheme.typography.labelLarge,
                 modifier = Modifier.weight(1f),
                 textAlign = TextAlign.Center,
@@ -171,18 +159,18 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
 
         TelemetryRow(alert)
 
-        Text(stringResource(R.string.alert_detail_next_step), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.alert_detail_next_step), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
             modifier = Modifier
                 .fillMaxWidth()
-                .border(1.dp, NeutralBorder, RoundedCornerShape(8.dp))
+                .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(8.dp))
                 .clickable(onClick = onRegisterInspection)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
         ) {
-            Text(alert.nextStep, color = AgathaBlue, style = MaterialTheme.typography.bodyMedium)
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
+            Text(alert.nextStep, color = AgathaTheme.colors.brand, style = MaterialTheme.typography.bodyMedium)
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = AgathaTheme.colors.textSecondary)
         }
     }
 }
@@ -193,7 +181,7 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
         AlertStatus.GENERATED, AlertStatus.RECEIVED -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = { onAdvance(AlertStatus.IN_INSPECTION) },
-                colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -201,8 +189,8 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
             }
             OutlinedButton(
                 onClick = { onAdvance(AlertStatus.CLOSED) },
-                border = BorderStroke(1.3.dp, AlertRed),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
+                border = BorderStroke(1.3.dp, AgathaTheme.colors.critical),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.critical),
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -212,7 +200,7 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
         AlertStatus.IN_INSPECTION -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             Button(
                 onClick = { onAdvance(AlertStatus.CLASSIFIED) },
-                colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
+                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -220,8 +208,8 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
             }
             OutlinedButton(
                 onClick = { onAdvance(AlertStatus.CLOSED) },
-                border = BorderStroke(1.3.dp, AlertRed),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
+                border = BorderStroke(1.3.dp, AgathaTheme.colors.critical),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.critical),
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -232,8 +220,8 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
             text = stringResource(
                 if (status == AlertStatus.CLOSED) R.string.alert_detail_no_pending_actions else R.string.alert_detail_pending_operator_close,
             ),
-            containerColor = NeutralSurfaceVariant,
-            contentColor = TextSecondary,
+            containerColor = AgathaTheme.colors.surfaceVariant,
+            contentColor = AgathaTheme.colors.textSecondary,
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -245,8 +233,8 @@ private fun TelemetryRow(alert: Alert) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurfaceVariant, RoundedCornerShape(10.dp))
-            .border(1.dp, NeutralBorder, RoundedCornerShape(10.dp))
+            .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
+            .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(10.dp))
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -256,10 +244,10 @@ private fun TelemetryRow(alert: Alert) {
             TelemetryStat(stringResource(R.string.telemetry_battery), stringResource(R.string.common_percent, alert.telemetry.batteryPercentage))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(Modifier.size(6.dp).background(if (alert.telemetry.isRealData) AlertGreen else TextTertiary, CircleShape))
+            Box(Modifier.size(6.dp).background(if (alert.telemetry.isRealData) AgathaTheme.colors.positive else AgathaTheme.colors.textTertiary, CircleShape))
             Text(
                 stringResource(if (alert.telemetry.isRealData) R.string.telemetry_real_data else R.string.telemetry_simulated_data),
-                color = StateClosedText,
+                color = AgathaTheme.colors.stateClosed,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -269,8 +257,8 @@ private fun TelemetryRow(alert: Alert) {
 @Composable
 private fun TelemetryStat(label: String, value: String) {
     Column {
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
-        Text(value, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelMedium)
+        Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
     }
 }
 
@@ -280,17 +268,17 @@ private fun FiltersRow(status: AlertStatus, onViewHistory: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
         StatusChip(
             text = stringResource(R.string.alert_detail_status, stringResource(status.labelRes())),
-            containerColor = NeutralSurfaceVariant,
-            contentColor = TextOnMuted,
+            containerColor = AgathaTheme.colors.surfaceVariant,
+            contentColor = AgathaTheme.colors.textOnMuted,
         )
         Text(
             stringResource(R.string.alert_detail_view_status_history),
-            color = AgathaBlue,
+            color = AgathaTheme.colors.brand,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.clickable(onClick = onViewHistory),
         )
@@ -303,30 +291,31 @@ private fun AccelerationGraphCard() {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
-        Text(stringResource(R.string.alert_detail_acceleration_chart), color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.alert_detail_acceleration_chart), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)
+        val colors = AgathaTheme.colors
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(140.dp)
-                .background(MapCanvasBackground, RoundedCornerShape(10.dp)),
+                .background(colors.mapCanvas, RoundedCornerShape(10.dp)),
         ) {
             val points = listOf(
-                Offset(size.width * 0.06f, size.height * 0.82f) to NodeNormal,
-                Offset(size.width * 0.5f, size.height * 0.45f) to NodeAlert,
-                Offset(size.width * 0.92f, size.height * 0.14f) to NodeCritical,
+                Offset(size.width * 0.06f, size.height * 0.82f) to colors.nodeNormal,
+                Offset(size.width * 0.5f, size.height * 0.45f) to colors.nodeAlert,
+                Offset(size.width * 0.92f, size.height * 0.14f) to colors.nodeCritical,
             )
             drawLine(
-                color = AgathaBlue,
+                color = colors.brand,
                 start = points[0].first,
                 end = points[1].first,
                 strokeWidth = 3f,
                 pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
             )
             drawLine(
-                color = AgathaBlue,
+                color = colors.brand,
                 start = points[1].first,
                 end = points[2].first,
                 strokeWidth = 3f,
@@ -334,13 +323,13 @@ private fun AccelerationGraphCard() {
             )
             points.forEach { (offset, color) ->
                 drawCircle(color = color, radius = 7f, center = offset)
-                drawCircle(color = Color.White, radius = 7f, center = offset, style = Stroke(width = 2f))
+                drawCircle(color = colors.nodeOutline, radius = 7f, center = offset, style = Stroke(width = 2f))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LegendDot(stringResource(R.string.legend_normal), NodeNormal)
-            LegendDot(stringResource(R.string.legend_alert), NodeAlert)
-            LegendDot(stringResource(R.string.legend_critical), NodeCritical)
+            LegendDot(stringResource(R.string.legend_normal), AgathaTheme.colors.nodeNormal)
+            LegendDot(stringResource(R.string.legend_alert), AgathaTheme.colors.nodeAlert)
+            LegendDot(stringResource(R.string.legend_critical), AgathaTheme.colors.nodeCritical)
         }
     }
 }
@@ -349,7 +338,7 @@ private fun AccelerationGraphCard() {
 private fun LegendDot(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Box(Modifier.size(6.dp).background(color, CircleShape))
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -359,19 +348,19 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
-        Text(stringResource(R.string.alert_detail_device_history), color = TextSecondary, style = MaterialTheme.typography.labelLarge)
+        Text(stringResource(R.string.alert_detail_device_history), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)
         events.forEach { event ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("${event.time} · ${event.title}", color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                Text(event.detail, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+                Text("${event.time} · ${event.title}", color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
+                Text(event.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
                 event.statusLabel?.let {
                     StatusChip(
                         text = it,
-                        containerColor = NeutralSurfaceVariant,
-                        contentColor = TextSecondary,
+                        containerColor = AgathaTheme.colors.surfaceVariant,
+                        contentColor = AgathaTheme.colors.textSecondary,
                         modifier = Modifier.padding(top = 2.dp),
                     )
                 }
@@ -381,17 +370,17 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
 }
 
 private data class SensorInfo(
-    val emoji: String,
+    val icon: ImageVector,
     @param:StringRes val titleRes: Int,
     @param:StringRes val detailRes: Int,
-    val color: Color,
+    val color: AgathaColors.() -> Color,
 )
 
 private val sensors = listOf(
-    SensorInfo("📡", R.string.sensor_motion_title, R.string.sensor_motion_detail, AlertRed),
-    SensorInfo("🎵", R.string.sensor_acoustic_title, R.string.sensor_acoustic_detail, StateInspectionText),
-    SensorInfo("🌡", R.string.sensor_environment_title, R.string.sensor_environment_detail, AgathaBlue),
-    SensorInfo("🔋", R.string.sensor_power_title, R.string.sensor_power_detail, AlertGreen),
+    SensorInfo(Icons.Filled.Sensors, R.string.sensor_motion_title, R.string.sensor_motion_detail) { critical },
+    SensorInfo(Icons.Filled.GraphicEq, R.string.sensor_acoustic_title, R.string.sensor_acoustic_detail) { warning },
+    SensorInfo(Icons.Filled.Thermostat, R.string.sensor_environment_title, R.string.sensor_environment_detail) { brand },
+    SensorInfo(Icons.Filled.BatteryChargingFull, R.string.sensor_power_title, R.string.sensor_power_detail) { positive },
 )
 
 @Composable
@@ -407,7 +396,7 @@ private fun AccordionRow(sensor: SensorInfo) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(12.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(12.dp))
             .clickable { expanded = !expanded }
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
@@ -417,15 +406,15 @@ private fun AccordionRow(sensor: SensorInfo) {
             modifier = Modifier.fillMaxWidth(),
         ) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(sensor.emoji, color = sensor.color, style = MaterialTheme.typography.titleSmall)
-                Text(stringResource(sensor.titleRes), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+                Icon(sensor.icon, contentDescription = null, tint = sensor.color(AgathaTheme.colors), modifier = Modifier.size(20.dp))
+                Text(stringResource(sensor.titleRes), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
             }
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
+            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = AgathaTheme.colors.textSecondary)
         }
         if (expanded) {
             Text(
                 stringResource(sensor.detailRes),
-                color = TextSecondary,
+                color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 6.dp),
             )

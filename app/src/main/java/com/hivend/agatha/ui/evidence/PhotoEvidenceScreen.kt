@@ -1,5 +1,8 @@
 package com.hivend.agatha.ui.evidence
 
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.foundation.layout.size
+import com.hivend.agatha.ui.theme.AgathaTheme
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -47,15 +50,6 @@ import com.hivend.agatha.domain.model.PhotoEvidence
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AgathaBlueContainer
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
@@ -89,7 +83,7 @@ fun PhotoEvidenceScreen(
         ActivityResultContracts.PickVisualMedia(),
     ) { uri -> uri?.let { viewModel.onPhotoAdded(it.toString()) } }
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         BackTopBar(title = stringResource(R.string.evidence_top_bar_title), onBack = onBack)
         ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_saved_locally))
 
@@ -103,13 +97,13 @@ fun PhotoEvidenceScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .background(NeutralSurface, RoundedCornerShape(14.dp))
+                    .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
                     .padding(16.dp),
             ) {
-                Text(stringResource(R.string.evidence_title), color = TextPrimary, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.evidence_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
                 Text(
                     stringResource(R.string.evidence_subtitle, uiState.alert?.sensorId ?: viewModel.alertId),
-                    color = TextSecondary,
+                    color = AgathaTheme.colors.textSecondary,
                     style = MaterialTheme.typography.bodySmall,
                     modifier = Modifier.padding(bottom = 10.dp),
                 )
@@ -142,9 +136,10 @@ fun PhotoEvidenceScreen(
                 Button(
                     onClick = viewModel::saveEvidence,
                     enabled = !uiState.saving,
-                    colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
+                    colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 ) {
+                    if (!uiState.saving) Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
                     Text(stringResource(if (uiState.saving) R.string.common_saving else R.string.evidence_save))
                 }
             }
@@ -162,7 +157,7 @@ private fun EvidenceTile(evidence: PhotoEvidence, onDescriptionChanged: (String,
             modifier = Modifier
                 .fillMaxWidth()
                 .aspectRatio(1f)
-                .background(NeutralSurfaceVariant, RoundedCornerShape(10.dp)),
+                .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp)),
         )
         OutlinedTextField(
             value = evidence.description,
@@ -184,29 +179,29 @@ private fun AddEvidenceTile(onTakePhoto: () -> Unit, onPickFromGallery: () -> Un
         modifier = Modifier
             .fillMaxWidth()
             .aspectRatio(1f)
-            .background(AgathaBlueContainer, RoundedCornerShape(10.dp))
-            .border(1.dp, AgathaBlue, RoundedCornerShape(10.dp))
+            .background(AgathaTheme.colors.brandContainer, RoundedCornerShape(10.dp))
+            .border(1.dp, AgathaTheme.colors.brand, RoundedCornerShape(10.dp))
             .clickable { showOptions = !showOptions },
     ) {
         if (showOptions) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     stringResource(R.string.evidence_take_photo),
-                    color = AgathaBlue,
+                    color = AgathaTheme.colors.brand,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.clickable { showOptions = false; onTakePhoto() }.padding(6.dp),
                 )
                 Text(
                     stringResource(R.string.evidence_pick_gallery),
-                    color = AgathaBlue,
+                    color = AgathaTheme.colors.brand,
                     style = MaterialTheme.typography.labelLarge,
                     modifier = Modifier.clickable { showOptions = false; onPickFromGallery() }.padding(6.dp),
                 )
             }
         } else {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = AgathaBlue)
-                Text(stringResource(R.string.evidence_add_hint), color = AgathaBlue, style = MaterialTheme.typography.labelMedium)
+                Icon(Icons.Filled.AddAPhoto, contentDescription = null, tint = AgathaTheme.colors.brand)
+                Text(stringResource(R.string.evidence_add_hint), color = AgathaTheme.colors.brand, style = MaterialTheme.typography.labelMedium)
             }
         }
     }

@@ -214,21 +214,36 @@ el día que alguien actualice uno y olvide los otros cuatro.
 
 ## 5. Sistema visual (Material 3)
 
-La paleta se extrajo directamente de los prototipos aprobados en Figma
-(`AGATHA — Prototipos App Móvil`, nodos `2:2`, `1:4` y `34:398`) y se mapeó a roles de
-color de Material 3 en `ui/theme/Color.kt` / `Theme.kt`. Ningún valor es inventado: cada
-hex de esta tabla es el que Figma reporta para ese elemento.
+**Identidad.** Un azul "acero" profundo como color de marca (instrumentación industrial,
+sobrio) sobre neutros fríos. Rojo, ámbar y verde quedan **reservados** a severidad y estado,
+nunca a decoración, para que una alerta roja sea lo primero que ve el técnico. El logotipo
+(tres barras) va en blanco sobre un cuadro azul de marca, igual que el ícono del launcher.
+No se usan emojis en la interfaz: todo pictograma es un ícono Material
+(`material-icons-extended`), que respeta el tinte del tema y no cambia según el fabricante.
 
-| Rol Material 3 | Color | Uso en el prototipo |
-|---|---|---|
-| `primary` | `#2563EB` (Agatha Blue) | Logo, enlaces, botón "Sincronizar ahora", chip "Recibida" |
-| `background` | `#F1F1F1` | Fondo general de todas las pantallas |
-| `surface` | `#FFFFFF` | Tarjetas, encabezados |
-| `surfaceVariant` | `#FAFAFA` | Filas de lista, pastilla de sitio |
-| `error` | `#DB2626` (Alert Red) | Alerta crítica, botón "Cerrar alerta" |
-| — semántico — | `#17A34A` (Alert Green) | Acciones positivas: "Actualizar estado", "Guardar" |
-| — semántico — | `#D9591A` / `#B2660D` (Amber) | Alerta media, chip "En inspección", "Pendiente" |
-| — semántico — | `#804DD9` (Púrpura) | Chip "Clasificada" |
+**Claro y oscuro.** `ui/theme/Color.kt` define `AgathaColors`, una paleta **por roles**
+(`brand`, `critical`, `stateInspection`, `offline`, `nodeCritical`…) con dos instancias,
+`LightAgathaColors` y `DarkAgathaColors`. Las pantallas nunca usan un hex: leen
+`AgathaTheme.colors.<rol>`, y `Theme.kt` deriva además el `ColorScheme` de Material 3 de esa
+misma paleta, así los componentes de Material y los propios no se contradicen. En oscuro los
+colores semánticos se aclaran y sus fondos se oscurecen para mantener contraste AA sin
+deslumbrar de noche. La ventana de arranque (`values/` y `values-night/themes.xml`) usa el
+mismo fondo para que no haya destello al abrir.
+
+| Rol | Claro | Oscuro | Uso |
+|---|---|---|---|
+| `brand` | `#1D4ED8` | `#8AB0FF` | Logo, enlaces, acciones principales, pestaña activa |
+| `background` | `#F3F5F8` | `#0D1117` | Fondo general |
+| `surface` | `#FFFFFF` | `#161B22` | Tarjetas, encabezados, barra inferior |
+| `textPrimary` / `textSecondary` | `#0F172A` / `#5A6474` | `#E7EBF0` / `#A8B1BD` | Texto |
+| `critical` | `#C62828` | `#FF8A80` | Alerta roja, "Cerrar alerta" |
+| `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta amarilla, "En inspección", "Pendiente" |
+| `positive` | `#15803D` | `#5BD68A` | "Actualizar estado", "Guardar", conectado |
+| `stateClassified` | `#6D3FC0` | `#C8B5FF` | Chip "Clasificada" |
+
+Los valores partieron de los prototipos de Figma (`AGATHA — Prototipos App Móvil`, nodos
+`2:2`, `1:4` y `34:398`) y se ajustaron para contraste y para el modo oscuro, que el
+prototipo no cubría.
 
 **Por qué no usamos Dynamic Color.** Material 3 permite generar la paleta a partir del
 wallpaper del usuario (Material You). Se decidió **no** activarla: el rojo/ámbar/verde de
@@ -238,11 +253,13 @@ podría volverse ambiguo distinguir una alerta crítica de una normal — inacep
 app que se usa para decidir si hay que atender una fuga de gas. La paleta es **fija e
 idéntica en todos los dispositivos**.
 
-**Tipografía.** La escala (`ui/theme/Type.kt`) reproduce los tamaños medidos en Figma
-(17px el wordmark "AGATHA", 14.5px los títulos de tarjeta, 10.5px el cuerpo de las filas).
-El prototipo especifica la fuente Inter; el proyecto usa `FontFamily.Default` (misma familia
-geométrica, cero peso adicional en el APK) con un único punto de cambio documentado en el
-propio archivo para cuando se agregue la fuente variable real en `res/font/`.
+**Tipografía.** La escala (`ui/theme/Type.kt`) está pensada para lectura en campo (sol
+directo, guantes, vehículo en movimiento): cuerpo a 14 sp y nunca menos de 12 sp, títulos
+SemiBold/Bold, y etiquetas en mayúsculas con tracking positivo. El prototipo medía el cuerpo
+en 10,5 px y las etiquetas en 8,5 px, por debajo del mínimo legible de Material 3, así que no
+se copió literal. La familia es la del sistema (Roboto): legible, con tildes y eñes, y sin
+descargas porque la app opera sin conexión. Si se adopta una fuente de marca (p. ej. Inter),
+hay un único punto de cambio documentado en el propio archivo.
 
 **Formas.** Radios de esquina (`ui/theme/Shape.kt`): 8dp pastillas/barra de sitio, 10-12dp
 botones, 14dp tarjetas — medidos directamente del archivo de diseño.

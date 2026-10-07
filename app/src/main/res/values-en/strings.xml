@@ -68,7 +68,7 @@
     <string name="alert_detail_not_found">Alert not found</string>
     <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
     <string name="alert_detail_scheduled_maintenance">Scheduled maintenance</string>
-    <string name="alert_detail_next_step">📝  Next step</string>
+    <string name="alert_detail_next_step">Next step</string>
     <string name="alert_detail_start_inspection">Start inspection</string>
     <string name="alert_detail_mark_false">Mark as false alarm</string>
     <string name="alert_detail_update_status">Update status</string>
@@ -76,9 +76,9 @@
     <string name="alert_detail_no_pending_actions">No pending actions</string>
     <string name="alert_detail_pending_operator_close">Waiting for operator to close</string>
     <string name="alert_detail_status">Status: %1$s</string>
-    <string name="alert_detail_view_status_history">⬇  View status change history</string>
-    <string name="alert_detail_acceleration_chart">🗺  24H ACCELERATION CHART</string>
-    <string name="alert_detail_device_history">📰  DEVICE HISTORY</string>
+    <string name="alert_detail_view_status_history">View status change history</string>
+    <string name="alert_detail_acceleration_chart">24H ACCELERATION CHART</string>
+    <string name="alert_detail_device_history">DEVICE HISTORY</string>
     <string name="telemetry_confidence">CONFIDENCE</string>
     <string name="telemetry_acceleration">ACCELERATION</string>
     <string name="telemetry_time_ago">AGO</string>
@@ -114,7 +114,7 @@
     <string name="inspection_category_subtitle">What actually triggered the alert?</string>
     <string name="inspection_observations_title">Field notes</string>
     <string name="inspection_observations_placeholder">Describe anything the categories do not cover (saved even when offline)…</string>
-    <string name="inspection_save">✓ Save inspection</string>
+    <string name="inspection_save">Save inspection</string>
     <string name="inspection_result_no_issue">No issues</string>
     <string name="inspection_result_maintenance_required">Maintenance required</string>
     <string name="inspection_result_device_issue">Device/sensor problem</string>
@@ -135,10 +135,10 @@
     <string name="evidence_top_bar_title">Photo Evidence</string>
     <string name="evidence_title">Photo evidence</string>
     <string name="evidence_subtitle">Sensor %1$s · Inspection in progress · Attach as many photos as you need</string>
-    <string name="evidence_save">✓ Save evidence</string>
+    <string name="evidence_save">Save evidence</string>
     <string name="evidence_add_description">Add a description…</string>
-    <string name="evidence_take_photo">📷 Take photo</string>
-    <string name="evidence_pick_gallery">🖼 Choose from gallery</string>
+    <string name="evidence_take_photo">Take photo</string>
+    <string name="evidence_pick_gallery">Choose from gallery</string>
     <string name="evidence_add_hint">Take a photo or choose from gallery</string>
 
     <!-- Node map -->
@@ -146,18 +146,21 @@
     <string name="map_node_type">TYPE</string>
     <string name="map_node_battery">BATTERY</string>
     <string name="map_node_last_communication">LAST CONTACT</string>
-    <string name="map_view_full_history">View full history →</string>
+    <string name="map_view_full_history">View full history</string>
+    <string name="map_zoom_in">Zoom in</string>
+    <string name="map_zoom_out">Zoom out</string>
+    <string name="map_recenter">Recenter map</string>
 
     <!-- Sync -->
     <string name="sync_offline_title">Working offline</string>
     <string name="sync_offline_body">Your records (inspections, classifications, notes and photos) are saved on this device and will sync automatically when the signal returns.</string>
     <string name="sync_pending_title">Waiting to sync (%1$d)</string>
     <string name="sync_pending_chip">Pending</string>
-    <string name="sync_retry">↻ Retry</string>
-    <string name="sync_conflict_title">⚠ %1$s</string>
+    <string name="sync_retry">Retry</string>
+    <string name="sync_conflict_title">%1$s</string>
     <string name="sync_conflict_local">YOUR CHANGE (LOCAL)</string>
     <string name="sync_conflict_server">SERVER CHANGE</string>
     <string name="sync_understood">Got it</string>
-    <string name="sync_now">🔄 Sync now</string>
+    <string name="sync_now">Sync now</string>
     <string name="sync_last_success">Last successful sync: %1$s</string>
 </resources>

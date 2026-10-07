@@ -1,5 +1,12 @@
 package com.hivend.agatha.ui.sync
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -32,19 +39,6 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.ConflictBorder
-import com.hivend.agatha.ui.theme.ConflictContainer
-import com.hivend.agatha.ui.theme.ConflictText
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.OfflineBannerBorder
-import com.hivend.agatha.ui.theme.OfflineBannerContainer
-import com.hivend.agatha.ui.theme.StateInspectionContainer
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -61,7 +55,7 @@ fun SyncScreen(
 ) {
     val status by viewModel.status.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
         ConnectivityBar(
             connected = status?.connected ?: false,
@@ -111,16 +105,16 @@ private fun OfflineBanner() {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(OfflineBannerContainer, RoundedCornerShape(12.dp))
-            .border(1.3.dp, OfflineBannerBorder, RoundedCornerShape(12.dp))
+            .background(AgathaTheme.colors.offlineBannerContainer, RoundedCornerShape(12.dp))
+            .border(1.3.dp, AgathaTheme.colors.offlineBannerBorder, RoundedCornerShape(12.dp))
             .padding(14.dp),
     ) {
-        Text("📴", style = MaterialTheme.typography.titleMedium)
+        Icon(Icons.Filled.CloudOff, contentDescription = null, tint = AgathaTheme.colors.stateInspection, modifier = Modifier.size(22.dp))
         Column {
-            Text(stringResource(R.string.sync_offline_title), color = StateInspectionText, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.sync_offline_title), color = AgathaTheme.colors.stateInspection, style = MaterialTheme.typography.titleSmall)
             Text(
                 stringResource(R.string.sync_offline_body),
-                color = TextSecondary,
+                color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -133,26 +127,26 @@ private fun PendingSyncCard(pending: List<PendingRecord>, onRetry: (String) -> U
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text(stringResource(R.string.sync_pending_title, pending.size), color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.sync_pending_title, pending.size), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
         pending.forEach { record ->
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(NeutralSurfaceVariant, RoundedCornerShape(8.dp))
+                    .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(8.dp))
                     .padding(horizontal = 12.dp, vertical = 10.dp),
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(record.title, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                    Text(record.detail, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                    Text(record.title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
+                    Text(record.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
                 }
-                StatusChip(text = stringResource(R.string.sync_pending_chip), containerColor = StateInspectionContainer, contentColor = StateInspectionText)
+                StatusChip(text = stringResource(R.string.sync_pending_chip), containerColor = AgathaTheme.colors.stateInspectionContainer, contentColor = AgathaTheme.colors.stateInspection)
                 Text(
                     stringResource(R.string.sync_retry),
-                    color = AgathaBlue,
+                    color = AgathaTheme.colors.brand,
                     style = MaterialTheme.typography.labelMedium,
                     modifier = Modifier
                         .clickable { onRetry(record.id) }
@@ -169,20 +163,23 @@ private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(ConflictContainer, RoundedCornerShape(14.dp))
-            .border(1.3.dp, ConflictBorder, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.conflictContainer, RoundedCornerShape(14.dp))
+            .border(1.3.dp, AgathaTheme.colors.conflictBorder, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text(stringResource(R.string.sync_conflict_title, conflict.conflictTitle), color = ConflictText, style = MaterialTheme.typography.titleSmall)
-        Text(conflict.description, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Filled.Warning, contentDescription = null, tint = AgathaTheme.colors.conflict, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.sync_conflict_title, conflict.conflictTitle), color = AgathaTheme.colors.conflict, style = MaterialTheme.typography.titleSmall)
+        }
+        Text(conflict.description, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
             ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange, Modifier.weight(1f))
             ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange, Modifier.weight(1f))
         }
         OutlinedButton(
             onClick = onUnderstood,
-            border = BorderStroke(1.2.dp, ConflictBorder),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = ConflictText),
+            border = BorderStroke(1.2.dp, AgathaTheme.colors.conflictBorder),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.conflict),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.sync_understood))
@@ -194,11 +191,11 @@ private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
 private fun ConflictVersion(label: String, valor: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(NeutralSurface, RoundedCornerShape(8.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-        Text(valor, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(valor, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
@@ -207,14 +204,15 @@ private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = onSyncNow,
-            colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
+            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text(stringResource(R.string.sync_now))
+            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.sync_now), modifier = Modifier.padding(start = 8.dp))
         }
         Text(
             stringResource(R.string.sync_last_success, lastSync),
-            color = TextSecondary,
+            color = AgathaTheme.colors.textSecondary,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),

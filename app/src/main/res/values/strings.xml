@@ -77,7 +77,7 @@
     <string name="alert_detail_not_found">Alerta no encontrada</string>
     <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
     <string name="alert_detail_scheduled_maintenance">Mantenimiento programado</string>
-    <string name="alert_detail_next_step">📝  Siguiente paso</string>
+    <string name="alert_detail_next_step">Siguiente paso</string>
     <string name="alert_detail_start_inspection">Iniciar inspección</string>
     <string name="alert_detail_mark_false">Marcar como falsa</string>
     <string name="alert_detail_update_status">Actualizar estado</string>
@@ -85,9 +85,9 @@
     <string name="alert_detail_no_pending_actions">Sin acciones pendientes</string>
     <string name="alert_detail_pending_operator_close">Pendiente de cierre por operador</string>
     <string name="alert_detail_status">Estado: %1$s</string>
-    <string name="alert_detail_view_status_history">⬇  Ver historial de cambios de estado</string>
-    <string name="alert_detail_acceleration_chart">🗺  GRÁFICA ACELERACIÓN 24H</string>
-    <string name="alert_detail_device_history">📰  HISTORIAL DEL DISPOSITIVO</string>
+    <string name="alert_detail_view_status_history">Ver historial de cambios de estado</string>
+    <string name="alert_detail_acceleration_chart">GRÁFICA ACELERACIÓN 24H</string>
+    <string name="alert_detail_device_history">HISTORIAL DEL DISPOSITIVO</string>
     <string name="telemetry_confidence">CONFIANZA</string>
     <string name="telemetry_acceleration">ACELERACIÓN</string>
     <string name="telemetry_time_ago">HACE</string>
@@ -123,7 +123,7 @@
     <string name="inspection_category_subtitle">¿Qué originó realmente la alerta?</string>
     <string name="inspection_observations_title">Observaciones de campo</string>
     <string name="inspection_observations_placeholder">Escribe aquí situaciones no contempladas en las categorías (se guarda incluso sin conexión)…</string>
-    <string name="inspection_save">✓ Guardar inspección</string>
+    <string name="inspection_save">Guardar inspección</string>
     <string name="inspection_result_no_issue">Sin novedad</string>
     <string name="inspection_result_maintenance_required">Mantenimiento requerido</string>
     <string name="inspection_result_device_issue">Problema del dispositivo/sensor</string>
@@ -144,10 +144,10 @@
     <string name="evidence_top_bar_title">Evidencia Fotográfica</string>
     <string name="evidence_title">Evidencia fotográfica</string>
     <string name="evidence_subtitle">Sensor %1$s · Inspección en curso · Adjunta cuantas fotos necesites</string>
-    <string name="evidence_save">✓ Guardar evidencias</string>
+    <string name="evidence_save">Guardar evidencias</string>
     <string name="evidence_add_description">Agregar descripción…</string>
-    <string name="evidence_take_photo">📷 Tomar foto</string>
-    <string name="evidence_pick_gallery">🖼 Elegir de galería</string>
+    <string name="evidence_take_photo">Tomar foto</string>
+    <string name="evidence_pick_gallery">Elegir de galería</string>
     <string name="evidence_add_hint">Tomar foto o elegir de galería</string>
 
     <!-- Mapa de nodos -->
@@ -155,21 +155,21 @@
     <string name="map_node_type">TIPO</string>
     <string name="map_node_battery">BATERÍA</string>
     <string name="map_node_last_communication">ÚLT. COMUNICACIÓN</string>
-    <string name="map_view_full_history">Ver historial completo →</string>
-    <string name="map_zoom_in" translatable="false">+</string>
-    <string name="map_zoom_out" translatable="false">–</string>
-    <string name="map_recenter" translatable="false">◎</string>
+    <string name="map_view_full_history">Ver historial completo</string>
+    <string name="map_zoom_in">Acercar</string>
+    <string name="map_zoom_out">Alejar</string>
+    <string name="map_recenter">Centrar mapa</string>
 
     <!-- Sincronización -->
     <string name="sync_offline_title">Trabajando sin conexión</string>
     <string name="sync_offline_body">Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.</string>
     <string name="sync_pending_title">Pendientes por sincronizar (%1$d)</string>
     <string name="sync_pending_chip">Pendiente</string>
-    <string name="sync_retry">↻ Reintentar</string>
-    <string name="sync_conflict_title">⚠ %1$s</string>
+    <string name="sync_retry">Reintentar</string>
+    <string name="sync_conflict_title">%1$s</string>
     <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
     <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
     <string name="sync_understood">Entendido</string>
-    <string name="sync_now">🔄 Sincronizar ahora</string>
+    <string name="sync_now">Sincronizar ahora</string>
     <string name="sync_last_success">Última sincronización correcta: %1$s</string>
 </resources>

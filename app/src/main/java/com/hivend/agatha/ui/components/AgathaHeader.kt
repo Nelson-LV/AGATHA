@@ -1,12 +1,12 @@
 package com.hivend.agatha.ui.components
 
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,8 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 
@@ -36,13 +35,16 @@ fun AgathaHeader(
             .padding(16.dp),
     ) {
         AgathaLogoMark()
-        Column(modifier = Modifier.padding(start = 8.dp).weight(1f)) {
-            Text(stringResource(R.string.app_name), color = TextPrimary, style = MaterialTheme.typography.titleLarge)
+        Column(modifier = Modifier.padding(start = 12.dp).weight(1f)) {
+            Text(
+                stringResource(R.string.app_name),
+                color = AgathaTheme.colors.textPrimary,
+                style = MaterialTheme.typography.titleLarge.copy(letterSpacing = 2.sp),
+            )
             Text(
                 stringResource(R.string.header_tagline),
-                color = TextSecondary,
+                color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.labelSmall,
-                modifier = Modifier.width(180.dp),
             )
         }
         trailing?.invoke(this)
@@ -64,11 +66,11 @@ fun BackTopBar(
             .padding(16.dp),
     ) {
         IconButton(onClick = onBack) {
-            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = TextPrimary)
+            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back), tint = AgathaTheme.colors.textPrimary)
         }
         Text(
             title,
-            color = TextPrimary,
+            color = AgathaTheme.colors.textPrimary,
             style = MaterialTheme.typography.titleMedium,
             modifier = Modifier.padding(start = 4.dp),
         )

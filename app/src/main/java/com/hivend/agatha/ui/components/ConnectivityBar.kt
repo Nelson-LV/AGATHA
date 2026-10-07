@@ -17,10 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.hivend.agatha.ui.theme.AgathaTheme
-import com.hivend.agatha.ui.theme.ConnectedContainer
-import com.hivend.agatha.ui.theme.ConnectedText
-import com.hivend.agatha.ui.theme.OfflineContainer
-import com.hivend.agatha.ui.theme.OfflineText
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -35,8 +31,8 @@ fun ConnectivityBar(
     message: String,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (connected) ConnectedContainer else OfflineContainer
-    val contentColor = if (connected) ConnectedText else OfflineText
+    val containerColor = if (connected) AgathaTheme.colors.connectedContainer else AgathaTheme.colors.offlineContainer
+    val contentColor = if (connected) AgathaTheme.colors.connected else AgathaTheme.colors.offline
 
     Row(
         verticalAlignment = Alignment.CenterVertically,

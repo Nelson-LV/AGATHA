@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.components
 
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Map
@@ -15,8 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.TextTertiary
 import androidx.compose.ui.res.stringResource
 
 private fun BottomTab.icon(): ImageVector = when (this) {
@@ -40,10 +39,10 @@ fun AgathaBottomNavBar(
                 icon = { Icon(tab.icon(), contentDescription = stringResource(tab.labelRes())) },
                 label = { Text(stringResource(tab.labelRes())) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = AgathaBlue,
-                    selectedTextColor = AgathaBlue,
-                    unselectedIconColor = TextTertiary,
-                    unselectedTextColor = TextTertiary,
+                    selectedIconColor = AgathaTheme.colors.brand,
+                    selectedTextColor = AgathaTheme.colors.brand,
+                    unselectedIconColor = AgathaTheme.colors.textTertiary,
+                    unselectedTextColor = AgathaTheme.colors.textTertiary,
                     indicatorColor = MaterialTheme.colorScheme.surface,
                 ),
             )

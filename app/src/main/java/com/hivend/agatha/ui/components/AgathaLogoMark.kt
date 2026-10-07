@@ -14,8 +14,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AgathaBlueContainer
 import com.hivend.agatha.ui.theme.AgathaTheme
 
 /** El glifo de tres barras del wordmark AGATHA, usado en el encabezado de cada pantalla. */
@@ -23,14 +21,14 @@ import com.hivend.agatha.ui.theme.AgathaTheme
 fun AgathaLogoMark(modifier: Modifier = Modifier) {
     Box(
         modifier = modifier
-            .size(36.dp)
-            .background(AgathaBlueContainer, RoundedCornerShape(8.dp)),
+            .size(40.dp)
+            .background(AgathaTheme.colors.brand, RoundedCornerShape(10.dp)),
         contentAlignment = Alignment.Center,
     ) {
         Row(verticalAlignment = Alignment.Bottom) {
-            Box(Modifier.width(3.dp).height(8.dp).background(AgathaBlue, RoundedCornerShape(1.dp)))
-            Box(Modifier.padding(start = 2.dp).width(3.dp).height(14.dp).background(AgathaBlue, RoundedCornerShape(1.dp)))
-            Box(Modifier.padding(start = 2.dp).width(3.dp).height(11.dp).background(AgathaBlue, RoundedCornerShape(1.dp)))
+            Box(Modifier.width(4.dp).height(9.dp).background(AgathaTheme.colors.onBrand, RoundedCornerShape(1.dp)))
+            Box(Modifier.padding(start = 2.dp).width(4.dp).height(16.dp).background(AgathaTheme.colors.onBrand, RoundedCornerShape(1.dp)))
+            Box(Modifier.padding(start = 2.dp).width(4.dp).height(12.dp).background(AgathaTheme.colors.onBrand, RoundedCornerShape(1.dp)))
         }
     }
 }

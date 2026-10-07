@@ -1,5 +1,12 @@
 package com.hivend.agatha.ui.map
 
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material3.Icon
+import androidx.compose.runtime.ReadOnlyComposable
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -34,18 +41,6 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.MapCanvasBackground
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.NodeAlert
-import com.hivend.agatha.ui.theme.NodeCritical
-import com.hivend.agatha.ui.theme.NodeNormal
-import com.hivend.agatha.ui.theme.StateClosedContainer
-import com.hivend.agatha.ui.theme.StateClosedText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 
@@ -63,7 +58,7 @@ fun SensorMapScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
         ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
@@ -98,7 +93,7 @@ private fun MapCanvas(
     // Un Canvas de solo-dibujo no puede recibir toques por posición sin más trabajo; los
     // nodos son además clicables por su propia burbuja posicionada con offset, así que el
     // Canvas de abajo únicamente pinta el fondo y el resto se compone con Box + offset.
-    Box(modifier = modifier.background(MapCanvasBackground, RoundedCornerShape(10.dp))) {
+    Box(modifier = modifier.background(AgathaTheme.colors.mapCanvas, RoundedCornerShape(10.dp))) {
         BoxWithConstraints(Modifier.fillMaxSize()) {
             val widthPx = constraints.maxWidth.toFloat()
             val heightPx = constraints.maxHeight.toFloat()
@@ -114,7 +109,7 @@ private fun MapCanvas(
                         }
                         .size(if (isSelected) 22.dp else 14.dp)
                         .background(node.status.color(), CircleShape)
-                        .then(if (isSelected) Modifier.border(2.dp, Color.White, CircleShape) else Modifier)
+                        .then(if (isSelected) Modifier.border(2.dp, AgathaTheme.colors.nodeOutline, CircleShape) else Modifier)
                         .clickable { onNodeClick(node.id) },
                 )
             }
@@ -126,11 +121,15 @@ private fun MapCanvas(
 private fun ZoomControls(modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(NeutralSurface, RoundedCornerShape(6.dp)),
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(6.dp)),
     ) {
-        listOf(R.string.map_zoom_in, R.string.map_zoom_out, R.string.map_recenter).forEach {
-            Box(modifier = Modifier.size(24.dp), contentAlignment = Alignment.Center) {
-                Text(stringResource(it), color = TextSecondary, style = MaterialTheme.typography.titleSmall)
+        listOf(
+            Icons.Filled.Add to R.string.map_zoom_in,
+            Icons.Filled.Remove to R.string.map_zoom_out,
+            Icons.Filled.MyLocation to R.string.map_recenter,
+        ).forEach { (icon, descriptionRes) ->
+            Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
+                Icon(icon, contentDescription = stringResource(descriptionRes), tint = AgathaTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
             }
         }
     }
@@ -140,11 +139,11 @@ private fun ZoomControls(modifier: Modifier = Modifier) {
 private fun Legend(modifier: Modifier = Modifier) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.background(Color.White.copy(alpha = 0.85f), RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 4.dp),
+        modifier = modifier.background(AgathaTheme.colors.mapLabelContainer, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 4.dp),
     ) {
-        LegendDot(stringResource(R.string.legend_connected), NodeNormal)
-        LegendDot(stringResource(R.string.legend_alert), NodeAlert)
-        LegendDot(stringResource(R.string.legend_critical), NodeCritical)
+        LegendDot(stringResource(R.string.legend_connected), AgathaTheme.colors.nodeNormal)
+        LegendDot(stringResource(R.string.legend_alert), AgathaTheme.colors.nodeAlert)
+        LegendDot(stringResource(R.string.legend_critical), AgathaTheme.colors.nodeCritical)
     }
 }
 
@@ -152,7 +151,7 @@ private fun Legend(modifier: Modifier = Modifier) {
 private fun LegendDot(label: String, color: Color) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
         Box(Modifier.size(6.dp).background(color, CircleShape))
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
     }
 }
 
@@ -162,14 +161,14 @@ private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-            Text(node.name, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-            StatusChip(text = stringResource(R.string.map_node_connected), containerColor = StateClosedContainer, contentColor = StateClosedText)
+            Text(node.name, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
+            StatusChip(text = stringResource(R.string.map_node_connected), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
         }
-        Text("${node.pk} · ${node.site}", color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Text("${node.pk} · ${node.site}", color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(20.dp)) {
             InfoStat(stringResource(R.string.map_node_type), node.sensorType)
             InfoStat(stringResource(R.string.map_node_battery), stringResource(R.string.common_percent, node.batteryPercentage))
@@ -177,7 +176,7 @@ private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
         }
         Button(
             onClick = onViewHistory,
-            colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
+            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
             modifier = Modifier.fillMaxWidth(),
         ) {
             Text(stringResource(R.string.map_view_full_history))
@@ -188,13 +187,15 @@ private fun NodeInfoCard(node: SensorNode, onViewHistory: () -> Unit) {
 @Composable
 private fun InfoStat(label: String, value: String) {
     Column {
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-        Text(value, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun AlertLevel.color(): Color = when (this) {
-    AlertLevel.RED -> NodeCritical
-    AlertLevel.YELLOW -> NodeAlert
-    AlertLevel.GREEN -> NodeNormal
+    AlertLevel.RED -> AgathaTheme.colors.nodeCritical
+    AlertLevel.YELLOW -> AgathaTheme.colors.nodeAlert
+    AlertLevel.GREEN -> AgathaTheme.colors.nodeNormal
 }

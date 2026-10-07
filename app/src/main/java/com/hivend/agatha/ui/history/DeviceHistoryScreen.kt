@@ -1,5 +1,19 @@
 package com.hivend.agatha.ui.history
 
+import androidx.compose.runtime.ReadOnlyComposable
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -26,16 +40,6 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.AlertRed
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import com.hivend.agatha.ui.components.labelRes
@@ -51,7 +55,7 @@ fun DeviceHistoryScreen(
 ) {
     val events by viewModel.events.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
         ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_local_data))
 
@@ -64,11 +68,11 @@ fun DeviceHistoryScreen(
             item {
                 Text(
                     stringResource(R.string.history_device, viewModel.deviceId),
-                    color = TextSecondary,
+                    color = AgathaTheme.colors.textSecondary,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(NeutralSurfaceVariant, RoundedCornerShape(8.dp))
+                        .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(8.dp))
                         .padding(horizontal = 10.dp, vertical = 6.dp),
                 )
             }
@@ -76,12 +80,12 @@ fun DeviceHistoryScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(NeutralSurface, RoundedCornerShape(14.dp))
+                        .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
                         .padding(horizontal = 14.dp),
                 ) {
                     events.forEachIndexed { index, event ->
                         HistoryRow(event)
-                        if (index != events.lastIndex) HorizontalDivider(color = NeutralBorder)
+                        if (index != events.lastIndex) HorizontalDivider(color = AgathaTheme.colors.border)
                     }
                 }
             }
@@ -92,16 +96,23 @@ fun DeviceHistoryScreen(
 @Composable
 private fun HistoryRow(event: HistoryEvent) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Text(event.type.emoji(), style = MaterialTheme.typography.titleMedium)
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .size(32.dp)
+                .background(event.type.color().copy(alpha = 0.12f), CircleShape),
+        ) {
+            Icon(event.type.icon(), contentDescription = null, tint = event.type.color(), modifier = Modifier.size(18.dp))
+        }
         Column(modifier = Modifier.padding(start = 10.dp)) {
             Text("${event.time}  ${stringResource(event.type.labelRes())}", color = event.type.color(), style = MaterialTheme.typography.labelSmall)
-            Text(event.title, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-            Text(event.detail, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+            Text(event.title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+            Text(event.detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
             event.statusLabel?.let {
                 StatusChip(
                     text = it,
-                    containerColor = NeutralSurfaceVariant,
-                    contentColor = TextSecondary,
+                    containerColor = AgathaTheme.colors.surfaceVariant,
+                    contentColor = AgathaTheme.colors.textSecondary,
                     modifier = Modifier.padding(top = 4.dp),
                 )
             }
@@ -109,20 +120,22 @@ private fun HistoryRow(event: HistoryEvent) {
     }
 }
 
-private fun EventType.emoji(): String = when (this) {
-    EventType.ALERT -> "🔴"
-    EventType.INSPECTION -> "🔧"
-    EventType.CLASSIFICATION -> "🏷"
-    EventType.EVIDENCE -> "📷"
-    EventType.OBSERVATION -> "📝"
-    EventType.MAINTENANCE -> "✅"
+private fun EventType.icon(): ImageVector = when (this) {
+    EventType.ALERT -> Icons.Filled.Warning
+    EventType.INSPECTION -> Icons.Filled.Build
+    EventType.CLASSIFICATION -> Icons.AutoMirrored.Filled.Label
+    EventType.EVIDENCE -> Icons.Filled.PhotoCamera
+    EventType.OBSERVATION -> Icons.Filled.EditNote
+    EventType.MAINTENANCE -> Icons.Filled.CheckCircle
 }
 
+@Composable
+@ReadOnlyComposable
 private fun EventType.color(): androidx.compose.ui.graphics.Color = when (this) {
-    EventType.ALERT -> AlertRed
-    EventType.INSPECTION -> AgathaBlue
-    EventType.CLASSIFICATION -> StateInspectionText
-    EventType.EVIDENCE -> AgathaBlue
-    EventType.OBSERVATION -> TextSecondary
-    EventType.MAINTENANCE -> AlertGreen
+    EventType.ALERT -> AgathaTheme.colors.critical
+    EventType.INSPECTION -> AgathaTheme.colors.brand
+    EventType.CLASSIFICATION -> AgathaTheme.colors.stateInspection
+    EventType.EVIDENCE -> AgathaTheme.colors.brand
+    EventType.OBSERVATION -> AgathaTheme.colors.textSecondary
+    EventType.MAINTENANCE -> AgathaTheme.colors.positive
 }

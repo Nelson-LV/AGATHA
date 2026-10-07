@@ -1,5 +1,7 @@
 package com.hivend.agatha.ui.alerts
 
+import androidx.compose.runtime.ReadOnlyComposable
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,18 +44,6 @@ import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.AlertStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.AlertRed
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.StateClosedContainer
-import com.hivend.agatha.ui.theme.StateClosedText
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
-import com.hivend.agatha.ui.theme.TextTertiary
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -73,9 +63,9 @@ fun AlertInboxScreen(
 ) {
     val alerts by viewModel.alerts.collectAsStateWithLifecycle()
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader {
-            StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = StateClosedContainer, contentColor = StateClosedText)
+            StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
         }
         ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
 
@@ -90,7 +80,7 @@ fun AlertInboxScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(NeutralSurface, RoundedCornerShape(14.dp))
+                        .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
                         .padding(16.dp),
                 ) {
                     Row(
@@ -98,11 +88,11 @@ fun AlertInboxScreen(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = TextPrimary)
+                        Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = AgathaTheme.colors.textPrimary)
                         StatusChip(
                             text = alerts.count { it.status != AlertStatus.CLOSED }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
-                            containerColor = NeutralSurfaceVariant,
-                            contentColor = TextSecondary,
+                            containerColor = AgathaTheme.colors.surfaceVariant,
+                            contentColor = AgathaTheme.colors.textSecondary,
                         )
                     }
                     alerts.forEachIndexed { index, alert ->
@@ -143,14 +133,14 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                     .background(alert.level.color(), CircleShape),
             )
             Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
-                Text(stringResource(R.string.inbox_alert_title, alert.point, alert.sensorId), style = MaterialTheme.typography.labelLarge, color = TextPrimary)
-                Text(alert.description, style = MaterialTheme.typography.bodyMedium, color = TextSecondary)
-                Text(alert.relativeTime, style = MaterialTheme.typography.bodySmall, color = TextTertiary)
+                Text(stringResource(R.string.inbox_alert_title, alert.point, alert.sensorId), style = MaterialTheme.typography.labelLarge, color = AgathaTheme.colors.textPrimary)
+                Text(alert.description, style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
+                Text(alert.relativeTime, style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
             }
             AlertStatusChip(status = alert.status)
         }
         if (showDivider) {
-            HorizontalDivider(color = NeutralBorder)
+            HorizontalDivider(color = AgathaTheme.colors.border)
         }
     }
 }
@@ -160,18 +150,20 @@ private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier 
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         modifier = modifier
-            .background(NeutralSurface, RoundedCornerShape(12.dp))
-            .border(1.dp, NeutralBorder, RoundedCornerShape(12.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(12.dp))
+            .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(12.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = TextSecondary, modifier = Modifier.size(18.dp))
-        Text(label, style = MaterialTheme.typography.labelMedium, color = TextPrimary, textAlign = TextAlign.Center)
+        Icon(icon, contentDescription = null, tint = AgathaTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
+        Text(label, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textPrimary, textAlign = TextAlign.Center)
     }
 }
 
+@Composable
+@ReadOnlyComposable
 private fun AlertLevel.color(): Color = when (this) {
-    AlertLevel.RED -> AlertRed
-    AlertLevel.YELLOW -> StateInspectionText
-    AlertLevel.GREEN -> AlertGreen
+    AlertLevel.RED -> AgathaTheme.colors.critical
+    AlertLevel.YELLOW -> AgathaTheme.colors.warning
+    AlertLevel.GREEN -> AgathaTheme.colors.positive
 }
