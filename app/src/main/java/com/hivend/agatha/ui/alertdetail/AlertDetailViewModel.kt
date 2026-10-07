@@ -54,8 +54,24 @@ class AlertDetailViewModel @Inject constructor(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertDetailUiState())
 
-    fun advanceStatus(newStatus: AlertStatus) {
-        viewModelScope.launch { alertRepository.updateStatus(alertId, newStatus) }
+    /** Al abrir el formulario, una alerta recibida pasa a "En inspección". */
+    fun startInspection() {
+        val status = uiState.value.alert?.status ?: return
+        if (status == AlertStatus.GENERATED || status == AlertStatus.RECEIVED) {
+            viewModelScope.launch { alertRepository.updateStatus(alertId, AlertStatus.IN_INSPECTION) }
+        }
+    }
+
+    /** Cierra la alerta sin inspección, guardando antes las observaciones pendientes. */
+    fun closeWithoutInspection() {
+        val draft = observationsDraft.value
+        viewModelScope.launch {
+            if (draft != null) {
+                alertRepository.saveObservations(alertId, draft)
+                observationsDraft.value = null
+            }
+            alertRepository.updateStatus(alertId, AlertStatus.CLOSED)
+        }
     }
 
     fun onObservationsChange(text: String) {

@@ -82,9 +82,11 @@
     <string name="alert_detail_scheduled_maintenance">Mantenimiento programado</string>
     <string name="alert_detail_next_step">Siguiente paso</string>
     <string name="alert_detail_start_inspection">Iniciar inspección</string>
-    <string name="alert_detail_mark_false">Marcar como falsa</string>
-    <string name="alert_detail_update_status">Actualizar estado</string>
+    <string name="alert_detail_continue_inspection">Continuar inspección</string>
     <string name="alert_detail_close_alert">Cerrar alerta</string>
+    <string name="alert_close_dialog_title">¿Cerrar la alerta sin inspección?</string>
+    <string name="alert_close_dialog_body">La alerta quedará cerrada sin un registro de inspección. Las observaciones de campo que escribiste se guardan con ella.</string>
+    <string name="alert_close_dialog_confirm">Cerrar sin inspección</string>
     <string name="alert_detail_no_pending_actions">Sin acciones pendientes</string>
     <string name="alert_detail_pending_operator_close">Pendiente de cierre por operador</string>
     <string name="alert_detail_status">Estado: %1$s</string>

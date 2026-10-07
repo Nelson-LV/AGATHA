@@ -72,9 +72,11 @@
     <string name="alert_detail_scheduled_maintenance">Scheduled maintenance</string>
     <string name="alert_detail_next_step">Next step</string>
     <string name="alert_detail_start_inspection">Start inspection</string>
-    <string name="alert_detail_mark_false">Mark as false alarm</string>
-    <string name="alert_detail_update_status">Update status</string>
+    <string name="alert_detail_continue_inspection">Continue inspection</string>
     <string name="alert_detail_close_alert">Close alert</string>
+    <string name="alert_close_dialog_title">Close the alert without an inspection?</string>
+    <string name="alert_close_dialog_body">The alert will be closed with no inspection record. Any field notes you wrote are saved with it.</string>
+    <string name="alert_close_dialog_confirm">Close without inspection</string>
     <string name="alert_detail_no_pending_actions">No pending actions</string>
     <string name="alert_detail_pending_operator_close">Waiting for operator to close</string>
     <string name="alert_detail_status">Status: %1$s</string>

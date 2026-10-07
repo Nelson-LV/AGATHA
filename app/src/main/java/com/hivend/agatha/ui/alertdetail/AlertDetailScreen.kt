@@ -28,13 +28,14 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -100,6 +101,17 @@ fun AlertDetailScreen(
             return@Column
         }
 
+        var showCloseDialog by remember { mutableStateOf(false) }
+        if (showCloseDialog) {
+            CloseWithoutInspectionDialog(
+                onConfirm = {
+                    showCloseDialog = false
+                    viewModel.closeWithoutInspection()
+                },
+                onDismiss = { showCloseDialog = false },
+            )
+        }
+
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
@@ -108,8 +120,11 @@ fun AlertDetailScreen(
             item {
                 AlertCard(
                     alert = alert,
-                    onAdvance = { viewModel.advanceStatus(it) },
-                    onRegisterInspection = { onRegisterInspection(alert.id) },
+                    onInspect = {
+                        viewModel.startInspection()
+                        onRegisterInspection(alert.id)
+                    },
+                    onRequestClose = { showCloseDialog = true },
                 )
             }
             item {
@@ -135,7 +150,7 @@ fun AlertDetailScreen(
 }
 
 @Composable
-private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegisterInspection: () -> Unit) {
+private fun AlertCard(alert: Alert, onInspect: () -> Unit, onRequestClose: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
@@ -151,7 +166,7 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
         )
         Text(alert.description.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
 
-        PrimaryActions(status = alert.status, onAdvance = onAdvance)
+        PrimaryActions(status = alert.status, onInspect = onInspect, onRequestClose = onRequestClose)
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -175,54 +190,45 @@ private fun AlertCard(alert: Alert, onAdvance: (AlertStatus) -> Unit, onRegister
         TelemetryRow(alert)
 
         Text(stringResource(R.string.alert_detail_next_step), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
+        Text(
+            stringResource(alert.status.nextStepRes()),
+            color = AgathaTheme.colors.brand,
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier
                 .fillMaxWidth()
                 .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(8.dp))
-                .clickable(onClick = onRegisterInspection)
                 .padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Text(stringResource(alert.status.nextStepRes()), color = AgathaTheme.colors.brand, style = MaterialTheme.typography.bodyMedium)
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = AgathaTheme.colors.textSecondary)
-        }
+        )
     }
 }
 
+/**
+ * Acciones de la alerta. El botón verde siempre lleva al formulario de inspección (iniciar o
+ * continuar): el estado solo pasa a Clasificada al guardar la inspección, nunca con un botón
+ * suelto. "Cerrar alerta" pide confirmación porque cierra sin registro de inspección.
+ */
 @Composable
-private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit) {
+private fun PrimaryActions(status: AlertStatus, onInspect: () -> Unit, onRequestClose: () -> Unit) {
     when (status) {
-        AlertStatus.GENERATED, AlertStatus.RECEIVED -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+        AlertStatus.GENERATED, AlertStatus.RECEIVED, AlertStatus.IN_INSPECTION -> Row(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             Button(
-                onClick = { onAdvance(AlertStatus.IN_INSPECTION) },
+                onClick = onInspect,
                 colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
                 modifier = Modifier.weight(1f),
             ) {
                 Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.alert_detail_start_inspection), modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    stringResource(
+                        if (status == AlertStatus.IN_INSPECTION) R.string.alert_detail_continue_inspection else R.string.alert_detail_start_inspection,
+                    ),
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
             OutlinedButton(
-                onClick = { onAdvance(AlertStatus.CLOSED) },
-                border = BorderStroke(1.3.dp, AgathaTheme.colors.critical),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.critical),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.alert_detail_mark_false), modifier = Modifier.padding(start = 4.dp))
-            }
-        }
-        AlertStatus.IN_INSPECTION -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = { onAdvance(AlertStatus.CLASSIFIED) },
-                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.alert_detail_update_status), modifier = Modifier.padding(start = 4.dp))
-            }
-            OutlinedButton(
-                onClick = { onAdvance(AlertStatus.CLOSED) },
+                onClick = onRequestClose,
                 border = BorderStroke(1.3.dp, AgathaTheme.colors.critical),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.critical),
                 modifier = Modifier.weight(1f),
@@ -240,6 +246,27 @@ private fun PrimaryActions(status: AlertStatus, onAdvance: (AlertStatus) -> Unit
             modifier = Modifier.fillMaxWidth(),
         )
     }
+}
+
+@Composable
+private fun CloseWithoutInspectionDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        icon = { Icon(Icons.Filled.Close, contentDescription = null, tint = AgathaTheme.colors.critical) },
+        title = { Text(stringResource(R.string.alert_close_dialog_title)) },
+        text = { Text(stringResource(R.string.alert_close_dialog_body)) },
+        confirmButton = {
+            TextButton(
+                onClick = onConfirm,
+                colors = ButtonDefaults.textButtonColors(contentColor = AgathaTheme.colors.critical),
+            ) {
+                Text(stringResource(R.string.alert_close_dialog_confirm))
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 /**
