@@ -51,6 +51,26 @@
     <string name="notice_no_communication">No communication</string>
     <string name="notice_indicator_unavailable">Indicator not computable</string>
 
+    <!-- Classification and management status (RN-06) -->
+    <string name="classification_confirmed">Confirmed</string>
+    <string name="classification_false_alarm">False alarm</string>
+    <string name="management_status_unclassified">Unclassified</string>
+    <string name="management_status_classified_without_tag">Classified, no tag</string>
+    <string name="management_status_classified_with_tag">Classified with tag</string>
+
+    <!-- Tags (RN-07) -->
+    <string name="alert_tag_leak_confirmed_in_field">Leak confirmed in the field</string>
+    <string name="alert_tag_ground_movement">Ground movement</string>
+    <string name="alert_tag_third_party_machinery">Third-party machinery intervention</string>
+    <string name="alert_tag_extreme_weather">Extreme weather conditions</string>
+    <string name="alert_tag_heavy_vehicle_traffic">Heavy vehicle traffic</string>
+    <string name="alert_tag_scheduled_maintenance">Scheduled maintenance or intervention</string>
+    <string name="alert_tag_other">Other (which?)</string>
+
+    <!-- Record origin (RN-10) -->
+    <string name="origin_web">Web</string>
+    <string name="origin_mobile_app">Mobile app · %1$s</string>
+
     <!-- Map and chart legends -->
     <string name="legend_normal">Normal</string>
     <string name="legend_connected">Online</string>

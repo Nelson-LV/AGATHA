@@ -4,7 +4,11 @@ import androidx.annotation.StringRes
 import com.hivend.agatha.R
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.domain.model.AccelerationLevel
+import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.AlertTag
+import com.hivend.agatha.domain.model.ManagementStatus
+import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorType
 import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.EventCategory
@@ -40,6 +44,38 @@ fun AlertLevel.labelRes(): Int = when (this) {
 fun Notice.labelRes(): Int = when (this) {
     Notice.NO_COMMUNICATION -> R.string.notice_no_communication
     Notice.INDICATOR_UNAVAILABLE -> R.string.notice_indicator_unavailable
+}
+
+@StringRes
+fun AlertClassification.labelRes(): Int = when (this) {
+    AlertClassification.CONFIRMED -> R.string.classification_confirmed
+    AlertClassification.FALSE_ALARM -> R.string.classification_false_alarm
+}
+
+@StringRes
+fun ManagementStatus.labelRes(): Int = when (this) {
+    ManagementStatus.UNCLASSIFIED -> R.string.management_status_unclassified
+    ManagementStatus.CLASSIFIED_WITHOUT_TAG -> R.string.management_status_classified_without_tag
+    ManagementStatus.CLASSIFIED_WITH_TAG -> R.string.management_status_classified_with_tag
+}
+
+/** Etiquetas RN-07. Las dos variantes "Otro" comparten texto; su detalle lo escribe una persona. */
+@StringRes
+fun AlertTag.labelRes(): Int = when (this) {
+    AlertTag.LEAK_CONFIRMED_IN_FIELD -> R.string.alert_tag_leak_confirmed_in_field
+    AlertTag.GROUND_MOVEMENT -> R.string.alert_tag_ground_movement
+    AlertTag.THIRD_PARTY_MACHINERY -> R.string.alert_tag_third_party_machinery
+    AlertTag.EXTREME_WEATHER -> R.string.alert_tag_extreme_weather
+    AlertTag.HEAVY_VEHICLE_TRAFFIC -> R.string.alert_tag_heavy_vehicle_traffic
+    AlertTag.SCHEDULED_MAINTENANCE -> R.string.alert_tag_scheduled_maintenance
+    AlertTag.OTHER_CONFIRMED, AlertTag.OTHER_FALSE_ALARM -> R.string.alert_tag_other
+}
+
+/** Origen de un registro (RN-10). [Origin.MobileApp] lleva el id del celular como `%1$s`. */
+@StringRes
+fun Origin.labelRes(): Int = when (this) {
+    Origin.Web -> R.string.origin_web
+    is Origin.MobileApp -> R.string.origin_mobile_app
 }
 
 /** Estado de un dispositivo según el nivel de su último reporte (verde = normal). */

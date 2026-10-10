@@ -61,6 +61,26 @@
     <string name="notice_no_communication">Sin comunicación</string>
     <string name="notice_indicator_unavailable">Indicador no calculable</string>
 
+    <!-- Clasificación y estado de gestión (RN-06) -->
+    <string name="classification_confirmed">Confirmada</string>
+    <string name="classification_false_alarm">Falsa alerta</string>
+    <string name="management_status_unclassified">Sin clasificar</string>
+    <string name="management_status_classified_without_tag">Clasificada sin etiqueta</string>
+    <string name="management_status_classified_with_tag">Clasificada con etiqueta</string>
+
+    <!-- Etiquetas (RN-07) -->
+    <string name="alert_tag_leak_confirmed_in_field">Fuga confirmada en campo</string>
+    <string name="alert_tag_ground_movement">Movimiento de tierra</string>
+    <string name="alert_tag_third_party_machinery">Intervención de maquinaria ajena</string>
+    <string name="alert_tag_extreme_weather">Condiciones climáticas extremas</string>
+    <string name="alert_tag_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
+    <string name="alert_tag_scheduled_maintenance">Mantenimiento o intervención programada</string>
+    <string name="alert_tag_other">Otro ¿Cuál?</string>
+
+    <!-- Origen del registro (RN-10) -->
+    <string name="origin_web">Web</string>
+    <string name="origin_mobile_app">App móvil · %1$s</string>
+
     <!-- Leyendas de mapa y gráfica -->
     <string name="legend_normal">Normal</string>
     <string name="legend_connected">Conectado</string>

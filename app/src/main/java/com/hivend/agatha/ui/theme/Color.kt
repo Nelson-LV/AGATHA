@@ -60,6 +60,18 @@ data class AgathaColors(
     val stateSimulated: Color,
     val stateSimulatedContainer: Color,
 
+    // ---- Clasificación y estado de gestión (RN-06, chips de la web) ----
+    val classificationConfirmed: Color,
+    val classificationConfirmedContainer: Color,
+    val classificationFalseAlarm: Color,
+    val classificationFalseAlarmContainer: Color,
+    val managementUnclassified: Color,
+    val managementUnclassifiedContainer: Color,
+    val managementUntagged: Color,
+    val managementUntaggedContainer: Color,
+    val managementTagged: Color,
+    val managementTaggedContainer: Color,
+
     // ---- Conectividad / sincronización (HE-07) ----
     val connected: Color,
     val connectedContainer: Color,
@@ -120,6 +132,17 @@ val LightAgathaColors = AgathaColors(
     stateSimulated = Color(0xFF5A6474),
     stateSimulatedContainer = Color(0xFFECEEF2),
 
+    classificationConfirmed = Color(0xFFB42318),
+    classificationConfirmedContainer = Color(0xFFFEE4E2),
+    classificationFalseAlarm = Color(0xFF6D3FC0),
+    classificationFalseAlarmContainer = Color(0xFFEDE6FF),
+    managementUnclassified = Color(0xFF5A6474),
+    managementUnclassifiedContainer = Color(0xFFECEEF2),
+    managementUntagged = Color(0xFF1D4ED8),
+    managementUntaggedContainer = Color(0xFFE0E9FF),
+    managementTagged = Color(0xFF15803D),
+    managementTaggedContainer = Color(0xFFDDF6E5),
+
     connected = Color(0xFF15803D),
     connectedContainer = Color(0xFFE3F5E9),
     offline = Color(0xFF9A4A06),
@@ -177,6 +200,17 @@ val DarkAgathaColors = AgathaColors(
     stateClosedContainer = Color(0xFF12301E),
     stateSimulated = Color(0xFFA8B1BD),
     stateSimulatedContainer = Color(0xFF242A33),
+
+    classificationConfirmed = Color(0xFFFF8A80),
+    classificationConfirmedContainer = Color(0xFF3A1716),
+    classificationFalseAlarm = Color(0xFFC8B5FF),
+    classificationFalseAlarmContainer = Color(0xFF2C2147),
+    managementUnclassified = Color(0xFFA8B1BD),
+    managementUnclassifiedContainer = Color(0xFF242A33),
+    managementUntagged = Color(0xFF9DBBFF),
+    managementUntaggedContainer = Color(0xFF1C2D57),
+    managementTagged = Color(0xFF5BD68A),
+    managementTaggedContainer = Color(0xFF12301E),
 
     connected = Color(0xFF5BD68A),
     connectedContainer = Color(0xFF112619),
