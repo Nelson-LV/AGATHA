@@ -1,18 +1,31 @@
 package com.hivend.agatha.domain.model
 
 /**
- * Nivel de severidad de una alerta, tal como lo codifica el color del punto de monitoreo
- * en la plataforma web y en la app móvil (HE-01 / HE-04). [GREEN] indica normalidad: el
- * nodo sigue visible en el mapa y en dispositivos, pero no cuenta como alerta.
+ * Nivel calculado del indicador de un dispositivo (RN-01, Backlog 1.3). El orden de
+ * declaración es el de severidad, [GREEN] < [YELLOW] < [ORANGE] < [RED], así que
+ * `compareTo` sirve para hallar el nivel máximo de una alerta (RN-05). [GREEN] es
+ * normalidad, no una alerta: el primer cálculo en verde termina la alerta (RN-04). Los
+ * umbrales los define el backend por dispositivo; la app solo muestra el nivel.
  */
 enum class AlertLevel {
     GREEN,
+    YELLOW,
     ORANGE,
     RED,
     ;
 
-    /** Solo naranja y rojo requieren atención en campo y aparecen en la bandeja de alertas. */
-    val requiresAttention: Boolean get() = this != GREEN
+    /** Amarillo, naranja y rojo son alertas (RN-01); verde es el estado normal. */
+    val isAlert: Boolean get() = this != GREEN
+}
+
+/**
+ * Aviso del dispositivo (RN-02): se pinta en gris y **no es una alerta**. No genera push ni
+ * entra al historial de alertas. Puede coexistir con una alerta; entonces el punto toma el
+ * color de la alerta y muestra el ícono de aviso (RN-03).
+ */
+enum class Notice {
+    NO_COMMUNICATION,
+    INDICATOR_UNAVAILABLE,
 }
 
 /**

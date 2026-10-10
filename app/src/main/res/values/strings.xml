@@ -55,6 +55,11 @@
     <string name="alert_level_red">ALERTA ROJA</string>
     <string name="alert_level_orange">ALERTA NARANJA</string>
     <string name="alert_level_green">ALERTA VERDE</string>
+    <string name="alert_level_yellow">ALERTA AMARILLA</string>
+
+    <!-- Avisos (RN-02): gris, no son alertas -->
+    <string name="notice_no_communication">Sin comunicación</string>
+    <string name="notice_indicator_unavailable">Indicador no calculable</string>
 
     <!-- Leyendas de mapa y gráfica -->
     <string name="legend_normal">Normal</string>

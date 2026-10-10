@@ -179,5 +179,6 @@ private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier 
 private fun AlertLevel.color(): Color = when (this) {
     AlertLevel.RED -> AgathaTheme.colors.critical
     AlertLevel.ORANGE -> AgathaTheme.colors.warning
+    AlertLevel.YELLOW -> AgathaTheme.colors.caution
     AlertLevel.GREEN -> AgathaTheme.colors.positive
 }

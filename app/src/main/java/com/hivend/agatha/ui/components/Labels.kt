@@ -10,6 +10,7 @@ import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.EventCategory
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.InspectionResult
+import com.hivend.agatha.domain.model.Notice
 
 /*
  * Textos visibles de los enums del dominio y de la navegación. El dominio no conoce
@@ -30,14 +31,22 @@ fun AlertStatus.labelRes(): Int = when (this) {
 fun AlertLevel.labelRes(): Int = when (this) {
     AlertLevel.RED -> R.string.alert_level_red
     AlertLevel.ORANGE -> R.string.alert_level_orange
+    AlertLevel.YELLOW -> R.string.alert_level_yellow
     AlertLevel.GREEN -> R.string.alert_level_green
+}
+
+/** Motivo del aviso gris (RN-02). */
+@StringRes
+fun Notice.labelRes(): Int = when (this) {
+    Notice.NO_COMMUNICATION -> R.string.notice_no_communication
+    Notice.INDICATOR_UNAVAILABLE -> R.string.notice_indicator_unavailable
 }
 
 /** Estado de un dispositivo según el nivel de su último reporte (verde = normal). */
 @StringRes
 fun AlertLevel.deviceStatusRes(): Int = when (this) {
     AlertLevel.RED -> R.string.device_status_critical
-    AlertLevel.ORANGE -> R.string.device_status_alert
+    AlertLevel.ORANGE, AlertLevel.YELLOW -> R.string.device_status_alert
     AlertLevel.GREEN -> R.string.device_status_normal
 }
 

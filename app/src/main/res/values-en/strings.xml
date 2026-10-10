@@ -45,6 +45,11 @@
     <string name="alert_level_red">RED ALERT</string>
     <string name="alert_level_orange">ORANGE ALERT</string>
     <string name="alert_level_green">GREEN ALERT</string>
+    <string name="alert_level_yellow">YELLOW ALERT</string>
+
+    <!-- Notices (RN-02): gray, not alerts -->
+    <string name="notice_no_communication">No communication</string>
+    <string name="notice_indicator_unavailable">Indicator not computable</string>
 
     <!-- Map and chart legends -->
     <string name="legend_normal">Normal</string>

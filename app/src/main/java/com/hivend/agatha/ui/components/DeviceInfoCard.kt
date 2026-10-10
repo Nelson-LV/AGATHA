@@ -85,5 +85,6 @@ private fun InfoStat(label: String, value: String, modifier: Modifier = Modifier
 fun AlertLevel.nodeColor(): Color = when (this) {
     AlertLevel.RED -> AgathaTheme.colors.nodeCritical
     AlertLevel.ORANGE -> AgathaTheme.colors.nodeAlert
+    AlertLevel.YELLOW -> AgathaTheme.colors.nodeCaution
     AlertLevel.GREEN -> AgathaTheme.colors.nodeNormal
 }

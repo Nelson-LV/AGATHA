@@ -40,6 +40,11 @@ data class AgathaColors(
     val criticalBorder: Color,
     val criticalSurface: Color,
     val warning: Color,
+    /** Alerta amarilla (RN-01). */
+    val caution: Color,
+    /** Aviso gris: sin comunicación o indicador no calculable (RN-02). No es alerta. */
+    val notice: Color,
+    val noticeContainer: Color,
     val positive: Color,
     val onPositive: Color,
 
@@ -69,6 +74,8 @@ data class AgathaColors(
     // ---- Mapa de nodos (HE-08) ----
     val nodeNormal: Color,
     val nodeAlert: Color,
+    val nodeCaution: Color,
+    val nodeNotice: Color,
     val nodeCritical: Color,
     val nodeOutline: Color,
     val mapCanvas: Color,
@@ -96,6 +103,9 @@ val LightAgathaColors = AgathaColors(
     criticalBorder = Color(0xFFF19A9A),
     criticalSurface = Color(0xFFFEF3F2),
     warning = Color(0xFFB45309),
+    caution = Color(0xFF8A6A00),
+    notice = Color(0xFF5A6474),
+    noticeContainer = Color(0xFFECEEF2),
     positive = Color(0xFF15803D),
     onPositive = Color(0xFFFFFFFF),
 
@@ -122,6 +132,8 @@ val LightAgathaColors = AgathaColors(
 
     nodeNormal = Color(0xFF16A34A),
     nodeAlert = Color(0xFFE38A06),
+    nodeCaution = Color(0xFFEAB308),
+    nodeNotice = Color(0xFF8A94A3),
     nodeCritical = Color(0xFFDC2626),
     nodeOutline = Color(0xFFFFFFFF),
     mapCanvas = Color(0xFFDCE7DD),
@@ -149,6 +161,9 @@ val DarkAgathaColors = AgathaColors(
     criticalBorder = Color(0xFF7A2A2A),
     criticalSurface = Color(0xFF2A1416),
     warning = Color(0xFFF5B054),
+    caution = Color(0xFFF2D04B),
+    notice = Color(0xFFA8B1BD),
+    noticeContainer = Color(0xFF242A33),
     positive = Color(0xFF5BD68A),
     onPositive = Color(0xFF0A2A16),
 
@@ -175,6 +190,8 @@ val DarkAgathaColors = AgathaColors(
 
     nodeNormal = Color(0xFF34C46A),
     nodeAlert = Color(0xFFF5A524),
+    nodeCaution = Color(0xFFF2D04B),
+    nodeNotice = Color(0xFF7F8997),
     nodeCritical = Color(0xFFFF5A52),
     nodeOutline = Color(0xFF0D1117),
     mapCanvas = Color(0xFF17231B),
