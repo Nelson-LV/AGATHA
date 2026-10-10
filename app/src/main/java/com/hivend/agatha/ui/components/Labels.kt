@@ -11,7 +11,7 @@ import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorType
-import com.hivend.agatha.domain.model.EventCategory
+import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.domain.model.Notice
@@ -66,7 +66,7 @@ fun AlertTag.labelRes(): Int = when (this) {
     AlertTag.EXTREME_WEATHER -> R.string.alert_tag_extreme_weather
     AlertTag.HEAVY_VEHICLE_TRAFFIC -> R.string.alert_tag_heavy_vehicle_traffic
     AlertTag.SCHEDULED_MAINTENANCE -> R.string.alert_tag_scheduled_maintenance
-    AlertTag.OTHER_CONFIRMED, AlertTag.OTHER_FALSE_ALARM -> R.string.alert_tag_other
+    AlertTag.OTHER_CONFIRMED, AlertTag.OTHER_FALSE_ALARM -> R.string.common_other_which
 }
 
 /** Origen de un registro (RN-10). [Origin.MobileApp] lleva el id del celular como `%1$s`. */
@@ -96,26 +96,22 @@ fun EventType.labelRes(): Int = when (this) {
 
 @StringRes
 fun InspectionResult.labelRes(): Int = when (this) {
-    InspectionResult.NO_VISIBLE_ISSUE -> R.string.inspection_result_no_visible_issue
-    InspectionResult.GROUND_ALTERATION -> R.string.inspection_result_ground_alteration
-    InspectionResult.SURFACE_GAS_SIGNS -> R.string.inspection_result_surface_gas_signs
-    InspectionResult.VISIBLE_DEVICE_DAMAGE -> R.string.inspection_result_visible_device_damage
+    InspectionResult.NO_ISSUES -> R.string.inspection_result_no_issues
     InspectionResult.MAINTENANCE_REQUIRED -> R.string.inspection_result_maintenance_required
+    InspectionResult.DEVICE_OR_SENSOR_PROBLEM -> R.string.inspection_result_device_or_sensor_problem
+    InspectionResult.PHYSICAL_DAMAGE -> R.string.inspection_result_physical_damage
     InspectionResult.LOW_BATTERY -> R.string.inspection_result_low_battery
     InspectionResult.NO_COMMUNICATION -> R.string.inspection_result_no_communication
-    InspectionResult.OTHER -> R.string.inspection_result_other
+    InspectionResult.OTHER -> R.string.common_other_which
 }
 
 @StringRes
-fun EventCategory.labelRes(): Int = when (this) {
-    EventCategory.GROUND_MOVEMENT -> R.string.event_category_ground_movement
-    EventCategory.MACHINERY_INTERVENTION -> R.string.event_category_machinery_intervention
-    EventCategory.WEATHER_CONDITIONS -> R.string.event_category_weather_conditions
-    EventCategory.HEAVY_VEHICLE_TRAFFIC -> R.string.event_category_heavy_vehicle_traffic
-    EventCategory.NO_ANOMALIES -> R.string.event_category_no_anomalies
-    EventCategory.SCHEDULED_MAINTENANCE -> R.string.event_category_scheduled_maintenance
-    EventCategory.SUSPECTED_LEAK -> R.string.event_category_suspected_leak
-    EventCategory.OTHER -> R.string.event_category_other
+fun MaintenanceType.labelRes(): Int = when (this) {
+    MaintenanceType.BATTERY_CHANGE_OR_RECHARGE -> R.string.maintenance_type_battery
+    MaintenanceType.CLEANING -> R.string.maintenance_type_cleaning
+    MaintenanceType.ADJUSTMENT_OR_REINSTALLATION -> R.string.maintenance_type_adjustment
+    MaintenanceType.COMPONENT_REPLACEMENT -> R.string.maintenance_type_component_replacement
+    MaintenanceType.OTHER -> R.string.common_other_which
 }
 
 @StringRes

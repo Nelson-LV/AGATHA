@@ -131,6 +131,18 @@ data class Alert(
         )
     }
 
+    /**
+     * Aplica la clasificación y la etiqueta que trae un reporte de inspección (HU-5.2), con la
+     * fecha-hora y el origen del reporte. Falla si choca con lo ya guardado: ese caso es un
+     * conflicto de sincronización (RN-18), no una edición.
+     */
+    fun applyInspection(report: Inspection): Alert {
+        require(report.alertId == id) { "Report ${report.id} is not for alert $id" }
+        val classified = report.classification?.let { classify(it, report.recordedAt, report.origin) } ?: this
+        val tag = report.tag ?: return classified
+        return classified.addTag(TagRecord(tag, report.tagOtherDetail, report.recordedAt, report.origin))
+    }
+
     /** Agrega la etiqueta a una alerta clasificada que aún no la tiene (HU-5.2). */
     fun addTag(tag: TagRecord): Alert {
         val current = checkNotNull(classification) { "Alert $id must be classified before tagging" }

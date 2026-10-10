@@ -37,8 +37,15 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
         }
     }
 
+    /** Reportes guardados en esta sesión. Sprint 3: Room + cola de data/sync (HU-7.2). */
+    private val inspections = MutableStateFlow<List<Inspection>>(emptyList())
+
     override suspend fun registerInspection(inspection: Inspection) {
-        // Sprint 3: persistir el reporte en Room y encolarlo en data/sync para su subida.
+        inspections.update { it + inspection }
+        val alertId = inspection.alertId ?: return
+        alerts.update { list ->
+            list.map { if (it.id == alertId) it.applyInspection(inspection) else it }
+        }
     }
 
     override suspend fun registerEvidence(alertId: String, evidence: List<PhotoEvidence>) {

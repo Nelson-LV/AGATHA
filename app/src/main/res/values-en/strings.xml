@@ -65,7 +65,6 @@
     <string name="alert_tag_extreme_weather">Extreme weather conditions</string>
     <string name="alert_tag_heavy_vehicle_traffic">Heavy vehicle traffic</string>
     <string name="alert_tag_scheduled_maintenance">Scheduled maintenance or intervention</string>
-    <string name="alert_tag_other">Other (which?)</string>
 
     <!-- Record origin (RN-10) -->
     <string name="origin_web">Web</string>
@@ -129,33 +128,43 @@
 
 
     <!-- Inspection form -->
-    <string name="inspection_top_bar_title">Log Inspection</string>
-    <string name="inspection_title">Log inspection</string>
-    <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
-    <string name="inspection_scope_title">Surface visual inspection</string>
-    <string name="inspection_scope_body">Log only what you can see on the surface and on the device. There is no direct access to the gas pipe.</string>
-    <string name="inspection_result_title">Surface observations</string>
-    <string name="inspection_result_subtitle">Select what you see on the ground, the surroundings or the device.</string>
-    <string name="inspection_category_title">Event classification</string>
-    <string name="inspection_category_subtitle">What actually triggered the alert?</string>
-    <string name="inspection_observations_hint">Field notes are written in the alert detail.</string>
-    <string name="inspection_save">Save inspection</string>
-    <string name="inspection_result_no_visible_issue">No visible issues</string>
-    <string name="inspection_result_ground_alteration">Visible ground change (cracks, sinking)</string>
-    <string name="inspection_result_surface_gas_signs">Surface signs of gas (odor, dead vegetation, bubbling)</string>
-    <string name="inspection_result_visible_device_damage">Visible damage to the device or its mount</string>
-    <string name="inspection_result_maintenance_required">Device maintenance required</string>
+    <string name="inspection_top_bar_title">Inspection report</string>
+    <string name="inspection_title">New inspection report</string>
+    <string name="inspection_result_title">Inspection result (required)</string>
+    <string name="inspection_save">Save report</string>
+    <string name="inspection_device_subtitle">Device %1$s · %2$s · %3$s</string>
+    <string name="inspection_alert_line">%1$s · Alert %2$s · %3$s</string>
+    <string name="inspection_result_no_issues">No issues</string>
+    <string name="inspection_result_device_or_sensor_problem">Device/sensor problem</string>
+    <string name="inspection_result_physical_damage">Physical damage</string>
+    <string name="inspection_classification_title">Alert classification (optional)</string>
+    <string name="inspection_classification_info">Once classified, the alert becomes “Classified, no tag” and the date, time and origin are recorded. The classification cannot be changed later.</string>
+    <string name="inspection_false_alarm">False alarm</string>
+    <string name="inspection_confirm_alert">Confirm alert</string>
+    <string name="inspection_classification_read_only">The alert is already classified and the classification cannot be changed.</string>
+    <string name="inspection_saved_tag">Tag: %1$s</string>
+    <string name="inspection_tag_title_confirmed">Cause of the confirmed alert (optional)</string>
+    <string name="inspection_tag_title_false_alarm">Cause of the false alarm (optional)</string>
+    <string name="inspection_observations_title">Notes (optional)</string>
+    <string name="inspection_observations_placeholder">Write what you saw in the field (optional)…</string>
+    <string name="inspection_previous_observation">Previous note</string>
+    <string name="inspection_maintenance_toggle">Maintenance was performed</string>
+    <string name="inspection_maintenance_types">Maintenance type (choose any)</string>
+    <string name="inspection_maintenance_description">Description (optional)</string>
+    <string name="inspection_maintenance_description_placeholder">Describe the maintenance performed (optional)…</string>
+    <string name="inspection_other_detail_title">Which? (required, 1 to 100 characters)</string>
+    <string name="inspection_other_detail_placeholder">Type which</string>
+    <string name="inspection_other_detail_error">Enter the detail to be able to save.</string>
+    <string name="inspection_save_hint">“Save report” is enabled once you pick a result and fill in the required fields.</string>
+    <string name="maintenance_type_battery">Battery change or recharge</string>
+    <string name="maintenance_type_cleaning">Cleaning</string>
+    <string name="maintenance_type_adjustment">Adjustment or reinstallation</string>
+    <string name="maintenance_type_component_replacement">Component replacement</string>
+    <string name="common_other_which">Other (which?)</string>
+    <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
+    <string name="inspection_result_maintenance_required">Maintenance required</string>
     <string name="inspection_result_low_battery">Low battery</string>
     <string name="inspection_result_no_communication">No communication</string>
-    <string name="inspection_result_other">Other</string>
-    <string name="event_category_ground_movement">Ground movement or minor landslide</string>
-    <string name="event_category_machinery_intervention">Third-party machinery work</string>
-    <string name="event_category_weather_conditions">External weather conditions</string>
-    <string name="event_category_heavy_vehicle_traffic">Heavy vehicle traffic</string>
-    <string name="event_category_no_anomalies">No anomalies</string>
-    <string name="event_category_scheduled_maintenance">Scheduled maintenance</string>
-    <string name="event_category_suspected_leak">Signs of a leak (needs operator verification)</string>
-    <string name="event_category_other">Other (describe it in field notes)</string>
 
     <!-- Photo evidence -->
     <string name="evidence_top_bar_title">Photo Evidence</string>
@@ -242,6 +251,6 @@
     <string name="sample_sync_classification_detail">Leak confirmed in the field · send failed</string>
     <string name="sample_sync_conflict_title">Conflict detected · Point %1$d</string>
     <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
-    <string name="sample_sync_conflict_local">Classification: Leak signs · %1$s</string>
+    <string name="sample_sync_conflict_local">Classification: Confirmed · Leak confirmed in the field · %1$s</string>
     <string name="sample_sync_conflict_server">Status: Closed by web operator · %1$s</string>
 </resources>

@@ -75,7 +75,6 @@
     <string name="alert_tag_extreme_weather">Condiciones climáticas extremas</string>
     <string name="alert_tag_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
     <string name="alert_tag_scheduled_maintenance">Mantenimiento o intervención programada</string>
-    <string name="alert_tag_other">Otro ¿Cuál?</string>
 
     <!-- Origen del registro (RN-10) -->
     <string name="origin_web">Web</string>
@@ -139,33 +138,44 @@
 
 
     <!-- Formulario de inspección -->
-    <string name="inspection_top_bar_title">Registrar Inspección</string>
-    <string name="inspection_title">Registrar inspección</string>
-    <string name="inspection_sensor_subtitle">Sensor %1$s · %2$s</string>
-    <string name="inspection_scope_title">Inspección visual superficial</string>
-    <string name="inspection_scope_body">Registra solo lo que se observa en superficie y en el dispositivo. No hay acceso directo a la tubería de gas.</string>
-    <string name="inspection_result_title">Lo observado en superficie</string>
-    <string name="inspection_result_subtitle">Selecciona lo que ves en el terreno, el entorno o el dispositivo.</string>
-    <string name="inspection_category_title">Clasificación del evento</string>
-    <string name="inspection_category_subtitle">¿Qué originó realmente la alerta?</string>
-    <string name="inspection_observations_hint">Las observaciones de campo se escriben en el detalle de la alerta.</string>
-    <string name="inspection_save">Guardar inspección</string>
-    <string name="inspection_result_no_visible_issue">Sin novedad visible</string>
-    <string name="inspection_result_ground_alteration">Alteración visible del terreno (grietas, hundimiento)</string>
-    <string name="inspection_result_surface_gas_signs">Indicios de gas en superficie (olor, vegetación seca, burbujeo)</string>
-    <string name="inspection_result_visible_device_damage">Daño visible en el dispositivo o su soporte</string>
-    <string name="inspection_result_maintenance_required">Mantenimiento del dispositivo requerido</string>
+    <string name="inspection_top_bar_title">Reporte de inspección</string>
+    <string name="inspection_title">Nuevo reporte de inspección</string>
+    <string name="inspection_result_title">Resultado de la inspección (obligatorio)</string>
+    <string name="inspection_save">Guardar reporte</string>
+    <string name="inspection_device_subtitle">Dispositivo %1$s · %2$s · %3$s</string>
+    <string name="inspection_alert_line">%1$s · Alerta %2$s · %3$s</string>
+    <string name="inspection_result_no_issues">Sin novedad</string>
+    <string name="inspection_result_device_or_sensor_problem">Problema del dispositivo/sensor</string>
+    <string name="inspection_result_physical_damage">Daño físico</string>
+    <string name="inspection_classification_title">Clasificación de la alerta (opcional)</string>
+    <string name="inspection_classification_info">Al clasificar, la alerta pasa a “Clasificada sin etiqueta” y se registran la fecha, la hora y el origen. La clasificación no se puede modificar después.</string>
+    <string name="inspection_false_alarm">Falsa alerta</string>
+    <string name="inspection_confirm_alert">Confirmar alerta</string>
+    <string name="inspection_classification_read_only">La alerta ya está clasificada y la clasificación no se puede modificar.</string>
+    <string name="inspection_saved_tag">Etiqueta: %1$s</string>
+    <string name="inspection_tag_title_confirmed">Causa de la alerta confirmada (opcional)</string>
+    <string name="inspection_tag_title_false_alarm">Causa de la falsa alerta (opcional)</string>
+    <string name="inspection_observations_title">Observaciones (opcional)</string>
+    <string name="inspection_observations_placeholder">Escriba lo observado en campo (opcional)…</string>
+    <string name="inspection_previous_observation">Observación previa</string>
+    <string name="inspection_maintenance_toggle">Se realizó mantenimiento</string>
+    <string name="inspection_maintenance_types">Tipo de mantenimiento (puede elegir varios)</string>
+    <string name="inspection_maintenance_description">Descripción (opcional)</string>
+    <string name="inspection_maintenance_description_placeholder">Describa el mantenimiento realizado (opcional)…</string>
+    <string name="inspection_other_detail_title">¿Cuál? (obligatorio, 1 a 100 caracteres)</string>
+    <string name="inspection_other_detail_placeholder">Escriba cuál</string>
+    <string name="inspection_other_detail_error">Indique la causa para poder guardar.</string>
+    <string name="inspection_save_hint">“Guardar reporte” se habilita al elegir el resultado y completar los campos obligatorios.</string>
+    <string name="maintenance_type_battery">Cambio o recarga de batería</string>
+    <string name="maintenance_type_cleaning">Limpieza</string>
+    <string name="maintenance_type_adjustment">Ajuste o reinstalación</string>
+    <string name="maintenance_type_component_replacement">Reemplazo de componente</string>
+    <string name="common_other_which">Otro ¿Cuál?</string>
+    <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
+    <string name="common_char_counter" translatable="false">%1$d/%2$d</string>
+    <string name="inspection_result_maintenance_required">Mantenimiento requerido</string>
     <string name="inspection_result_low_battery">Batería baja</string>
     <string name="inspection_result_no_communication">Sin comunicación</string>
-    <string name="inspection_result_other">Otra</string>
-    <string name="event_category_ground_movement">Movimiento de tierra o desprendimiento menor</string>
-    <string name="event_category_machinery_intervention">Intervención de maquinaria ajena</string>
-    <string name="event_category_weather_conditions">Condiciones climáticas externas</string>
-    <string name="event_category_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
-    <string name="event_category_no_anomalies">Sin anomalías</string>
-    <string name="event_category_scheduled_maintenance">Mantenimiento programado</string>
-    <string name="event_category_suspected_leak">Indicios de fuga (requiere verificación del operador)</string>
-    <string name="event_category_other">Otro (detállalo en observaciones)</string>
 
     <!-- Evidencia fotográfica -->
     <string name="evidence_top_bar_title">Evidencia Fotográfica</string>
@@ -258,6 +268,6 @@
     <string name="sample_sync_classification_detail">Fuga confirmada en campo · error al enviar</string>
     <string name="sample_sync_conflict_title">Conflicto detectado · Punto %1$d</string>
     <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
-    <string name="sample_sync_conflict_local">Clasificación: Indicios de fuga · %1$s</string>
+    <string name="sample_sync_conflict_local">Clasificación: Confirmada · Fuga confirmada en campo · %1$s</string>
     <string name="sample_sync_conflict_server">Estado: Cerrada por Operador Web · %1$s</string>
 </resources>

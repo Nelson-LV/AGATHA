@@ -207,7 +207,7 @@ internal object SampleAgathaData {
             HistoryEvent(
                 "13:07", EventType.CLASSIFICATION,
                 text(R.string.sample_history_classification_title),
-                text(R.string.event_category_ground_movement),
+                text(R.string.alert_tag_ground_movement),
             ),
             HistoryEvent(
                 "13:10", EventType.EVIDENCE,
