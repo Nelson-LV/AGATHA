@@ -1,6 +1,5 @@
 package com.hivend.agatha.ui.alertdetail
 
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.hivend.agatha.ui.theme.AgathaColors
 import androidx.compose.material.icons.filled.Sensors
@@ -48,7 +47,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -58,6 +56,12 @@ import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ClassificationChip
 import com.hivend.agatha.ui.components.ManagementStatusChip
+import com.hivend.agatha.ui.components.LevelChip
+import com.hivend.agatha.ui.components.levelColor
+import com.hivend.agatha.ui.components.shortLabelRes
+import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.label
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
@@ -102,6 +106,8 @@ fun AlertDetailScreen(
         ) {
             item { SitePill(site = alert.site) }
             item { AlertCard(alert = alert, onNewReport = { onRegisterInspection(alert.id) }) }
+            item { ClassificationCard(alert = alert, onViewHistory = { onViewHistory(alert.sensorId) }) }
+            item { LevelTimelineCard(alert) }
             item {
                 ObservationsCard(
                     text = uiState.observations,
@@ -111,12 +117,6 @@ fun AlertDetailScreen(
                     onSave = viewModel::saveObservations,
                 )
             }
-            item {
-                ManagementRow(
-                    alert = alert,
-                    onViewHistory = { onViewHistory(alert.sensorId) },
-                )
-            }
             item { AccelerationGraphCard() }
             item { RecentHistoryCard(events = uiState.recentHistory) }
             item { SensorAccordionList() }
@@ -124,22 +124,49 @@ fun AlertDetailScreen(
     }
 }
 
+/**
+ * Encabezado y datos de la alerta como en la web (referencia 02): "chip nivel + Alerta ALR-xxxx +
+ * chip estado" y la grilla Dispositivo, PK, Municipio, Evento, Inicio, Fin, Indicador y nivel
+ * máximo (HU-4.2, RN-04, RN-05).
+ */
 @Composable
 private fun AlertCard(alert: Alert, onNewReport: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.criticalSurface, RoundedCornerShape(14.dp))
-            .border(1.5.dp, AgathaTheme.colors.criticalBorder, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .border(1.5.dp, alert.level.levelColor().copy(alpha = 0.6f), RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
-        Text(
-            text = stringResource(R.string.alert_detail_header, stringResource(alert.level.labelRes()), alert.sensorId, alert.pk),
-            color = AgathaTheme.colors.critical,
-            style = MaterialTheme.typography.labelLarge,
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LevelChip(alert.level)
+            Text(
+                stringResource(R.string.alert_detail_alert_id, alert.id),
+                color = AgathaTheme.colors.textPrimary,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.weight(1f),
+            )
+            ManagementStatusChip(alert.managementStatus)
+        }
+        Text(alert.description.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+
+        DataGrid(
+            listOf(
+                stringResource(R.string.alert_detail_device) to alert.sensorId,
+                stringResource(R.string.alert_detail_pk) to alert.pk,
+                stringResource(R.string.alert_detail_municipality) to alert.municipality,
+                stringResource(R.string.alert_detail_event) to stringResource(alert.event.labelRes()),
+                stringResource(R.string.alert_detail_start) to formatDateTime(alert.startedAt),
+                stringResource(R.string.alert_detail_end) to (alert.endedAt?.let { formatDateTime(it) } ?: ""),
+                stringResource(R.string.alert_detail_indicator) to (
+                    alert.indicator?.let { stringResource(R.string.alert_detail_indicator_value, it.value, it.threshold) }
+                        ?: stringResource(R.string.notice_indicator_unavailable)
+                    ),
+                stringResource(R.string.alert_detail_max_level) to stringResource(alert.maxLevel.shortLabelRes()),
+            ),
+            ongoing = alert.isOngoing,
         )
-        Text(alert.description.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
 
         Button(
             onClick = onNewReport,
@@ -150,26 +177,101 @@ private fun AlertCard(alert: Alert, onNewReport: () -> Unit) {
             Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
         }
 
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AgathaTheme.colors.brandContainer, RoundedCornerShape(10.dp))
-                .border(1.3.dp, AgathaTheme.colors.brandContainer, RoundedCornerShape(10.dp))
-                .padding(10.dp),
-        ) {
-            Icon(Icons.Filled.Build, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(18.dp))
+        TelemetryRow(alert)
+    }
+}
+
+/** Grilla de dos columnas etiqueta/valor. Un "Fin" vacío se muestra como "En curso" en rojo. */
+@Composable
+private fun DataGrid(items: List<Pair<String, String>>, ongoing: Boolean) {
+    val endLabel = stringResource(R.string.alert_detail_end)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        items.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { (label, value) ->
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(label, color = AgathaTheme.colors.textTertiary, style = MaterialTheme.typography.labelMedium)
+                        if (label == endLabel && ongoing) {
+                            Text(stringResource(R.string.alert_detail_ongoing), color = AgathaTheme.colors.critical, style = MaterialTheme.typography.bodyMedium)
+                        } else {
+                            Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Línea de tiempo de niveles (RN-05): cada cambio de nivel con su fecha-hora. */
+@Composable
+private fun LevelTimelineCard(alert: Alert) {
+    SectionCard(title = stringResource(R.string.alert_detail_timeline)) {
+        alert.levelTimeline.forEach { change ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LevelChip(change.level)
+                Text(formatDateTime(change.at), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        alert.endedAt?.let { ended ->
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                LevelChip(AlertLevel.GREEN)
+                Text(
+                    stringResource(R.string.alert_detail_timeline_end, formatDateTime(ended)),
+                    color = AgathaTheme.colors.textSecondary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+/** Clasificación, estado de gestión y etiqueta, con fecha-hora y origen (RN-06, RN-10). */
+@Composable
+private fun ClassificationCard(alert: Alert, onViewHistory: () -> Unit) {
+    SectionCard(title = stringResource(R.string.alert_detail_classification)) {
+        val record = alert.classification
+        if (record == null) {
+            ManagementStatusChip(alert.managementStatus)
+            Text(stringResource(R.string.alert_detail_unclassified_hint), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                ClassificationChip(record.classification)
+                ManagementStatusChip(alert.managementStatus)
+            }
             Text(
-                stringResource(R.string.alert_detail_scheduled_maintenance),
-                color = AgathaTheme.colors.brand,
-                style = MaterialTheme.typography.labelLarge,
-                modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
+                stringResource(R.string.common_dot_separated, formatDateTime(record.classifiedAt), record.origin.label()),
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            val tag = record.tag
+            Text(
+                if (tag == null) stringResource(R.string.alert_detail_no_tag)
+                else stringResource(R.string.inspection_saved_tag, tag.otherDetail ?: stringResource(tag.tag.labelRes())),
+                color = AgathaTheme.colors.textPrimary,
+                style = MaterialTheme.typography.bodyMedium,
             )
         }
+        Text(
+            stringResource(R.string.alert_detail_view_device_history),
+            color = AgathaTheme.colors.brand,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.clickable(onClick = onViewHistory),
+        )
+    }
+}
 
-        TelemetryRow(alert)
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .padding(14.dp),
+    ) {
+        Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        content()
     }
 }
 
@@ -255,27 +357,6 @@ private fun TelemetryStat(label: String, value: String) {
     }
 }
 
-@Composable
-private fun ManagementRow(alert: Alert, onViewHistory: () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            ManagementStatusChip(alert.managementStatus)
-            alert.classification?.let { ClassificationChip(it.classification) }
-        }
-        Text(
-            stringResource(R.string.alert_detail_view_device_history),
-            color = AgathaTheme.colors.brand,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.clickable(onClick = onViewHistory),
-        )
-    }
-}
 
 @Composable
 private fun AccelerationGraphCard() {

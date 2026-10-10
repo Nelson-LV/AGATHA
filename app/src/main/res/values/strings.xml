@@ -106,8 +106,22 @@
     <!-- Detalle de alerta -->
     <string name="alert_detail_title">Detalle de Alerta</string>
     <string name="alert_detail_not_found">Alerta no encontrada</string>
-    <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
-    <string name="alert_detail_scheduled_maintenance">Mantenimiento programado</string>
+    <string name="alert_detail_alert_id">Alerta %1$s</string>
+    <string name="alert_detail_device">Dispositivo</string>
+    <string name="alert_detail_pk" translatable="false">PK</string>
+    <string name="alert_detail_municipality">Municipio</string>
+    <string name="alert_detail_event">Evento</string>
+    <string name="alert_detail_start">Inicio</string>
+    <string name="alert_detail_end">Fin</string>
+    <string name="alert_detail_ongoing">En curso</string>
+    <string name="alert_detail_indicator">Indicador</string>
+    <string name="alert_detail_indicator_value">%1$.2f (umbral %2$.2f)</string>
+    <string name="alert_detail_max_level">Nivel máximo</string>
+    <string name="alert_detail_timeline">Línea de tiempo</string>
+    <string name="alert_detail_timeline_end">Fin de la alerta · %1$s</string>
+    <string name="alert_detail_classification">Clasificación</string>
+    <string name="alert_detail_unclassified_hint">Se clasifica desde un nuevo reporte de inspección.</string>
+    <string name="alert_detail_no_tag">Sin etiqueta</string>
     <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
     <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
     <string name="alert_detail_observations_title">Observaciones de campo</string>

@@ -96,8 +96,21 @@
     <!-- Alert detail -->
     <string name="alert_detail_title">Alert Detail</string>
     <string name="alert_detail_not_found">Alert not found</string>
-    <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
-    <string name="alert_detail_scheduled_maintenance">Scheduled maintenance</string>
+    <string name="alert_detail_alert_id">Alert %1$s</string>
+    <string name="alert_detail_device">Device</string>
+    <string name="alert_detail_municipality">Municipality</string>
+    <string name="alert_detail_event">Event</string>
+    <string name="alert_detail_start">Start</string>
+    <string name="alert_detail_end">End</string>
+    <string name="alert_detail_ongoing">Ongoing</string>
+    <string name="alert_detail_indicator">Indicator</string>
+    <string name="alert_detail_indicator_value">%1$.2f (threshold %2$.2f)</string>
+    <string name="alert_detail_max_level">Maximum level</string>
+    <string name="alert_detail_timeline">Timeline</string>
+    <string name="alert_detail_timeline_end">Alert ended · %1$s</string>
+    <string name="alert_detail_classification">Classification</string>
+    <string name="alert_detail_unclassified_hint">Classify it from a new inspection report.</string>
+    <string name="alert_detail_no_tag">No tag</string>
     <string name="alert_detail_new_inspection_report">New inspection report</string>
     <string name="alert_detail_view_device_history">View device history</string>
     <string name="alert_detail_observations_title">Field notes</string>
