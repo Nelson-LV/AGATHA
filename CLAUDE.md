@@ -1,3 +1,29 @@
+## Functional source of truth (Backlog 1.3)
+
+The app covers epics HE-04..HE-08 of the AGATHA backlog. Since Backlog 1.3 (10/10/2026)
+the **web platform is the source of truth**: alert levels, management states,
+classification, tags, limits, colors and date format are exactly the web's (rules RN-01 to
+RN-13). The app only adds push, inspection reports with maintenance, photos and
+offline-first sync (RN-16 to RN-18). Read `docs/BACKLOG_V1_3_APP_MOVIL.md` before touching
+any alert, inspection, map or sync screen; web screenshots live in `docs/referencias-web/`.
+
+Key rules to keep in mind:
+- Levels: Yellow < Orange < Red; Green means normal (no alert). Gray is a *notice*
+  (no communication / indicator not computable), never an alert, and never sends a push.
+- An alert has a **classification** (Confirmed / False alarm) and a **management status**
+  (Unclassified → Classified without tag → Classified with tag). Neither can be edited
+  once saved, from any client. There are no app-specific states.
+- No login: every record stores date-time and **origin** ("App móvil" + device id), not a
+  user.
+- Limits: observations 500 chars, "Otro ¿Cuál?" 1–100, photos JPG/PNG max 5 × 5 MB
+  (compress on device), photo description 200, dates `dd/mm/aaaa HH:mm` UTC-5.
+- Section 5 of that doc lists where Backlog 1.3 contradicts what the app implemented on
+  07/10 (orange/red-only inbox, "close alert", inspection states, "Indicios de fuga"). Ask
+  Nelson before changing either side of those.
+
+Jira: https://proyecto-agatha.atlassian.net, project `AGT` (mobile stories AGT-25, 27,
+29–40, 154). Reference a story key in the commit body when a change implements it.
+
 ## Language convention
 
 All code in this project is written in English: class/interface/enum names, properties,

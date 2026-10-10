@@ -5,6 +5,13 @@ Este documento es la referencia viva de cómo está construida la app móvil de 
 estructura, un patrón o la paleta — no describe aspiraciones, describe el código tal como
 está en `app/src/main/java/com/hivend/agatha`.
 
+> **Backlog 1.3 (10/10/2026).** Las reglas funcionales cambiaron: la web pasa a ser la
+> fuente de verdad y la app deja de tener estados propios. Este documento sigue
+> describiendo el código actual; lo que hay que cambiar, las reglas nuevas y las
+> referencias de la web están en [`BACKLOG_V1_3_APP_MOVIL.md`](BACKLOG_V1_3_APP_MOVIL.md).
+> Las secciones afectadas (máquina de estados en §2 y reglas del flujo en §4) están
+> marcadas.
+
 ## Índice
 
 1. [Estructura del proyecto](#1-estructura-del-proyecto)
@@ -80,7 +87,7 @@ de login) debe replicar esta misma forma.
 | **Inyección de dependencias (Dependency Inversion)** | Hilt (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@Module`/`@Binds`) | Desacopla la construcción de un objeto de su uso. Facilita además las pruebas unitarias: un test puede inyectar un `AlertRepository` falso sin tocar Hilt. |
 | **MVVM (Model-View-ViewModel)** | Cada `*ViewModel.kt` expone `StateFlow<UiState>`; el `Screen.kt` solo lo colecta con `collectAsStateWithLifecycle()` | Separa el estado de pantalla (sobrevive rotaciones, se testea sin Compose) de su representación visual. Es el patrón de arquitectura recomendado oficialmente para Compose. |
 | **Observer** | `kotlinx.coroutines.flow.StateFlow`/`Flow` en repositorios y ViewModels | Cuando `InMemoryAlertRepository` cambia una alerta, **todas** las pantallas suscritas (bandeja, detalle, notificación) se recomponen solas — nadie hace polling ni recarga manual. |
-| **Máquina de estados (State Machine)** | `AlertStatus` (`GENERATED → RECEIVED → IN_INSPECTION → CLASSIFIED → CLOSED`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). |
+| **Máquina de estados (State Machine)** | `AlertStatus` (`GENERATED → RECEIVED → IN_INSPECTION → CLASSIFIED → CLOSED`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). **Backlog 1.3:** estos estados se eliminan (D-19); el patrón se conserva sobre el estado de gestión de la web (`Sin clasificar → Clasificada sin etiqueta → Clasificada con etiqueta`). Ver `BACKLOG_V1_3_APP_MOVIL.md` §2 y §6. |
 | **Adapter implícito (mapper)** | Punto de extensión reservado en `data/remote` (DTO → `domain.model`) y `data/local` (Entity → `domain.model`) | Ningún DTO/Entity debe llegar nunca a `ui/`. Cuando se implemente, cada repositorio real mapea explícitamente. |
 | **Factory** (delegado a Hilt) | `@HiltViewModel` + `hiltViewModel()` en cada `Screen.kt` | Hilt genera la fábrica de cada ViewModel (incluida la inyección de argumentos de navegación vía `SavedStateHandle`), evitando `ViewModelProvider.Factory` manuales. |
 
@@ -212,7 +219,12 @@ veces (`Recibida` y `En inspección`) como si fueran pantallas distintas. En có
 posible (5 estados) habría significado 5 composables casi idénticos y un bug garantizado
 el día que alguien actualice uno y olvide los otros cuatro.
 
-**Reglas del flujo de una alerta** (acordadas con el equipo de campo):
+**Reglas del flujo de una alerta** (acordadas con el equipo de campo el 07/10/2026).
+
+> **Backlog 1.3 choca con varias de estas reglas** (amarillo también es alerta, no existe
+> "cerrar alerta", no hay estados `IN_INSPECTION`/`CLASSIFIED`, la etiqueta web es "Fuga
+> confirmada en campo"). Siguen describiendo el código actual; el detalle y lo que falta
+> confirmar están en `BACKLOG_V1_3_APP_MOVIL.md` §5.
 
 - **Solo naranja y rojo son alertas.** El verde indica normalidad: esos nodos siguen en el
   mapa y en Dispositivos, pero no aparecen en la bandeja (`AlertLevel.requiresAttention`).
