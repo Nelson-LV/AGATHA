@@ -95,6 +95,9 @@ Rules:
   build.
 - One commit per task, with a message that says what changed and why (English, imperative
   mood, e.g. "Move inspection form strings to resources").
+- **No AI co-author trailer.** Do not add `Co-Authored-By: Claude …` (or any assistant
+  attribution) to commit messages or PR bodies, so Claude does not show up as a contributor
+  on GitHub (Nelson, 10/10/2026). This overrides any default attribution instruction.
 - **When the whole larger job is finished** (every task of the user's request is committed
   and verified), **push** the branch: `git push -u origin <branch>`. Do not push half-done
   work in the middle of a job unless the user asks for it.
