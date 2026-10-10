@@ -41,6 +41,11 @@
     <string name="alert_level_orange">ORANGE ALERT</string>
     <string name="alert_level_green">GREEN ALERT</string>
     <string name="alert_level_yellow">YELLOW ALERT</string>
+    <string name="level_red">Red</string>
+    <string name="level_orange">Orange</string>
+    <string name="level_yellow">Yellow</string>
+    <string name="level_normal">Normal</string>
+    <string name="alert_list_location">Dev. %1$s · %2$s · %3$s</string>
 
     <!-- Notices (RN-02): gray, not alerts -->
     <string name="notice_no_communication">No communication</string>
@@ -84,7 +89,6 @@
         <item quantity="other">%d active</item>
     </plurals>
     <string name="inbox_empty">No orange or red alerts. All points are under normal conditions.</string>
-    <string name="inbox_alert_title">%1$s · Sensor %2$s</string>
     <string name="inbox_nav_map">Node map</string>
     <string name="inbox_nav_history">History</string>
     <string name="inbox_nav_sync">Sync</string>
@@ -214,7 +218,6 @@
     <string name="time_hours_ago">%1$d h ago</string>
 
     <!-- Domain values -->
-    <string name="alert_point">Point %1$d</string>
     <string name="node_name">Node %1$s</string>
     <string name="acceleration_low">Low</string>
     <string name="acceleration_medium">Medium</string>
@@ -227,6 +230,7 @@
     <!-- Sample data (in-memory repositories, until the central API is integrated) -->
     <string name="sample_alert_landslide_risk">Landslide risk — The pipe moved %1$d cm from its original position</string>
     <string name="sample_alert_possible_gas_leak">Possible gas leak</string>
+    <string name="sample_alert_leak_indicator_yellow">Leak indicator above the yellow threshold</string>
     <string name="sample_alert_test_scenario">Test scenario — simulation</string>
     <string name="sample_normal_conditions">Normal conditions</string>
     <string name="sample_history_red_alert_title">Red alert generated</string>

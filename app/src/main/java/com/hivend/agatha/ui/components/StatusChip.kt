@@ -11,7 +11,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.Alignment
 import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.ManagementStatus
 import androidx.compose.ui.res.stringResource
 
@@ -31,6 +38,32 @@ fun StatusChip(
             .background(containerColor, RoundedCornerShape(20.dp))
             .padding(horizontal = 8.dp, vertical = 4.dp),
     )
+}
+
+/** Color de texto e indicador de un nivel (RN-03). Verde = normal. */
+@Composable
+@ReadOnlyComposable
+fun AlertLevel.levelColor(): Color = when (this) {
+    AlertLevel.RED -> AgathaTheme.colors.critical
+    AlertLevel.ORANGE -> AgathaTheme.colors.warning
+    AlertLevel.YELLOW -> AgathaTheme.colors.caution
+    AlertLevel.GREEN -> AgathaTheme.colors.positive
+}
+
+/** Chip de nivel de la web: "● Rojo", "● Naranja", "● Amarillo". */
+@Composable
+fun LevelChip(level: AlertLevel, modifier: Modifier = Modifier) {
+    val color = level.levelColor()
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier
+            .background(color.copy(alpha = 0.14f), RoundedCornerShape(20.dp))
+            .padding(horizontal = 8.dp, vertical = 3.dp),
+    ) {
+        Box(Modifier.size(6.dp).background(color, CircleShape))
+        Text(stringResource(level.shortLabelRes()), color = color, style = MaterialTheme.typography.labelMedium)
+    }
 }
 
 @Composable

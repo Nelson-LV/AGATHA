@@ -30,6 +30,15 @@ fun AlertLevel.labelRes(): Int = when (this) {
     AlertLevel.GREEN -> R.string.alert_level_green
 }
 
+/** Nombre corto del nivel, como en los chips de la web ("Rojo", "Naranja", "Amarillo", "Normal"). */
+@StringRes
+fun AlertLevel.shortLabelRes(): Int = when (this) {
+    AlertLevel.RED -> R.string.level_red
+    AlertLevel.ORANGE -> R.string.level_orange
+    AlertLevel.YELLOW -> R.string.level_yellow
+    AlertLevel.GREEN -> R.string.level_normal
+}
+
 /** Motivo del aviso gris (RN-02). */
 @StringRes
 fun Notice.labelRes(): Int = when (this) {

@@ -143,9 +143,24 @@ data class Alert(
         return classified.addTag(TagRecord(tag, report.tagOtherDetail, report.recordedAt, report.origin))
     }
 
+    /** Lo que la lista de alertas muestra (HU-4.2): todas las Sin clasificar y las activas clasificadas. */
+    val belongsInAlertList: Boolean
+        get() = managementStatus == ManagementStatus.UNCLASSIFIED || isOngoing
+
     /** Agrega la etiqueta a una alerta clasificada que aún no la tiene (HU-5.2). */
     fun addTag(tag: TagRecord): Alert {
         val current = checkNotNull(classification) { "Alert $id must be classified before tagging" }
         return copy(classification = current.withTag(tag))
     }
 }
+
+/**
+ * Lista de alertas del celular (HU-4.2): primero las Sin clasificar y luego las activas ya
+ * clasificadas; dentro de cada grupo, la más reciente primero.
+ */
+fun List<Alert>.forAlertList(): List<Alert> =
+    filter { it.belongsInAlertList }
+        .sortedWith(
+            compareBy<Alert> { it.managementStatus != ManagementStatus.UNCLASSIFIED }
+                .thenByDescending { it.startedAt },
+        )

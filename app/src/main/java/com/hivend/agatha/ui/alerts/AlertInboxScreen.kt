@@ -43,8 +43,9 @@ import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.components.relativeTimeAgo
-import com.hivend.agatha.ui.components.resolve
+import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.LevelChip
+import com.hivend.agatha.ui.components.labelRes
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -135,22 +136,36 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                 .clickable(onClick = onClick)
                 .padding(vertical = 12.dp),
         ) {
-            Box(
-                modifier = Modifier
-                    .padding(top = 4.dp)
-                    .size(10.dp)
-                    .background(alert.level.color(), CircleShape),
-            )
-            Column(modifier = Modifier.weight(1f).padding(start = 10.dp)) {
+            // Como la tarjeta de alerta de la web: nivel actual, evento, inicio y "Disp. · PK · Municipio".
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier.weight(1f),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    LevelChip(alert.level)
+                    Text(
+                        stringResource(alert.event.labelRes()),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = AgathaTheme.colors.textPrimary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Text(alert.id, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textSecondary)
+                }
                 Text(
-                    stringResource(R.string.inbox_alert_title, stringResource(R.string.alert_point, alert.pointNumber), alert.sensorId),
-                    style = MaterialTheme.typography.labelLarge,
-                    color = AgathaTheme.colors.textPrimary,
+                    stringResource(R.string.alert_list_location, alert.sensorId, alert.pk, alert.municipality),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = AgathaTheme.colors.textSecondary,
                 )
-                Text(alert.description.resolve(), style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
-                Text(relativeTimeAgo(alert.minutesSinceStart()), style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(
+                        formatDateTime(alert.startedAt),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = AgathaTheme.colors.textTertiary,
+                        modifier = Modifier.weight(1f),
+                    )
+                    ManagementStatusChip(status = alert.managementStatus)
+                }
             }
-            ManagementStatusChip(status = alert.managementStatus)
         }
         if (showDivider) {
             HorizontalDivider(color = AgathaTheme.colors.border)
@@ -171,13 +186,4 @@ private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier 
         Icon(icon, contentDescription = null, tint = AgathaTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
         Text(label, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textPrimary, textAlign = TextAlign.Center)
     }
-}
-
-@Composable
-@ReadOnlyComposable
-private fun AlertLevel.color(): Color = when (this) {
-    AlertLevel.RED -> AgathaTheme.colors.critical
-    AlertLevel.ORANGE -> AgathaTheme.colors.warning
-    AlertLevel.YELLOW -> AgathaTheme.colors.caution
-    AlertLevel.GREEN -> AgathaTheme.colors.positive
 }

@@ -66,6 +66,19 @@ class AlertTest {
             .classify(AlertClassification.FALSE_ALARM, later, Origin.Web)
     }
 
+    @Test
+    fun alertListShowsUnclassifiedFirstThenOngoingNewestFirst() {
+        val old = alert(AlertLevel.RED).copy(id = "old", startedAt = start.minusSeconds(3600))
+        val recent = alert(AlertLevel.YELLOW).copy(id = "recent", startedAt = start)
+        val confirmedOngoing = alert(AlertLevel.ORANGE).copy(id = "confirmed", startedAt = later)
+            .classify(AlertClassification.CONFIRMED, later, app)
+        val falseAlarm = alert(AlertLevel.ORANGE).copy(id = "false").classify(AlertClassification.FALSE_ALARM, later, app)
+
+        val ids = listOf(old, falseAlarm, confirmedOngoing, recent).forAlertList().map { it.id }
+
+        assertEquals(listOf("recent", "old", "confirmed"), ids)
+    }
+
     @Test(expected = IllegalStateException::class)
     fun unclassifiedAlertCannotBeTagged() {
         alert(AlertLevel.RED).addTag(TagRecord(AlertTag.GROUND_MOVEMENT, null, later, app))

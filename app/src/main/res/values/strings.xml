@@ -51,6 +51,11 @@
     <string name="alert_level_orange">ALERTA NARANJA</string>
     <string name="alert_level_green">ALERTA VERDE</string>
     <string name="alert_level_yellow">ALERTA AMARILLA</string>
+    <string name="level_red">Rojo</string>
+    <string name="level_orange">Naranja</string>
+    <string name="level_yellow">Amarillo</string>
+    <string name="level_normal">Normal</string>
+    <string name="alert_list_location">Disp. %1$s · %2$s · %3$s</string>
 
     <!-- Avisos (RN-02): gris, no son alertas -->
     <string name="notice_no_communication">Sin comunicación</string>
@@ -94,7 +99,6 @@
         <item quantity="other">%d activas</item>
     </plurals>
     <string name="inbox_empty">Sin alertas naranjas ni rojas. Todos los puntos están en condiciones normales.</string>
-    <string name="inbox_alert_title">%1$s · Sensor %2$s</string>
     <string name="inbox_nav_map">Mapa de nodos</string>
     <string name="inbox_nav_history">Historial</string>
     <string name="inbox_nav_sync">Sincronización</string>
@@ -227,7 +231,6 @@
     <string name="duration_hours" translatable="false">%1$d h</string>
 
     <!-- Valores del dominio (enums y números que la UI formatea) -->
-    <string name="alert_point">Punto %1$d</string>
     <string name="node_name">Nodo %1$s</string>
     <string name="acceleration_low">Baja</string>
     <string name="acceleration_medium">Media</string>
@@ -244,6 +247,7 @@
     -->
     <string name="sample_alert_landslide_risk">Riesgo de deslizamiento — El tubo se movió %1$d cm de su posición original</string>
     <string name="sample_alert_possible_gas_leak">Posible fuga de gas</string>
+    <string name="sample_alert_leak_indicator_yellow">Indicador de fuga por encima del umbral amarillo</string>
     <string name="sample_alert_test_scenario">Escenario de prueba — simulación</string>
     <string name="sample_normal_conditions">Condiciones normales</string>
     <string name="sample_history_red_alert_title">Alerta roja generada</string>
