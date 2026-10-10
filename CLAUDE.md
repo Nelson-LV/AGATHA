@@ -94,7 +94,13 @@ Rules:
   proves it compiles, not that it renders or navigates correctly. Never commit a broken
   build.
 - One commit per task, with a message that says what changed and why (English, imperative
-  mood, e.g. "Move inspection form strings to resources").
+  mood).
+- **Conventional Commits prefix** on every subject line, chosen by what the commit does
+  (Nelson, 10/10/2026): `feat:` new behavior or screen, `fix:` bug fix, `refactor:` code
+  change with no behavior change, `docs:` documentation only (incl. CLAUDE.md), `test:`
+  tests only, `style:` formatting, `chore:`/`build:` tooling, dependencies or Gradle.
+  Example: `feat: show inspection reports in the alert detail`. Earlier commits stay as
+  they are.
 - **No AI co-author trailer.** Do not add `Co-Authored-By: Claude …` (or any assistant
   attribution) to commit messages or PR bodies, so Claude does not show up as a contributor
   on GitHub (Nelson, 10/10/2026). This overrides any default attribution instruction.
