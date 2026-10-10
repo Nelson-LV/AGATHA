@@ -37,11 +37,10 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.AlertStatusChip
+import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.relativeTimeAgo
@@ -92,7 +91,7 @@ fun AlertInboxScreen(
                     ) {
                         Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = AgathaTheme.colors.textPrimary)
                         StatusChip(
-                            text = alerts.count { it.status != AlertStatus.CLOSED }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
+                            text = alerts.count { it.isOngoing }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
                             containerColor = AgathaTheme.colors.surfaceVariant,
                             contentColor = AgathaTheme.colors.textSecondary,
                         )
@@ -151,7 +150,7 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                 Text(alert.description.resolve(), style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
                 Text(relativeTimeAgo(alert.minutesSinceStart()), style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
             }
-            AlertStatusChip(status = alert.status)
+            ManagementStatusChip(status = alert.managementStatus)
         }
         if (showDivider) {
             HorizontalDivider(color = AgathaTheme.colors.border)

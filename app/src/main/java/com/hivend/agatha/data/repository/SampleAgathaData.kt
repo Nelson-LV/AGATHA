@@ -7,7 +7,6 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.AlertTelemetry
 import com.hivend.agatha.domain.model.ClassificationRecord
@@ -66,7 +65,6 @@ internal object SampleAgathaData {
             ),
             startedAt = minutesAgo(5),
             indicator = IndicatorReading(value = 2.8, threshold = 1.5),
-            status = AlertStatus.IN_INSPECTION,
             telemetry = AlertTelemetry(
                 confidencePercentage = 96,
                 acceleration = AccelerationLevel.HIGH,
@@ -90,7 +88,6 @@ internal object SampleAgathaData {
             ),
             startedAt = minutesAgo(40),
             indicator = IndicatorReading(value = 1.9, threshold = 1.5),
-            status = AlertStatus.RECEIVED,
             telemetry = AlertTelemetry(
                 confidencePercentage = 81,
                 acceleration = AccelerationLevel.MEDIUM,
@@ -113,7 +110,6 @@ internal object SampleAgathaData {
             endedAt = minutesAgo(60),
             indicator = IndicatorReading(value = 0.4, threshold = 1.5),
             classification = ClassificationRecord(AlertClassification.CONFIRMED, minutesAgo(90), Origin.Web),
-            status = AlertStatus.CLASSIFIED,
             telemetry = AlertTelemetry(
                 confidencePercentage = 100,
                 acceleration = AccelerationLevel.LOW,
@@ -139,7 +135,6 @@ internal object SampleAgathaData {
                 AlertClassification.FALSE_ALARM, minutesAgo(150), SAMPLE_PHONE,
                 tag = TagRecord(AlertTag.HEAVY_VEHICLE_TRAFFIC, null, minutesAgo(150), SAMPLE_PHONE),
             ),
-            status = AlertStatus.CLOSED,
             telemetry = AlertTelemetry(
                 confidencePercentage = 98,
                 acceleration = AccelerationLevel.LOW,
@@ -202,7 +197,7 @@ internal object SampleAgathaData {
                 "12:42", EventType.ALERT,
                 text(R.string.sample_history_red_alert_title),
                 text(R.string.sample_history_red_alert_detail, 5),
-                text(R.string.sample_history_pending_confirmation),
+                text(R.string.management_status_unclassified),
             ),
             HistoryEvent(
                 "13:05", EventType.INSPECTION,
@@ -232,9 +227,9 @@ internal object SampleAgathaData {
             ),
             HistoryEvent(
                 "13:25", EventType.ALERT,
-                text(R.string.sample_history_alert_closed_title),
-                text(R.string.sample_history_alert_closed_detail),
-                text(R.string.alert_status_closed),
+                text(R.string.sample_history_alert_ended_title),
+                text(R.string.sample_history_alert_ended_detail),
+                text(R.string.management_status_classified_with_tag),
             ),
         )
         else -> listOf(

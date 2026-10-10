@@ -8,7 +8,6 @@ import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.BatteryChargingFull
 import com.hivend.agatha.ui.theme.AgathaTheme
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,14 +27,11 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EditNote
 import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -57,18 +53,17 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.AlertStatusChip
+import com.hivend.agatha.ui.components.ClassificationChip
+import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import androidx.annotation.StringRes
 import com.hivend.agatha.ui.components.labelRes
-import com.hivend.agatha.ui.components.nextStepRes
 import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.components.shortDuration
 
@@ -101,32 +96,12 @@ fun AlertDetailScreen(
             return@Column
         }
 
-        var showCloseDialog by remember { mutableStateOf(false) }
-        if (showCloseDialog) {
-            CloseWithoutInspectionDialog(
-                onConfirm = {
-                    showCloseDialog = false
-                    viewModel.closeWithoutInspection()
-                },
-                onDismiss = { showCloseDialog = false },
-            )
-        }
-
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { SitePill(site = alert.site) }
-            item {
-                AlertCard(
-                    alert = alert,
-                    onInspect = {
-                        viewModel.startInspection()
-                        onRegisterInspection(alert.id)
-                    },
-                    onRequestClose = { showCloseDialog = true },
-                )
-            }
+            item { AlertCard(alert = alert, onNewReport = { onRegisterInspection(alert.id) }) }
             item {
                 ObservationsCard(
                     text = uiState.observations,
@@ -137,8 +112,8 @@ fun AlertDetailScreen(
                 )
             }
             item {
-                FiltersRow(
-                    status = alert.status,
+                ManagementRow(
+                    alert = alert,
                     onViewHistory = { onViewHistory(alert.sensorId) },
                 )
             }
@@ -150,7 +125,7 @@ fun AlertDetailScreen(
 }
 
 @Composable
-private fun AlertCard(alert: Alert, onInspect: () -> Unit, onRequestClose: () -> Unit) {
+private fun AlertCard(alert: Alert, onNewReport: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
@@ -166,7 +141,14 @@ private fun AlertCard(alert: Alert, onInspect: () -> Unit, onRequestClose: () ->
         )
         Text(alert.description.resolve(), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
 
-        PrimaryActions(status = alert.status, onInspect = onInspect, onRequestClose = onRequestClose)
+        Button(
+            onClick = onNewReport,
+            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+            Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
+        }
 
         Row(
             verticalAlignment = Alignment.CenterVertically,
@@ -188,90 +170,12 @@ private fun AlertCard(alert: Alert, onInspect: () -> Unit, onRequestClose: () ->
         }
 
         TelemetryRow(alert)
-
-        Text(stringResource(R.string.alert_detail_next_step), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
-        Text(
-            stringResource(alert.status.nextStepRes()),
-            color = AgathaTheme.colors.brand,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(8.dp))
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-        )
     }
-}
-
-/**
- * Acciones de la alerta. El botón verde siempre lleva al formulario de inspección (iniciar o
- * continuar): el estado solo pasa a Clasificada al guardar la inspección, nunca con un botón
- * suelto. "Cerrar alerta" pide confirmación porque cierra sin registro de inspección.
- */
-@Composable
-private fun PrimaryActions(status: AlertStatus, onInspect: () -> Unit, onRequestClose: () -> Unit) {
-    when (status) {
-        AlertStatus.GENERATED, AlertStatus.RECEIVED, AlertStatus.IN_INSPECTION -> Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Button(
-                onClick = onInspect,
-                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.positive),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(
-                    stringResource(
-                        if (status == AlertStatus.IN_INSPECTION) R.string.alert_detail_continue_inspection else R.string.alert_detail_start_inspection,
-                    ),
-                    modifier = Modifier.padding(start = 4.dp),
-                )
-            }
-            OutlinedButton(
-                onClick = onRequestClose,
-                border = BorderStroke(1.3.dp, AgathaTheme.colors.critical),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.critical),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.alert_detail_close_alert), modifier = Modifier.padding(start = 4.dp))
-            }
-        }
-        AlertStatus.CLASSIFIED, AlertStatus.CLOSED -> StatusChip(
-            text = stringResource(
-                if (status == AlertStatus.CLOSED) R.string.alert_detail_no_pending_actions else R.string.alert_detail_pending_operator_close,
-            ),
-            containerColor = AgathaTheme.colors.surfaceVariant,
-            contentColor = AgathaTheme.colors.textSecondary,
-            modifier = Modifier.fillMaxWidth(),
-        )
-    }
-}
-
-@Composable
-private fun CloseWithoutInspectionDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        icon = { Icon(Icons.Filled.Close, contentDescription = null, tint = AgathaTheme.colors.critical) },
-        title = { Text(stringResource(R.string.alert_close_dialog_title)) },
-        text = { Text(stringResource(R.string.alert_close_dialog_body)) },
-        confirmButton = {
-            TextButton(
-                onClick = onConfirm,
-                colors = ButtonDefaults.textButtonColors(contentColor = AgathaTheme.colors.critical),
-            ) {
-                Text(stringResource(R.string.alert_close_dialog_confirm))
-            }
-        },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
-        },
-    )
 }
 
 /**
  * Observaciones de campo al mismo nivel que la información de la alerta: el técnico las
- * escribe sin tener que entrar a la inspección (y también si cierra la alerta sin ella).
+ * escribe sin tener que entrar a un reporte de inspección.
  */
 @Composable
 private fun ObservationsCard(
@@ -352,7 +256,7 @@ private fun TelemetryStat(label: String, value: String) {
 }
 
 @Composable
-private fun FiltersRow(status: AlertStatus, onViewHistory: () -> Unit) {
+private fun ManagementRow(alert: Alert, onViewHistory: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
@@ -360,13 +264,12 @@ private fun FiltersRow(status: AlertStatus, onViewHistory: () -> Unit) {
             .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
-        StatusChip(
-            text = stringResource(R.string.alert_detail_status, stringResource(status.labelRes())),
-            containerColor = AgathaTheme.colors.surfaceVariant,
-            contentColor = AgathaTheme.colors.textOnMuted,
-        )
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+            ManagementStatusChip(alert.managementStatus)
+            alert.classification?.let { ClassificationChip(it.classification) }
+        }
         Text(
-            stringResource(R.string.alert_detail_view_status_history),
+            stringResource(R.string.alert_detail_view_device_history),
             color = AgathaTheme.colors.brand,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.clickable(onClick = onViewHistory),

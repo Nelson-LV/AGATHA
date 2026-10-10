@@ -11,7 +11,6 @@ import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorType
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.EventCategory
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.InspectionResult
@@ -22,15 +21,6 @@ import com.hivend.agatha.domain.model.Notice
  * idiomas: cada pantalla traduce el enum a un recurso de res/values(-en)/strings.xml con
  * estas funciones y lo resuelve con stringResource(). Ver CLAUDE.md § "User-facing strings".
  */
-
-@StringRes
-fun AlertStatus.labelRes(): Int = when (this) {
-    AlertStatus.GENERATED -> R.string.alert_status_generated
-    AlertStatus.RECEIVED -> R.string.alert_status_received
-    AlertStatus.IN_INSPECTION -> R.string.alert_status_in_inspection
-    AlertStatus.CLASSIFIED -> R.string.alert_status_classified
-    AlertStatus.CLOSED -> R.string.alert_status_closed
-}
 
 @StringRes
 fun AlertLevel.labelRes(): Int = when (this) {
@@ -126,15 +116,6 @@ fun EventCategory.labelRes(): Int = when (this) {
     EventCategory.SCHEDULED_MAINTENANCE -> R.string.event_category_scheduled_maintenance
     EventCategory.SUSPECTED_LEAK -> R.string.event_category_suspected_leak
     EventCategory.OTHER -> R.string.event_category_other
-}
-
-/** Qué debe hacer el técnico a continuación según el estado de la alerta. */
-@StringRes
-fun AlertStatus.nextStepRes(): Int = when (this) {
-    AlertStatus.GENERATED, AlertStatus.RECEIVED -> R.string.alert_next_step_start_inspection
-    AlertStatus.IN_INSPECTION -> R.string.alert_next_step_register_inspection
-    AlertStatus.CLASSIFIED -> R.string.alert_next_step_review_classification
-    AlertStatus.CLOSED -> R.string.alert_next_step_none
 }
 
 @StringRes

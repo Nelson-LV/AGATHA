@@ -1,7 +1,6 @@
 package com.hivend.agatha.data.repository
 
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.PhotoEvidence
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.repository.AlertRepository
@@ -32,12 +31,6 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
     override fun observeAlert(alertId: String) =
         alerts.map { list -> list.find { it.id == alertId } }
 
-    override suspend fun updateStatus(alertId: String, newStatus: AlertStatus) {
-        alerts.update { list ->
-            list.map { if (it.id == alertId) it.copy(status = newStatus) else it }
-        }
-    }
-
     override suspend fun saveObservations(alertId: String, observations: String) {
         alerts.update { list ->
             list.map { if (it.id == alertId) it.copy(observations = observations) else it }
@@ -45,7 +38,7 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
     }
 
     override suspend fun registerInspection(inspection: Inspection) {
-        updateStatus(inspection.alertId, AlertStatus.CLASSIFIED)
+        // Sprint 3: persistir el reporte en Room y encolarlo en data/sync para su subida.
     }
 
     override suspend fun registerEvidence(alertId: String, evidence: List<PhotoEvidence>) {

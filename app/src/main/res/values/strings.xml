@@ -45,11 +45,6 @@
     <string name="site_pill">Sitio: %1$s</string>
 
     <!-- Estados de alerta -->
-    <string name="alert_status_generated">Generada</string>
-    <string name="alert_status_received">Recibida</string>
-    <string name="alert_status_in_inspection">En inspección</string>
-    <string name="alert_status_classified">Clasificada</string>
-    <string name="alert_status_closed">Cerrada</string>
 
     <!-- Niveles de alerta -->
     <string name="alert_level_red">ALERTA ROJA</string>
@@ -110,17 +105,8 @@
     <string name="alert_detail_not_found">Alerta no encontrada</string>
     <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
     <string name="alert_detail_scheduled_maintenance">Mantenimiento programado</string>
-    <string name="alert_detail_next_step">Siguiente paso</string>
-    <string name="alert_detail_start_inspection">Iniciar inspección</string>
-    <string name="alert_detail_continue_inspection">Continuar inspección</string>
-    <string name="alert_detail_close_alert">Cerrar alerta</string>
-    <string name="alert_close_dialog_title">¿Cerrar la alerta sin inspección?</string>
-    <string name="alert_close_dialog_body">La alerta quedará cerrada sin un registro de inspección. Las observaciones de campo que escribiste se guardan con ella.</string>
-    <string name="alert_close_dialog_confirm">Cerrar sin inspección</string>
-    <string name="alert_detail_no_pending_actions">Sin acciones pendientes</string>
-    <string name="alert_detail_pending_operator_close">Pendiente de cierre por operador</string>
-    <string name="alert_detail_status">Estado: %1$s</string>
-    <string name="alert_detail_view_status_history">Ver historial de cambios de estado</string>
+    <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
+    <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
     <string name="alert_detail_observations_title">Observaciones de campo</string>
     <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio (se guarda incluso sin conexión)…</string>
     <string name="alert_detail_observations_save">Guardar observaciones</string>
@@ -239,10 +225,6 @@
     <string name="sensor_type_acoustic">Acústico</string>
     <string name="sensor_type_environment">Condiciones ambientales</string>
     <string name="sensor_type_power">Energía / batería</string>
-    <string name="alert_next_step_start_inspection">Iniciar inspección</string>
-    <string name="alert_next_step_register_inspection">Registrar inspección de campo</string>
-    <string name="alert_next_step_review_classification">Revisar clasificación</string>
-    <string name="alert_next_step_none">Sin acción pendiente</string>
 
     <!--
         Datos de ejemplo de los repositorios en memoria (data/repository/SampleAgathaData.kt
@@ -255,7 +237,6 @@
     <string name="sample_normal_conditions">Condiciones normales</string>
     <string name="sample_history_red_alert_title">Alerta roja generada</string>
     <string name="sample_history_red_alert_detail">Riesgo de deslizamiento — el tubo se movió %1$d cm</string>
-    <string name="sample_history_pending_confirmation">Pendiente de confirmar</string>
     <string name="sample_history_inspection_title">Inspección registrada</string>
     <string name="sample_history_inspection_detail">Resultado: mantenimiento requerido</string>
     <string name="sample_history_classification_title">Clasificación del evento</string>
@@ -266,15 +247,15 @@
     <string name="sample_history_maintenance_title">Mantenimiento realizado</string>
     <string name="sample_history_maintenance_detail">Ajuste de anclaje y limpieza del sensor</string>
     <string name="sample_history_completed">Completado</string>
-    <string name="sample_history_alert_closed_title">Alerta cerrada</string>
-    <string name="sample_history_alert_closed_detail">Estado final: Clasificada — sin anomalías adicionales</string>
+    <string name="sample_history_alert_ended_title">Fin de la alerta</string>
+    <string name="sample_history_alert_ended_detail">El indicador volvió a Normal · Confirmada, etiqueta: Movimiento de tierra</string>
     <string name="sample_history_all_points_stable">Todos los puntos estables</string>
     <string name="sample_sync_inspection_title">Inspección · Punto %1$d</string>
     <string name="sample_sync_inspection_detail">Registrada %1$s · esperando conexión</string>
     <string name="sample_sync_evidence_title">Foto evidencia · Punto %1$d</string>
     <string name="sample_sync_evidence_detail">%1$d imágenes · registradas %2$s</string>
     <string name="sample_sync_classification_title">Clasificación · Punto %1$d</string>
-    <string name="sample_sync_classification_detail">Indicios de fuga · error al enviar</string>
+    <string name="sample_sync_classification_detail">Fuga confirmada en campo · error al enviar</string>
     <string name="sample_sync_conflict_title">Conflicto detectado · Punto %1$d</string>
     <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
     <string name="sample_sync_conflict_local">Clasificación: Indicios de fuga · %1$s</string>

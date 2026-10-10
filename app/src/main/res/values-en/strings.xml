@@ -35,11 +35,6 @@
     <string name="site_pill">Site: %1$s</string>
 
     <!-- Alert statuses -->
-    <string name="alert_status_generated">Generated</string>
-    <string name="alert_status_received">Received</string>
-    <string name="alert_status_in_inspection">In inspection</string>
-    <string name="alert_status_classified">Classified</string>
-    <string name="alert_status_closed">Closed</string>
 
     <!-- Alert levels -->
     <string name="alert_level_red">RED ALERT</string>
@@ -100,17 +95,8 @@
     <string name="alert_detail_not_found">Alert not found</string>
     <string name="alert_detail_header">%1$s · Sensor %2$s · %3$s</string>
     <string name="alert_detail_scheduled_maintenance">Scheduled maintenance</string>
-    <string name="alert_detail_next_step">Next step</string>
-    <string name="alert_detail_start_inspection">Start inspection</string>
-    <string name="alert_detail_continue_inspection">Continue inspection</string>
-    <string name="alert_detail_close_alert">Close alert</string>
-    <string name="alert_close_dialog_title">Close the alert without an inspection?</string>
-    <string name="alert_close_dialog_body">The alert will be closed with no inspection record. Any field notes you wrote are saved with it.</string>
-    <string name="alert_close_dialog_confirm">Close without inspection</string>
-    <string name="alert_detail_no_pending_actions">No pending actions</string>
-    <string name="alert_detail_pending_operator_close">Waiting for operator to close</string>
-    <string name="alert_detail_status">Status: %1$s</string>
-    <string name="alert_detail_view_status_history">View status change history</string>
+    <string name="alert_detail_new_inspection_report">New inspection report</string>
+    <string name="alert_detail_view_device_history">View device history</string>
     <string name="alert_detail_observations_title">Field notes</string>
     <string name="alert_detail_observations_placeholder">Describe what you see on site (saved even when offline)…</string>
     <string name="alert_detail_observations_save">Save notes</string>
@@ -227,10 +213,6 @@
     <string name="sensor_type_acoustic">Acoustic</string>
     <string name="sensor_type_environment">Environmental conditions</string>
     <string name="sensor_type_power">Power / battery</string>
-    <string name="alert_next_step_start_inspection">Start inspection</string>
-    <string name="alert_next_step_register_inspection">Log field inspection</string>
-    <string name="alert_next_step_review_classification">Review classification</string>
-    <string name="alert_next_step_none">No pending action</string>
 
     <!-- Sample data (in-memory repositories, until the central API is integrated) -->
     <string name="sample_alert_landslide_risk">Landslide risk — The pipe moved %1$d cm from its original position</string>
@@ -239,7 +221,6 @@
     <string name="sample_normal_conditions">Normal conditions</string>
     <string name="sample_history_red_alert_title">Red alert generated</string>
     <string name="sample_history_red_alert_detail">Landslide risk — the pipe moved %1$d cm</string>
-    <string name="sample_history_pending_confirmation">Pending confirmation</string>
     <string name="sample_history_inspection_title">Inspection logged</string>
     <string name="sample_history_inspection_detail">Result: maintenance required</string>
     <string name="sample_history_classification_title">Event classification</string>
@@ -250,15 +231,15 @@
     <string name="sample_history_maintenance_title">Maintenance performed</string>
     <string name="sample_history_maintenance_detail">Anchor adjustment and sensor cleaning</string>
     <string name="sample_history_completed">Completed</string>
-    <string name="sample_history_alert_closed_title">Alert closed</string>
-    <string name="sample_history_alert_closed_detail">Final status: Classified — no further anomalies</string>
+    <string name="sample_history_alert_ended_title">Alert ended</string>
+    <string name="sample_history_alert_ended_detail">The indicator returned to Normal · Confirmed, tag: Ground movement</string>
     <string name="sample_history_all_points_stable">All points stable</string>
     <string name="sample_sync_inspection_title">Inspection · Point %1$d</string>
     <string name="sample_sync_inspection_detail">Logged %1$s · waiting for connection</string>
     <string name="sample_sync_evidence_title">Photo evidence · Point %1$d</string>
     <string name="sample_sync_evidence_detail">%1$d images · logged %2$s</string>
     <string name="sample_sync_classification_title">Classification · Point %1$d</string>
-    <string name="sample_sync_classification_detail">Leak signs · failed to send</string>
+    <string name="sample_sync_classification_detail">Leak confirmed in the field · send failed</string>
     <string name="sample_sync_conflict_title">Conflict detected · Point %1$d</string>
     <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
     <string name="sample_sync_conflict_local">Classification: Leak signs · %1$s</string>

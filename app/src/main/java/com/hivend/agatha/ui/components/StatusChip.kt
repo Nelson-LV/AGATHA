@@ -11,7 +11,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.hivend.agatha.domain.model.AlertStatus
+import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.ManagementStatus
 import androidx.compose.ui.res.stringResource
 
 /** Pastilla de texto genérica (contador, etiqueta de historial, tag "Pendiente", etc.). */
@@ -34,17 +35,29 @@ fun StatusChip(
 
 @Composable
 @ReadOnlyComposable
-private fun AlertStatus.statusColors(): Pair<Color, Color> = when (this) {
-    AlertStatus.GENERATED -> AgathaTheme.colors.stateInspectionContainer to AgathaTheme.colors.stateInspection
-    AlertStatus.RECEIVED -> AgathaTheme.colors.stateReceivedContainer to AgathaTheme.colors.stateReceived
-    AlertStatus.IN_INSPECTION -> AgathaTheme.colors.stateInspectionContainer to AgathaTheme.colors.stateInspection
-    AlertStatus.CLASSIFIED -> AgathaTheme.colors.stateClassifiedContainer to AgathaTheme.colors.stateClassified
-    AlertStatus.CLOSED -> AgathaTheme.colors.stateClosedContainer to AgathaTheme.colors.stateClosed
+private fun ManagementStatus.statusColors(): Pair<Color, Color> = when (this) {
+    ManagementStatus.UNCLASSIFIED -> AgathaTheme.colors.managementUnclassifiedContainer to AgathaTheme.colors.managementUnclassified
+    ManagementStatus.CLASSIFIED_WITHOUT_TAG -> AgathaTheme.colors.managementUntaggedContainer to AgathaTheme.colors.managementUntagged
+    ManagementStatus.CLASSIFIED_WITH_TAG -> AgathaTheme.colors.managementTaggedContainer to AgathaTheme.colors.managementTagged
 }
 
-/** Chip de estado de alerta (Recibida / En inspección / Clasificada / Cerrada). */
+/** Chip de estado de gestión de la web: Sin clasificar (gris), sin etiqueta (azul), con etiqueta (verde). */
 @Composable
-fun AlertStatusChip(status: AlertStatus, modifier: Modifier = Modifier) {
+fun ManagementStatusChip(status: ManagementStatus, modifier: Modifier = Modifier) {
     val (container, content) = status.statusColors()
     StatusChip(text = stringResource(status.labelRes()), containerColor = container, contentColor = content, modifier = modifier)
+}
+
+@Composable
+@ReadOnlyComposable
+private fun AlertClassification.chipColors(): Pair<Color, Color> = when (this) {
+    AlertClassification.CONFIRMED -> AgathaTheme.colors.classificationConfirmedContainer to AgathaTheme.colors.classificationConfirmed
+    AlertClassification.FALSE_ALARM -> AgathaTheme.colors.classificationFalseAlarmContainer to AgathaTheme.colors.classificationFalseAlarm
+}
+
+/** Chip de clasificación de la web: Confirmada (rojo) o Falsa alerta (morado). */
+@Composable
+fun ClassificationChip(classification: AlertClassification, modifier: Modifier = Modifier) {
+    val (container, content) = classification.chipColors()
+    StatusChip(text = stringResource(classification.labelRes()), containerColor = container, contentColor = content, modifier = modifier)
 }

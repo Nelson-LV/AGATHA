@@ -23,7 +23,6 @@ class AlertTest {
         level = levels.last(),
         levelTimeline = levels.mapIndexed { i, level -> LevelChange(level, start.plusSeconds(60L * i)) },
         startedAt = start,
-        status = AlertStatus.GENERATED,
         telemetry = AlertTelemetry(90, AccelerationLevel.LOW, 80, isRealData = true),
     )
 

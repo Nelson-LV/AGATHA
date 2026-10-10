@@ -50,19 +50,6 @@ data class IndicatorReading(
     val threshold: Double,
 )
 
-/**
- * Ciclo de vida propio de la app acordado el 07/10/2026 (HU-4.4). **Deuda:** el Backlog 1.3
- * lo reemplaza por [AlertClassification] + [ManagementStatus]; sigue aquí solo mientras las
- * pantallas de bandeja, detalle e inspección no se rehacen (BACKLOG_V1_3_APP_MOVIL.md § 5).
- */
-enum class AlertStatus {
-    GENERATED,
-    RECEIVED,
-    IN_INSPECTION,
-    CLASSIFIED,
-    CLOSED,
-}
-
 /** Intensidad de la aceleración medida por el sensor de movimiento. */
 enum class AccelerationLevel {
     LOW,
@@ -107,8 +94,6 @@ data class Alert(
     /** null cuando el indicador no es calculable (aviso, RN-02). */
     val indicator: IndicatorReading? = null,
     val classification: ClassificationRecord? = null,
-    /** Deuda 07/10, ver [AlertStatus]. */
-    val status: AlertStatus,
     val telemetry: AlertTelemetry,
     /** Observaciones de campo escritas por el técnico (texto libre, no se traduce). */
     val observations: String = "",

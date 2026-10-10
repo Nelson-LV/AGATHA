@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.core.navigation.AgathaDestination
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertStatus
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
@@ -67,26 +66,6 @@ class AlertDetailViewModel @Inject constructor(
             observationsDirty = draft != null && draft != saved,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertDetailUiState())
-
-    /** Al abrir el formulario, una alerta recibida pasa a "En inspección". */
-    fun startInspection() {
-        val status = uiState.value.alert?.status ?: return
-        if (status == AlertStatus.GENERATED || status == AlertStatus.RECEIVED) {
-            viewModelScope.launch { alertRepository.updateStatus(alertId, AlertStatus.IN_INSPECTION) }
-        }
-    }
-
-    /** Cierra la alerta sin inspección, guardando antes las observaciones pendientes. */
-    fun closeWithoutInspection() {
-        val draft = observationsDraft.value
-        viewModelScope.launch {
-            if (draft != null) {
-                alertRepository.saveObservations(alertId, draft)
-                observationsDraft.value = null
-            }
-            alertRepository.updateStatus(alertId, AlertStatus.CLOSED)
-        }
-    }
 
     fun onObservationsChange(text: String) {
         observationsDraft.value = text
