@@ -11,10 +11,15 @@ import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -40,9 +45,18 @@ class AlertDetailViewModel @Inject constructor(
     /** null = sin edición en curso; el campo muestra lo guardado en la alerta. */
     private val observationsDraft = MutableStateFlow<String?>(null)
 
+    /** El historial es del dispositivo, no de la alerta (ids ALR-xxxx ≠ id del sensor). */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    private val deviceHistory = alertRepository.observeAlert(alertId)
+        .map { it?.sensorId }
+        .distinctUntilChanged()
+        .flatMapLatest { sensorId ->
+            if (sensorId == null) flowOf(emptyList()) else historyRepository.observeHistory(sensorId)
+        }
+
     val uiState: StateFlow<AlertDetailUiState> = combine(
         alertRepository.observeAlert(alertId),
-        historyRepository.observeHistory(alertId),
+        deviceHistory,
         observationsDraft,
     ) { alert, history, draft ->
         val saved = alert?.observations.orEmpty()

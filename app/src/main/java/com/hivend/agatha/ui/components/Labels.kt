@@ -5,6 +5,7 @@ import com.hivend.agatha.R
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.domain.model.AccelerationLevel
 import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ManagementStatus
@@ -44,6 +45,13 @@ fun AlertLevel.labelRes(): Int = when (this) {
 fun Notice.labelRes(): Int = when (this) {
     Notice.NO_COMMUNICATION -> R.string.notice_no_communication
     Notice.INDICATOR_UNAVAILABLE -> R.string.notice_indicator_unavailable
+}
+
+@StringRes
+fun AlertEvent.labelRes(): Int = when (this) {
+    AlertEvent.LEAK -> R.string.alert_event_leak
+    AlertEvent.MOVEMENT -> R.string.alert_event_movement
+    AlertEvent.LEAK_AND_MOVEMENT -> R.string.alert_event_leak_and_movement
 }
 
 @StringRes

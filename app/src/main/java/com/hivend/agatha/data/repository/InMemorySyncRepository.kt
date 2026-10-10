@@ -44,7 +44,7 @@ class InMemorySyncRepository @Inject constructor() : SyncRepository {
                 ),
             ),
             conflict = SyncConflict(
-                alertId = "MP-1122",
+                alertId = "ALR-0136",
                 conflictTitle = text(R.string.sample_sync_conflict_title, 1),
                 description = text(R.string.sample_sync_conflict_description),
                 localChange = text(R.string.sample_sync_conflict_local, "13:10"),

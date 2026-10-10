@@ -61,6 +61,11 @@
     <string name="notice_no_communication">Sin comunicación</string>
     <string name="notice_indicator_unavailable">Indicador no calculable</string>
 
+    <!-- Evento de la alerta (RN-12) -->
+    <string name="alert_event_leak">Fuga</string>
+    <string name="alert_event_movement">Movimiento</string>
+    <string name="alert_event_leak_and_movement">Fuga y Movimiento</string>
+
     <!-- Clasificación y estado de gestión (RN-06) -->
     <string name="classification_confirmed">Confirmada</string>
     <string name="classification_false_alarm">Falsa alerta</string>

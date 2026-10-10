@@ -149,7 +149,7 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                     color = AgathaTheme.colors.textPrimary,
                 )
                 Text(alert.description.resolve(), style = MaterialTheme.typography.bodyMedium, color = AgathaTheme.colors.textSecondary)
-                Text(relativeTimeAgo(alert.minutesAgo), style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
+                Text(relativeTimeAgo(alert.minutesSinceStart()), style = MaterialTheme.typography.bodySmall, color = AgathaTheme.colors.textTertiary)
             }
             AlertStatusChip(status = alert.status)
         }

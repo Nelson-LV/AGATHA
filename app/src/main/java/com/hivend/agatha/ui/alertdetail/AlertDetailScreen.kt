@@ -329,7 +329,7 @@ private fun TelemetryRow(alert: Alert) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             TelemetryStat(stringResource(R.string.telemetry_confidence), stringResource(R.string.common_percent, alert.telemetry.confidencePercentage))
             TelemetryStat(stringResource(R.string.telemetry_acceleration), stringResource(alert.telemetry.acceleration.labelRes()))
-            TelemetryStat(stringResource(R.string.telemetry_time_ago), shortDuration(alert.minutesAgo))
+            TelemetryStat(stringResource(R.string.telemetry_time_ago), shortDuration(alert.minutesSinceStart()))
             TelemetryStat(stringResource(R.string.telemetry_battery), stringResource(R.string.common_percent, alert.telemetry.batteryPercentage))
         }
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {

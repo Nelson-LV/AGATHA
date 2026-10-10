@@ -4,14 +4,24 @@ import androidx.annotation.StringRes
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.AccelerationLevel
 import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertStatus
+import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.AlertTelemetry
+import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.IndicatorReading
+import com.hivend.agatha.domain.model.LevelChange
 import com.hivend.agatha.domain.model.LocalizedText
+import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorType
+import com.hivend.agatha.domain.model.TagRecord
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Datos de muestra usados por los repositorios en memoria mientras HE-04..HE-08 no
@@ -27,20 +37,36 @@ import com.hivend.agatha.domain.model.SensorType
 internal object SampleAgathaData {
 
     const val SITE = "Güepsa – San José de Pare"
+    const val MUNICIPALITY = "San José de Pare"
+
+    /** Celular de ejemplo que registró los datos de campo (no hay login, RN-10). */
+    private val SAMPLE_PHONE = Origin.MobileApp("CEL-01")
+
+    /** Las fechas de ejemplo son relativas al arranque para que "hace 5 min" siga siendo cierto. */
+    private val startup: Instant = Instant.now()
+
+    private fun minutesAgo(minutes: Long): Instant = startup.minus(Duration.ofMinutes(minutes))
 
     private fun text(@StringRes id: Int, vararg args: Any) = LocalizedText.Resource(id, args.toList())
 
     val alerts: List<Alert> = listOf(
         Alert(
-            id = "MP-1156",
+            id = "ALR-0142",
             pointNumber = 3,
             sensorId = "MP-1156",
             pk = "PK37+800",
             site = SITE,
+            municipality = MUNICIPALITY,
+            event = AlertEvent.MOVEMENT,
             description = text(R.string.sample_alert_landslide_risk, 5),
             level = AlertLevel.RED,
+            levelTimeline = listOf(
+                LevelChange(AlertLevel.ORANGE, minutesAgo(5)),
+                LevelChange(AlertLevel.RED, minutesAgo(3)),
+            ),
+            startedAt = minutesAgo(5),
+            indicator = IndicatorReading(value = 2.8, threshold = 1.5),
             status = AlertStatus.IN_INSPECTION,
-            minutesAgo = 5,
             telemetry = AlertTelemetry(
                 confidencePercentage = 96,
                 acceleration = AccelerationLevel.HIGH,
@@ -49,15 +75,22 @@ internal object SampleAgathaData {
             ),
         ),
         Alert(
-            id = "MP-1189",
+            id = "ALR-0139",
             pointNumber = 2,
             sensorId = "MP-1189",
             pk = "PK22+300",
             site = SITE,
+            municipality = MUNICIPALITY,
+            event = AlertEvent.LEAK,
             description = text(R.string.sample_alert_possible_gas_leak),
             level = AlertLevel.ORANGE,
+            levelTimeline = listOf(
+                LevelChange(AlertLevel.YELLOW, minutesAgo(40)),
+                LevelChange(AlertLevel.ORANGE, minutesAgo(25)),
+            ),
+            startedAt = minutesAgo(40),
+            indicator = IndicatorReading(value = 1.9, threshold = 1.5),
             status = AlertStatus.RECEIVED,
-            minutesAgo = 40,
             telemetry = AlertTelemetry(
                 confidencePercentage = 81,
                 acceleration = AccelerationLevel.MEDIUM,
@@ -66,15 +99,21 @@ internal object SampleAgathaData {
             ),
         ),
         Alert(
-            id = "MP-1122",
+            id = "ALR-0136",
             pointNumber = 1,
             sensorId = "MP-1122",
             pk = "PK10+050",
             site = SITE,
+            municipality = MUNICIPALITY,
+            event = AlertEvent.LEAK_AND_MOVEMENT,
             description = text(R.string.sample_alert_test_scenario),
             level = AlertLevel.GREEN,
+            levelTimeline = listOf(LevelChange(AlertLevel.RED, minutesAgo(120))),
+            startedAt = minutesAgo(120),
+            endedAt = minutesAgo(60),
+            indicator = IndicatorReading(value = 0.4, threshold = 1.5),
+            classification = ClassificationRecord(AlertClassification.CONFIRMED, minutesAgo(90), Origin.Web),
             status = AlertStatus.CLASSIFIED,
-            minutesAgo = 120,
             telemetry = AlertTelemetry(
                 confidencePercentage = 100,
                 acceleration = AccelerationLevel.LOW,
@@ -83,15 +122,24 @@ internal object SampleAgathaData {
             ),
         ),
         Alert(
-            id = "MP-1201",
+            id = "ALR-0133",
             pointNumber = 4,
             sensorId = "MP-1201",
             pk = "PK44+120",
             site = SITE,
+            municipality = MUNICIPALITY,
+            event = AlertEvent.LEAK,
             description = text(R.string.sample_normal_conditions),
             level = AlertLevel.GREEN,
+            levelTimeline = listOf(LevelChange(AlertLevel.ORANGE, minutesAgo(180))),
+            startedAt = minutesAgo(180),
+            endedAt = minutesAgo(150),
+            indicator = IndicatorReading(value = 0.6, threshold = 1.5),
+            classification = ClassificationRecord(
+                AlertClassification.FALSE_ALARM, minutesAgo(150), SAMPLE_PHONE,
+                tag = TagRecord(AlertTag.HEAVY_VEHICLE_TRAFFIC, null, minutesAgo(150), SAMPLE_PHONE),
+            ),
             status = AlertStatus.CLOSED,
-            minutesAgo = 180,
             telemetry = AlertTelemetry(
                 confidencePercentage = 98,
                 acceleration = AccelerationLevel.LOW,
