@@ -39,6 +39,9 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
     /** Reportes guardados en esta sesión. Sprint 3: Room + cola de data/sync (HU-7.2). */
     private val inspections = MutableStateFlow<List<Inspection>>(emptyList())
 
+    override fun observeInspections(alertId: String) =
+        inspections.map { list -> list.filter { it.alertId == alertId }.sortedByDescending { it.recordedAt } }
+
     override suspend fun registerInspection(inspection: Inspection) {
         inspections.update { it + inspection }
         val alertId = inspection.alertId ?: return

@@ -122,6 +122,14 @@
     <string name="alert_detail_classification">Clasificación</string>
     <string name="alert_detail_unclassified_hint">Se clasifica desde un nuevo reporte de inspección.</string>
     <string name="alert_detail_no_tag">Sin etiqueta</string>
+    <plurals name="alert_detail_reports">
+        <item quantity="one">Reportes de inspección (%d)</item>
+        <item quantity="other">Reportes de inspección (%d)</item>
+    </plurals>
+    <string name="alert_detail_no_reports">Todavía no hay reportes de inspección para esta alerta.</string>
+    <string name="alert_detail_pending_sync">Pendiente de sincronizar</string>
+    <string name="alert_detail_report_result">Resultado: %1$s</string>
+    <string name="alert_detail_report_maintenance">Mantenimiento: %1$s</string>
     <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
     <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
     <string name="alert_detail_observations_title">Observaciones de campo</string>

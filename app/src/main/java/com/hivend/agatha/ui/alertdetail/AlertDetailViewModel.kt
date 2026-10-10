@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.core.navigation.AgathaDestination
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,6 +26,8 @@ import kotlinx.coroutines.launch
 data class AlertDetailUiState(
     val alert: Alert? = null,
     val recentHistory: List<HistoryEvent> = emptyList(),
+    /** Reportes de inspección de esta alerta, el más reciente primero (HU-4.2). */
+    val reports: List<Inspection> = emptyList(),
     /** Texto que se ve en el campo de observaciones (borrador o lo ya guardado). */
     val observations: String = "",
     /** true cuando hay cambios en el campo que aún no se guardaron. */
@@ -56,12 +59,14 @@ class AlertDetailViewModel @Inject constructor(
     val uiState: StateFlow<AlertDetailUiState> = combine(
         alertRepository.observeAlert(alertId),
         deviceHistory,
+        alertRepository.observeInspections(alertId),
         observationsDraft,
-    ) { alert, history, draft ->
+    ) { alert, history, reports, draft ->
         val saved = alert?.observations.orEmpty()
         AlertDetailUiState(
             alert = alert,
             recentHistory = history.take(4),
+            reports = reports,
             observations = draft ?: saved,
             observationsDirty = draft != null && draft != saved,
         )

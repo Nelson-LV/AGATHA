@@ -18,4 +18,7 @@ interface AlertRepository {
     fun observeAlert(alertId: String): Flow<Alert?>
     suspend fun saveObservations(alertId: String, observations: String)
     suspend fun registerInspection(inspection: Inspection)
+
+    /** Reportes de inspección asociados a la alerta, el más reciente primero (HU-4.2). */
+    fun observeInspections(alertId: String): Flow<List<Inspection>>
 }

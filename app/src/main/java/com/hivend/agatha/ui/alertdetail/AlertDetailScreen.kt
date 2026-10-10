@@ -65,6 +65,12 @@ import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import com.hivend.agatha.domain.model.Inspection
+import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.R
 import androidx.annotation.StringRes
 import com.hivend.agatha.ui.components.labelRes
@@ -108,6 +114,7 @@ fun AlertDetailScreen(
             item { AlertCard(alert = alert, onNewReport = { onRegisterInspection(alert.id) }) }
             item { ClassificationCard(alert = alert, onViewHistory = { onViewHistory(alert.sensorId) }) }
             item { LevelTimelineCard(alert) }
+            item { ReportsCard(uiState.reports) }
             item {
                 ObservationsCard(
                     text = uiState.observations,
@@ -258,6 +265,78 @@ private fun ClassificationCard(alert: Alert, onViewHistory: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.clickable(onClick = onViewHistory),
         )
+    }
+}
+
+/**
+ * Reportes de inspección de la alerta (HU-4.2): resultado, mantenimiento, observación y fotos,
+ * con fecha-hora y origen. No se editan; los guardados en el celular esperan sincronizarse.
+ */
+@Composable
+private fun ReportsCard(reports: List<Inspection>) {
+    SectionCard(title = pluralStringResource(R.plurals.alert_detail_reports, reports.size, reports.size)) {
+        if (reports.isEmpty()) {
+            Text(stringResource(R.string.alert_detail_no_reports), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        reports.forEach { report ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.common_dot_separated, formatDateTime(report.recordedAt), report.origin.label()),
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    StatusChip(
+                        text = stringResource(R.string.alert_detail_pending_sync),
+                        containerColor = AgathaTheme.colors.offlineContainer,
+                        contentColor = AgathaTheme.colors.offline,
+                    )
+                }
+                Text(
+                    stringResource(
+                        R.string.alert_detail_report_result,
+                        report.resultOtherDetail ?: stringResource(report.result.labelRes()),
+                    ),
+                    color = AgathaTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+                report.maintenance?.let { maintenance ->
+                    val types = maintenance.types.sortedBy { it.ordinal }.map {
+                        if (it == MaintenanceType.OTHER) maintenance.otherDetail.orEmpty() else stringResource(it.labelRes())
+                    }
+                    Text(
+                        stringResource(R.string.alert_detail_report_maintenance, types.joinToString(", ")),
+                        color = AgathaTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    maintenance.description?.let {
+                        Text(it, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                report.observations?.let {
+                    Text(it, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                }
+                if (report.photos.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        report.photos.forEach { photo ->
+                            AsyncImage(
+                                model = photo.uri,
+                                contentDescription = photo.description.ifBlank { null },
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)),
+                            )
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
