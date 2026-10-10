@@ -1,6 +1,19 @@
 package com.hivend.agatha.core.navigation
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -49,6 +62,10 @@ fun AgathaApp() {
             navController = navController,
             startDestination = BottomTab.Alerts.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { if (isTabSwitch()) tabEnter() else forwardEnter() },
+            exitTransition = { if (isTabSwitch()) tabExit() else forwardExit() },
+            popEnterTransition = { if (isTabSwitch()) tabEnter() else backEnter() },
+            popExitTransition = { if (isTabSwitch()) tabExit() else backExit() },
         ) {
             composable(BottomTab.Alerts.route) {
                 AlertInboxScreen(
@@ -105,6 +122,44 @@ fun AgathaApp() {
         }
     }
 }
+
+/*
+ * Transiciones (Material motion). Entre pestañas: "fade through" corto, porque son destinos
+ * hermanos sin relación espacial. Al apilar una pantalla (detalle, reporte): "shared axis X",
+ * la nueva entra desde la derecha y la anterior se desplaza un poco a la izquierda; al volver,
+ * al revés. Reemplaza el fundido largo por defecto de Navigation Compose.
+ */
+private const val TAB_FADE_OUT_MS = 90
+private const val TAB_FADE_IN_MS = 210
+private const val AXIS_MS = 300
+private const val AXIS_FADE_MS = 150
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+    initialState.destination.route.isTabRoute() && targetState.destination.route.isTabRoute()
+
+private fun String?.isTabRoute(): Boolean = BottomTab.all.any { it.route == this }
+
+private fun tabEnter(): EnterTransition =
+    fadeIn(tween(TAB_FADE_IN_MS, delayMillis = TAB_FADE_OUT_MS, easing = LinearOutSlowInEasing)) +
+        scaleIn(tween(TAB_FADE_IN_MS, delayMillis = TAB_FADE_OUT_MS, easing = LinearOutSlowInEasing), initialScale = 0.96f)
+
+private fun tabExit(): ExitTransition = fadeOut(tween(TAB_FADE_OUT_MS, easing = FastOutLinearInEasing))
+
+private fun forwardEnter(): EnterTransition =
+    slideInHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { it / 3 } +
+        fadeIn(tween(AXIS_FADE_MS, delayMillis = AXIS_MS - AXIS_FADE_MS))
+
+private fun forwardExit(): ExitTransition =
+    slideOutHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { -it / 3 } +
+        fadeOut(tween(AXIS_FADE_MS))
+
+private fun backEnter(): EnterTransition =
+    slideInHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { -it / 3 } +
+        fadeIn(tween(AXIS_FADE_MS, delayMillis = AXIS_MS - AXIS_FADE_MS))
+
+private fun backExit(): ExitTransition =
+    slideOutHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { it / 3 } +
+        fadeOut(tween(AXIS_FADE_MS))
 
 /** Cambia de pestaña conservando el estado de cada una (patrón estándar de bottom nav + Navigation Compose). */
 private fun NavHostController.navigateToTab(tab: BottomTab) {
