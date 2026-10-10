@@ -223,8 +223,9 @@ el día que alguien actualice uno y olvide los otros cuatro.
 
 > **Backlog 1.3 choca con varias de estas reglas** (amarillo también es alerta, no existe
 > "cerrar alerta", no hay estados `IN_INSPECTION`/`CLASSIFIED`, la etiqueta web es "Fuga
-> confirmada en campo"). Siguen describiendo el código actual; el detalle y lo que falta
-> confirmar están en `BACKLOG_V1_3_APP_MOVIL.md` §5.
+> confirmada en campo"). **Rige el Backlog 1.3** (decisión de Nelson, 10/10/2026): estas
+> reglas describen el código actual y se retiran en el próximo sprint. Detalle en
+> `BACKLOG_V1_3_APP_MOVIL.md` §5.
 
 - **Solo naranja y rojo son alertas.** El verde indica normalidad: esos nodos siguen en el
   mapa y en Dispositivos, pero no aparecen en la bandeja (`AlertLevel.requiresAttention`).

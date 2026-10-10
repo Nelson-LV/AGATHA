@@ -123,7 +123,7 @@ grilla de causas a una columna, y los colores salen de `AgathaTheme.colors` (agr
 nuevos en `ui/theme/Color.kt` para amarillo, gris de aviso y los chips de estado y
 clasificación, con su variante oscura).
 
-## 5. Choques con lo acordado el 07/10/2026 (pendiente de confirmar)
+## 5. Choques con lo acordado el 07/10/2026 (resuelto: rige el Backlog 1.3)
 
 | Implementado / acordado | Backlog 1.3 |
 |---|---|
@@ -132,8 +132,9 @@ clasificación, con su variante oscura).
 | Botón verde "Iniciar / Continuar inspección", estados `IN_INSPECTION` / `CLASSIFIED` | "Nuevo reporte de inspección"; estados de gestión de la web |
 | Resultado "Indicios de fuga" (inspección solo visual) | Etiqueta "Fuga confirmada en campo" (lista web) |
 
-Hasta que Nelson confirme, **no implementar ninguno de los dos lados de un choque**;
-preguntar antes.
+**Decisión de Nelson (10/10/2026): rige el Backlog 1.3 en los cuatro puntos.** El código
+actual (columna izquierda) es deuda a retirar en el próximo sprint: incluir amarillo en la
+lista, quitar "Cerrar alerta" y los estados propios, y usar las etiquetas RN-07 tal cual.
 
 ## 6. Brecha con el código actual (para los próximos sprints)
 

@@ -17,9 +17,9 @@ Key rules to keep in mind:
   user.
 - Limits: observations 500 chars, "Otro ¿Cuál?" 1–100, photos JPG/PNG max 5 × 5 MB
   (compress on device), photo description 200, dates `dd/mm/aaaa HH:mm` UTC-5.
-- Section 5 of that doc lists where Backlog 1.3 contradicts what the app implemented on
-  07/10 (orange/red-only inbox, "close alert", inspection states, "Indicios de fuga"). Ask
-  Nelson before changing either side of those.
+- Where Backlog 1.3 contradicts what the app implemented on 07/10 (orange/red-only inbox,
+  "close alert", inspection states, "Indicios de fuga"), **Backlog 1.3 wins** (Nelson,
+  10/10/2026). That code is debt to remove; see section 5 of that doc.
 
 Jira: https://proyecto-agatha.atlassian.net, project `AGT` (mobile stories AGT-25, 27,
 29–40, 154). Reference a story key in the commit body when a change implements it.
