@@ -32,11 +32,6 @@ sealed class AgathaDestination(val route: String) {
         const val ARG_ALERT_ID = "alertId"
         fun buildRoute(alertId: String) = "inspection_form/$alertId"
     }
-
-    data object PhotoEvidence : AgathaDestination("photo_evidence/{alertId}") {
-        const val ARG_ALERT_ID = "alertId"
-        fun buildRoute(alertId: String) = "photo_evidence/$alertId"
-    }
 }
 
 /** El historial por defecto que abre el tab inferior "Historial" antes de elegir un nodo. */

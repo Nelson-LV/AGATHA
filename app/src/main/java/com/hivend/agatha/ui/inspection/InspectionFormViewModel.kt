@@ -1,6 +1,10 @@
 package com.hivend.agatha.ui.inspection
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import com.hivend.agatha.core.util.PhotoProcessor
+import com.hivend.agatha.core.util.PreparedPhoto
+import com.hivend.agatha.domain.model.PhotoEvidence
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.core.device.DeviceOriginProvider
@@ -39,7 +43,12 @@ data class InspectionDraft(
     val maintenanceTypes: Set<MaintenanceType> = emptySet(),
     val maintenanceOtherDetail: String = "",
     val maintenanceDescription: String = "",
+    val photos: List<PhotoDraft> = emptyList(),
+    /** Archivos que no se aceptaron: se muestran con su error, como en la web (CA-2.3.4). */
+    val rejectedPhotos: List<PreparedPhoto.Rejected> = emptyList(),
 )
+
+data class PhotoDraft(val uri: String, val description: String = "")
 
 data class InspectionFormUiState(
     val alert: Alert? = null,
@@ -72,11 +81,13 @@ data class InspectionFormUiState(
 
     val canSave: Boolean
         get() = draft.result != null && !resultDetailMissing && !tagDetailMissing && !maintenanceIncomplete
+
+    val remainingPhotos: Int get() = PhotoEvidence.MAX_PER_REPORT - draft.photos.size
 }
 
 /**
  * Reporte de inspección (HE-05): resultado RN-16, clasificación y etiqueta de la alerta
- * asociada (HU-5.2), observación (HU-5.3) y mantenimiento (HU-5.4). Funciona sin conexión:
+ * asociada (HU-5.2), observación (HU-5.3), mantenimiento (HU-5.4) y fotos (HE-06). Funciona sin conexión:
  * guarda en el repositorio local con fecha-hora y origen del celular.
  */
 @HiltViewModel
@@ -84,6 +95,7 @@ class InspectionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val alertRepository: AlertRepository,
     private val originProvider: DeviceOriginProvider,
+    private val photoProcessor: PhotoProcessor,
 ) : ViewModel() {
 
     val alertId: String =
@@ -129,6 +141,33 @@ class InspectionFormViewModel @Inject constructor(
 
     fun onMaintenanceDescriptionChange(text: String) = edit { it.copy(maintenanceDescription = text.take(TextLimits.OBSERVATIONS)) }
 
+    /** HU-6.1: máximo 5 por reporte; cada archivo se valida, se copia y se comprime. */
+    fun onPhotosPicked(uris: List<Uri>) {
+        val accepted = uris.take(uiState.value.remainingPhotos)
+        viewModelScope.launch {
+            accepted.forEach { uri ->
+                when (val photo = photoProcessor.prepare(uri)) {
+                    is PreparedPhoto.Accepted -> edit {
+                        if (it.photos.size >= PhotoEvidence.MAX_PER_REPORT) it else it.copy(photos = it.photos + PhotoDraft(photo.uri))
+                    }
+                    is PreparedPhoto.Rejected -> edit { it.copy(rejectedPhotos = it.rejectedPhotos + photo) }
+                }
+            }
+        }
+    }
+
+    fun onPhotoRemoved(uri: String) = edit { draft -> draft.copy(photos = draft.photos.filterNot { it.uri == uri }) }
+
+    fun onRejectedPhotoDismissed(photo: PreparedPhoto.Rejected) = edit { it.copy(rejectedPhotos = it.rejectedPhotos - photo) }
+
+    fun onPhotoDescriptionChange(uri: String, text: String) = edit { draft ->
+        draft.copy(
+            photos = draft.photos.map {
+                if (it.uri == uri) it.copy(description = text.take(PhotoEvidence.DESCRIPTION_MAX_LENGTH)) else it
+            },
+        )
+    }
+
     fun saveInspection() {
         val state = uiState.value
         val alert = state.alert ?: return
@@ -160,6 +199,7 @@ class InspectionFormViewModel @Inject constructor(
                     } else {
                         null
                     },
+                    photos = draft.photos.map { PhotoEvidence(it.uri, it.description.trim()) },
                     recordedAt = Instant.now(),
                     origin = originProvider.current(),
                 ),

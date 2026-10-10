@@ -167,14 +167,15 @@
     <string name="inspection_result_no_communication">No communication</string>
 
     <!-- Photo evidence -->
-    <string name="evidence_top_bar_title">Photo Evidence</string>
-    <string name="evidence_title">Photo evidence</string>
-    <string name="evidence_subtitle">Sensor %1$s · Inspection in progress · Attach as many photos as you need</string>
-    <string name="evidence_save">Save evidence</string>
-    <string name="evidence_add_description">Add a description…</string>
+    <string name="evidence_title">Photo evidence (optional)</string>
+    <string name="evidence_add_description">Description (optional)…</string>
     <string name="evidence_take_photo">Take photo</string>
-    <string name="evidence_pick_gallery">Choose from gallery</string>
-    <string name="evidence_add_hint">Take a photo or choose from gallery</string>
+    <string name="evidence_pick_gallery">Gallery</string>
+    <string name="evidence_formats_hint">JPG, JPEG or PNG · up to 5 photos · 5 MB each (compressed on the phone)</string>
+    <string name="evidence_limit_reached">Up to 5 photos per report</string>
+    <string name="evidence_format_not_allowed">Format not allowed</string>
+    <string name="evidence_unreadable">The image could not be read</string>
+    <string name="evidence_remove">Remove</string>
 
     <!-- Devices -->
     <string name="devices_title">Section devices</string>

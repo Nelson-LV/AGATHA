@@ -1,7 +1,6 @@
 package com.hivend.agatha.domain.repository
 
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.PhotoEvidence
 import com.hivend.agatha.domain.model.Inspection
 import kotlinx.coroutines.flow.Flow
 
@@ -19,5 +18,4 @@ interface AlertRepository {
     fun observeAlert(alertId: String): Flow<Alert?>
     suspend fun saveObservations(alertId: String, observations: String)
     suspend fun registerInspection(inspection: Inspection)
-    suspend fun registerEvidence(alertId: String, evidence: List<PhotoEvidence>)
 }

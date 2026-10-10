@@ -178,14 +178,15 @@
     <string name="inspection_result_no_communication">Sin comunicación</string>
 
     <!-- Evidencia fotográfica -->
-    <string name="evidence_top_bar_title">Evidencia Fotográfica</string>
-    <string name="evidence_title">Evidencia fotográfica</string>
-    <string name="evidence_subtitle">Sensor %1$s · Inspección en curso · Adjunta cuantas fotos necesites</string>
-    <string name="evidence_save">Guardar evidencias</string>
-    <string name="evidence_add_description">Agregar descripción…</string>
+    <string name="evidence_title">Evidencias fotográficas (opcional)</string>
+    <string name="evidence_add_description">Descripción (opcional)…</string>
     <string name="evidence_take_photo">Tomar foto</string>
-    <string name="evidence_pick_gallery">Elegir de galería</string>
-    <string name="evidence_add_hint">Tomar foto o elegir de galería</string>
+    <string name="evidence_pick_gallery">Galería</string>
+    <string name="evidence_formats_hint">JPG, JPEG o PNG · máx. 5 fotos · 5 MB por foto (se comprimen en el celular)</string>
+    <string name="evidence_limit_reached">Máximo 5 fotografías por reporte</string>
+    <string name="evidence_format_not_allowed">Formato no permitido</string>
+    <string name="evidence_unreadable">No se pudo leer la imagen</string>
+    <string name="evidence_remove">Quitar</string>
 
     <!-- Dispositivos -->
     <string name="devices_title">Dispositivos del tramo</string>

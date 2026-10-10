@@ -16,13 +16,11 @@ import androidx.navigation.compose.composable
 import com.hivend.agatha.core.navigation.AgathaDestination.AlertDetail
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.AgathaDestination.InspectionForm
-import com.hivend.agatha.core.navigation.AgathaDestination.PhotoEvidence
 import com.hivend.agatha.ui.alertdetail.AlertDetailScreen
 import com.hivend.agatha.ui.alerts.AlertInboxScreen
 import com.hivend.agatha.ui.components.AgathaBottomNavBar
 import com.hivend.agatha.ui.components.rootRoute
 import com.hivend.agatha.ui.devices.DeviceListScreen
-import com.hivend.agatha.ui.evidence.PhotoEvidenceScreen
 import com.hivend.agatha.ui.history.DeviceHistoryScreen
 import com.hivend.agatha.ui.inspection.InspectionFormScreen
 import com.hivend.agatha.ui.map.SensorMapScreen
@@ -101,19 +99,7 @@ fun AgathaApp() {
             ) {
                 InspectionFormScreen(
                     onBack = { navController.popBackStack() },
-                    onSaved = { alertId -> navController.navigate(PhotoEvidence.buildRoute(alertId)) },
-                )
-            }
-
-            composable(
-                route = PhotoEvidence.route,
-                arguments = listOf(navArgument(PhotoEvidence.ARG_ALERT_ID) { type = NavType.StringType }),
-            ) {
-                PhotoEvidenceScreen(
-                    onBack = { navController.popBackStack() },
-                    onSaved = { alertId ->
-                        navController.popBackStack(route = AlertDetail.buildRoute(alertId), inclusive = false)
-                    },
+                    onSaved = { navController.popBackStack() },
                 )
             }
         }

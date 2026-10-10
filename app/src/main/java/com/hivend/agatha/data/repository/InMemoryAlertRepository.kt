@@ -1,7 +1,6 @@
 package com.hivend.agatha.data.repository
 
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.PhotoEvidence
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.repository.AlertRepository
 import javax.inject.Inject
@@ -46,9 +45,5 @@ class InMemoryAlertRepository @Inject constructor() : AlertRepository {
         alerts.update { list ->
             list.map { if (it.id == alertId) it.applyInspection(inspection) else it }
         }
-    }
-
-    override suspend fun registerEvidence(alertId: String, evidence: List<PhotoEvidence>) {
-        // Sprint 3: persistir evidencias en Room y encolarlas en data/sync para su subida.
     }
 }

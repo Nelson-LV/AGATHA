@@ -1,6 +1,25 @@
 package com.hivend.agatha.ui.inspection
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import coil3.compose.AsyncImage
+import com.hivend.agatha.core.util.PreparedPhoto
+import com.hivend.agatha.core.util.createEvidenceUri
+import com.hivend.agatha.domain.model.PhotoEvidence
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -64,7 +83,8 @@ import com.hivend.agatha.ui.theme.AgathaTheme
 /**
  * Reporte de inspección (HE-05, HU-5.1 a 5.4). Adapta a una sola pantalla los diálogos de la
  * web (docs/referencias-web/02 a 04): resultado RN-16, clasificación Confirmada / Falsa alerta
- * con la lista de etiquetas de esa clasificación, observación con contador y mantenimiento.
+ * con la lista de etiquetas de esa clasificación, observación con contador, mantenimiento y
+ * evidencias fotográficas.
  * Funciona sin conexión: el guardado solo escribe en el repositorio local.
  */
 @Composable
@@ -150,6 +170,18 @@ fun InspectionFormScreen(
                     onTypeToggled = viewModel::onMaintenanceTypeToggled,
                     onOtherDetailChange = viewModel::onMaintenanceOtherDetailChange,
                     onDescriptionChange = viewModel::onMaintenanceDescriptionChange,
+                )
+            }
+
+            item {
+                PhotosSection(
+                    photos = draft.photos,
+                    rejected = draft.rejectedPhotos,
+                    remaining = uiState.remainingPhotos,
+                    onPhotosPicked = viewModel::onPhotosPicked,
+                    onRemove = viewModel::onPhotoRemoved,
+                    onDismissRejected = viewModel::onRejectedPhotoDismissed,
+                    onDescriptionChange = viewModel::onPhotoDescriptionChange,
                 )
             }
 
@@ -377,6 +409,137 @@ private fun MaintenanceSection(
                 placeholder = stringResource(R.string.inspection_maintenance_description_placeholder),
                 minLines = 2,
             )
+        }
+    }
+}
+
+/**
+ * Evidencias fotográficas del reporte (HE-06, opcional), como en la web: contador n/5, cámara
+ * o galería, descripción opcional por foto (máx. 200) y error por archivo rechazado. La cámara
+ * del sistema y el Photo Picker no requieren pedir permisos en tiempo de ejecución.
+ */
+@Composable
+private fun PhotosSection(
+    photos: List<PhotoDraft>,
+    rejected: List<PreparedPhoto.Rejected>,
+    remaining: Int,
+    onPhotosPicked: (List<Uri>) -> Unit,
+    onRemove: (String) -> Unit,
+    onDismissRejected: (PreparedPhoto.Rejected) -> Unit,
+    onDescriptionChange: (String, String) -> Unit,
+) {
+    val context = LocalContext.current
+    var pendingCameraUri by remember { mutableStateOf<Uri?>(null) }
+    val takePhoto = rememberLauncherForActivityResult(ActivityResultContracts.TakePicture()) { success ->
+        val uri = pendingCameraUri
+        if (success && uri != null) onPhotosPicked(listOf(uri))
+    }
+    val pickPhotos = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia(PhotoEvidence.MAX_PER_REPORT),
+    ) { uris -> if (uris.isNotEmpty()) onPhotosPicked(uris) }
+
+    FormCard {
+        Row(modifier = Modifier.fillMaxWidth()) {
+            SectionTitle(stringResource(R.string.evidence_title))
+            Box(Modifier.weight(1f))
+            Text(
+                stringResource(R.string.common_char_counter, photos.size, PhotoEvidence.MAX_PER_REPORT),
+                color = AgathaTheme.colors.textTertiary,
+                style = MaterialTheme.typography.labelMedium,
+            )
+        }
+        Text(stringResource(R.string.evidence_formats_hint), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+
+        if (remaining > 0) {
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                OutlinedButton(
+                    onClick = {
+                        val uri = createEvidenceUri(context)
+                        pendingCameraUri = uri
+                        takePhoto.launch(uri)
+                    },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Filled.PhotoCamera, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+                    Text(stringResource(R.string.evidence_take_photo))
+                }
+                OutlinedButton(
+                    onClick = { pickPhotos.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) },
+                    modifier = Modifier.weight(1f),
+                ) {
+                    Icon(Icons.Filled.PhotoLibrary, contentDescription = null, modifier = Modifier.size(18.dp).padding(end = 4.dp))
+                    Text(stringResource(R.string.evidence_pick_gallery))
+                }
+            }
+        } else {
+            Banner(
+                icon = Icons.Filled.Info,
+                text = stringResource(R.string.evidence_limit_reached),
+                container = AgathaTheme.colors.surfaceVariant,
+                content = AgathaTheme.colors.textSecondary,
+            )
+        }
+
+        photos.forEach { photo ->
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.Top) {
+                AsyncImage(
+                    model = photo.uri,
+                    contentDescription = photo.description.ifBlank { null },
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier
+                        .size(72.dp)
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(AgathaTheme.colors.surfaceVariant),
+                )
+                Column(modifier = Modifier.weight(1f)) {
+                    OutlinedTextField(
+                        value = photo.description,
+                        onValueChange = { onDescriptionChange(photo.uri, it) },
+                        placeholder = { Text(stringResource(R.string.evidence_add_description), style = MaterialTheme.typography.bodySmall) },
+                        textStyle = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        stringResource(R.string.common_char_counter, photo.description.length, PhotoEvidence.DESCRIPTION_MAX_LENGTH),
+                        color = AgathaTheme.colors.textTertiary,
+                        style = MaterialTheme.typography.labelSmall,
+                        modifier = Modifier.align(Alignment.End),
+                    )
+                }
+                IconButton(onClick = { onRemove(photo.uri) }) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.evidence_remove), tint = AgathaTheme.colors.textSecondary)
+                }
+            }
+        }
+
+        rejected.forEach { file ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AgathaTheme.colors.criticalSurface, RoundedCornerShape(10.dp))
+                    .border(1.dp, AgathaTheme.colors.criticalBorder, RoundedCornerShape(10.dp))
+                    .padding(start = 12.dp),
+            ) {
+                Icon(Icons.Filled.Warning, contentDescription = null, tint = AgathaTheme.colors.critical, modifier = Modifier.size(18.dp))
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(file.fileName, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodySmall)
+                    Text(
+                        stringResource(
+                            when (file.reason) {
+                                PreparedPhoto.Reason.FORMAT_NOT_ALLOWED -> R.string.evidence_format_not_allowed
+                                PreparedPhoto.Reason.UNREADABLE -> R.string.evidence_unreadable
+                            },
+                        ),
+                        color = AgathaTheme.colors.critical,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+                IconButton(onClick = { onDismissRejected(file) }) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.evidence_remove), tint = AgathaTheme.colors.textSecondary)
+                }
+            }
         }
     }
 }
