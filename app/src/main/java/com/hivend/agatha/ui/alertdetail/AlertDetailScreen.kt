@@ -6,6 +6,7 @@ import androidx.compose.material.icons.filled.Sensors
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.Thermostat
 import androidx.compose.material.icons.filled.BatteryChargingFull
+import com.hivend.agatha.ui.theme.AgathaDataTextStyle
 import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
@@ -47,6 +48,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.PathEffect
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -413,7 +415,7 @@ private fun TelemetryRow(alert: Alert) {
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             TelemetryStat(stringResource(R.string.telemetry_confidence), stringResource(R.string.common_percent, alert.telemetry.confidencePercentage))
-            TelemetryStat(stringResource(R.string.telemetry_acceleration), stringResource(alert.telemetry.acceleration.labelRes()))
+            TelemetryStat(stringResource(R.string.telemetry_acceleration), stringResource(alert.telemetry.acceleration.labelRes()), isData = false)
             TelemetryStat(stringResource(R.string.telemetry_time_ago), shortDuration(alert.minutesSinceStart()))
             TelemetryStat(stringResource(R.string.telemetry_battery), stringResource(R.string.common_percent, alert.telemetry.batteryPercentage))
         }
@@ -429,10 +431,10 @@ private fun TelemetryRow(alert: Alert) {
 }
 
 @Composable
-private fun TelemetryStat(label: String, value: String) {
+private fun TelemetryStat(label: String, value: String, isData: Boolean = true) {
     Column {
         Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelMedium)
-        Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        Text(value, color = AgathaTheme.colors.textPrimary, style = if (isData) AgathaDataTextStyle else MaterialTheme.typography.titleSmall)
     }
 }
 
@@ -451,31 +453,29 @@ private fun AccelerationGraphCard() {
         Canvas(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp)
-                .background(colors.mapCanvas, RoundedCornerShape(10.dp)),
+                .height(140.dp),
         ) {
+            // Mismo estilo que las gráficas de la web: cuadrícula punteada gris y serie azul.
+            val gridEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
+            for (i in 0..4) {
+                val y = size.height * i / 4f
+                drawLine(colors.chartGrid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx(), pathEffect = gridEffect)
+            }
+            for (i in 0..6) {
+                val x = size.width * i / 6f
+                drawLine(colors.chartGrid, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx(), pathEffect = gridEffect)
+            }
             val points = listOf(
                 Offset(size.width * 0.06f, size.height * 0.82f) to colors.nodeNormal,
                 Offset(size.width * 0.5f, size.height * 0.45f) to colors.nodeAlert,
                 Offset(size.width * 0.92f, size.height * 0.14f) to colors.nodeCritical,
             )
-            drawLine(
-                color = colors.brand,
-                start = points[0].first,
-                end = points[1].first,
-                strokeWidth = 3f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
-            )
-            drawLine(
-                color = colors.brand,
-                start = points[1].first,
-                end = points[2].first,
-                strokeWidth = 3f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
-            )
+            points.zipWithNext().forEach { (from, to) ->
+                drawLine(color = colors.chartLine, start = from.first, end = to.first, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
+            }
             points.forEach { (offset, color) ->
-                drawCircle(color = color, radius = 7f, center = offset)
-                drawCircle(color = colors.nodeOutline, radius = 7f, center = offset, style = Stroke(width = 2f))
+                drawCircle(color = color, radius = 5.dp.toPx(), center = offset)
+                drawCircle(color = colors.nodeOutline, radius = 5.dp.toPx(), center = offset, style = Stroke(width = 1.5.dp.toPx()))
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {

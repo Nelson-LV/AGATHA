@@ -1,10 +1,14 @@
 package com.hivend.agatha.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontVariation
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
+import com.hivend.agatha.R
 
 /**
  * Escala tipográfica de AGATHA, pensada para lectura en campo (sol directo, guantes,
@@ -12,15 +16,39 @@ import androidx.compose.ui.unit.sp
  * etiquetas en 8,5 px, por debajo del mínimo legible de Material 3; esta escala parte de
  * 14 sp para el cuerpo y nunca baja de 12 sp, y respeta el tamaño de fuente del sistema.
  *
- * Familia: la del sistema (Roboto en Android), que es legible, cubre tildes y eñes, y no
- * depende de descargas — la app opera sin conexión. Si se adopta una fuente de marca
- * (p. ej. Inter), basta con cambiar [AgathaFontFamily] por `FontFamily(Font(R.font.…))`.
+ * Familias: las mismas del frontend web. Geist para toda la interfaz (`font-sans` en la
+ * web) y JetBrains Mono para datos técnicos, horas y métricas (`font-data-mono`). Ambas son
+ * OFL y van empaquetadas en `res/font` como fuentes variables, no como fuentes descargables:
+ * la app opera sin conexión y no puede depender de Google Play Services para mostrar texto.
+ * Licencias en docs/licencias-fuentes/.
  *
  * Jerarquía: los títulos usan SemiBold/Bold con tracking levemente negativo para que se
  * lean como bloque; las etiquetas (chips, encabezados de sección en mayúsculas) usan
  * tracking positivo para separarse del cuerpo sin necesitar emojis ni color extra.
  */
-private val AgathaFontFamily = FontFamily.Default
+/** Una instancia por peso usado: la fuente variable se fija con el eje `wght`. */
+@OptIn(ExperimentalTextApi::class)
+private fun variableFamily(resId: Int, vararg weights: FontWeight) = FontFamily(
+    weights.map { weight ->
+        Font(resId, weight, variationSettings = FontVariation.Settings(FontVariation.weight(weight.weight)))
+    },
+)
+
+private val AgathaFontFamily = variableFamily(
+    R.font.geist,
+    FontWeight.Normal, FontWeight.Medium, FontWeight.SemiBold, FontWeight.Bold,
+)
+
+/** Fuente de datos técnicos (valores de sensores, horas, identificadores), como en la web. */
+val AgathaMonoFontFamily = variableFamily(R.font.jetbrains_mono, FontWeight.Normal, FontWeight.Medium)
+
+/** Valor numérico destacado (métricas de telemetría): mono, tamaño de `titleSmall`. */
+val AgathaDataTextStyle = TextStyle(
+    fontFamily = AgathaMonoFontFamily,
+    fontWeight = FontWeight.Medium,
+    fontSize = 15.sp,
+    lineHeight = 20.sp,
+)
 
 val AgathaTypography = Typography(
     headlineSmall = TextStyle(
@@ -88,4 +116,23 @@ val AgathaTypography = Typography(
         lineHeight = 16.sp,
         letterSpacing = 0.4.sp,
     ),
+).withFamily(AgathaFontFamily)
+
+/** Los estilos que no se redefinen arriba (display*, headlineLarge…) también usan Geist. */
+private fun Typography.withFamily(family: FontFamily) = Typography(
+    displayLarge = displayLarge.copy(fontFamily = family),
+    displayMedium = displayMedium.copy(fontFamily = family),
+    displaySmall = displaySmall.copy(fontFamily = family),
+    headlineLarge = headlineLarge.copy(fontFamily = family),
+    headlineMedium = headlineMedium.copy(fontFamily = family),
+    headlineSmall = headlineSmall.copy(fontFamily = family),
+    titleLarge = titleLarge.copy(fontFamily = family),
+    titleMedium = titleMedium.copy(fontFamily = family),
+    titleSmall = titleSmall.copy(fontFamily = family),
+    bodyLarge = bodyLarge.copy(fontFamily = family),
+    bodyMedium = bodyMedium.copy(fontFamily = family),
+    bodySmall = bodySmall.copy(fontFamily = family),
+    labelLarge = labelLarge.copy(fontFamily = family),
+    labelMedium = labelMedium.copy(fontFamily = family),
+    labelSmall = labelSmall.copy(fontFamily = family),
 )

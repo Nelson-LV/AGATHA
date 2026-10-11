@@ -263,7 +263,7 @@ mismo fondo para que no haya destello al abrir.
 
 | Rol | Claro | Oscuro | Uso |
 |---|---|---|---|
-| `brand` | `#1D4ED8` | `#8AB0FF` | Logo, enlaces, acciones principales, pestaña activa |
+| `brand` | `#2563EB` | `#60A5FA` | Logo, enlaces, acciones principales, pestaña activa |
 | `background` | `#F3F5F8` | `#0D1117` | Fondo general |
 | `surface` | `#FFFFFF` | `#161B22` | Tarjetas, encabezados, barra inferior |
 | `textPrimary` / `textSecondary` | `#0F172A` / `#5A6474` | `#E7EBF0` / `#A8B1BD` | Texto |
@@ -271,10 +271,18 @@ mismo fondo para que no haya destello al abrir.
 | `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta naranja, "En inspección", "Pendiente" |
 | `positive` | `#15803D` | `#5BD68A` | "Iniciar/Continuar inspección", "Guardar", conectado |
 | `stateClassified` | `#6D3FC0` | `#C8B5FF` | Chip "Clasificada" |
+| `nodeNormal` / `nodeCaution` / `nodeNotice` | `#22C55E` / `#EAB308` / `#9CA3AF` | `#4ADE80` / `#FACC15` / `#9CA3AF` | Nodos del mapa: en línea, amarilla, sin comunicación |
+| `chartLine` / `chartGrid` | `#3B82F6` / `#F0F0F0` | `#60A5FA` / `#262C35` | Serie y cuadrícula de la gráfica del detalle |
 
 Los valores partieron de los prototipos de Figma (`AGATHA — Prototipos App Móvil`, nodos
 `2:2`, `1:4` y `34:398`) y se ajustaron para contraste y para el modo oscuro, que el
-prototipo no cubría.
+prototipo no cubría. El 10/10/2026 se alinearon con el documento "AGATHA Frontend — Paleta y
+Tipografías" de la web: la marca pasó a la familia Tailwind `blue` de la web (`blue-600` en
+claro para que el texto blanco cumpla AA; la web usa `#3b82f6`), los nodos del mapa a los
+estados de sensor de la web y la gráfica del detalle a su "Línea 1" y "Grid". La web aún no
+define colores de nivel de alerta (`severity.ts`), así que los de severidad no cambiaron. De
+la paleta de gráficas solo se tomó la serie 1 y la cuadrícula, porque la app tiene una sola
+gráfica con una sola serie; las líneas 2-5 se agregan cuando haya gráficas multi-serie.
 
 **Por qué no usamos Dynamic Color.** Material 3 permite generar la paleta a partir del
 wallpaper del usuario (Material You). Se decidió **no** activarla: el rojo/ámbar/verde de
@@ -288,9 +296,10 @@ idéntica en todos los dispositivos**.
 directo, guantes, vehículo en movimiento): cuerpo a 14 sp y nunca menos de 12 sp, títulos
 SemiBold/Bold, y etiquetas en mayúsculas con tracking positivo. El prototipo medía el cuerpo
 en 10,5 px y las etiquetas en 8,5 px, por debajo del mínimo legible de Material 3, así que no
-se copió literal. La familia es la del sistema (Roboto): legible, con tildes y eñes, y sin
-descargas porque la app opera sin conexión. Si se adopta una fuente de marca (p. ej. Inter),
-hay un único punto de cambio documentado en el propio archivo.
+se copió literal. Las familias son las de la web: **Geist** para toda la interfaz y
+**JetBrains Mono** para datos técnicos y métricas (`AgathaDataTextStyle`, `font-data-mono`
+en la web). Ambas son OFL y van empaquetadas como fuentes variables en `res/font` (no como
+fuentes descargables, porque la app opera sin conexión); licencias en `docs/licencias-fuentes/`.
 
 **Formas.** Radios de esquina (`ui/theme/Shape.kt`): 8dp pastillas/barra de sitio, 10-12dp
 botones, 14dp tarjetas — medidos directamente del archivo de diseño.
