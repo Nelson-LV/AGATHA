@@ -120,7 +120,7 @@
     <string name="alert_detail_timeline">Línea de tiempo</string>
     <string name="alert_detail_timeline_end">Fin de la alerta · %1$s</string>
     <string name="alert_detail_classification">Clasificación</string>
-    <string name="alert_detail_unclassified_hint">Se clasifica desde un nuevo reporte de inspección.</string>
+    <string name="alert_detail_unclassified_hint">Clasifícala con “Falsa alerta” o “Confirmar alerta” en la tarjeta de la alerta.</string>
     <string name="alert_detail_no_tag">Sin etiqueta</string>
     <plurals name="alert_detail_reports">
         <item quantity="one">Reportes de inspección (%d)</item>
@@ -128,9 +128,11 @@
     </plurals>
     <string name="alert_detail_no_reports">Todavía no hay reportes de inspección para esta alerta.</string>
     <string name="alert_detail_pending_sync">Pendiente de sincronizar</string>
-    <string name="alert_detail_report_result">Resultado: %1$s</string>
     <string name="alert_detail_report_maintenance">Mantenimiento: %1$s</string>
     <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
+    <string name="alert_detail_classify_dialog_title">¿Clasificar como “%1$s”?</string>
+    <string name="alert_detail_classify_dialog_text">La clasificación se guarda de inmediato y no se puede cambiar después. Luego podrás agregar la etiqueta, observaciones, mantenimiento y fotos en el reporte de inspección.</string>
+    <string name="alert_detail_classify_dialog_confirm">Clasificar</string>
     <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
     <string name="alert_detail_observations_title">Observaciones de campo</string>
     <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio (se guarda incluso sin conexión)…</string>
@@ -166,14 +168,10 @@
     <!-- Formulario de inspección -->
     <string name="inspection_top_bar_title">Reporte de inspección</string>
     <string name="inspection_title">Nuevo reporte de inspección</string>
-    <string name="inspection_result_title">Resultado de la inspección (obligatorio)</string>
     <string name="inspection_save">Guardar reporte</string>
     <string name="inspection_device_subtitle">Dispositivo %1$s · %2$s · %3$s</string>
     <string name="inspection_alert_line">%1$s · Alerta %2$s · %3$s</string>
-    <string name="inspection_result_no_issues">Sin novedad</string>
-    <string name="inspection_result_device_or_sensor_problem">Problema del dispositivo/sensor</string>
-    <string name="inspection_result_physical_damage">Daño físico</string>
-    <string name="inspection_classification_title">Clasificación de la alerta (opcional)</string>
+    <string name="inspection_classification_title">Clasificación de la alerta</string>
     <string name="inspection_classification_info">Al clasificar, la alerta pasa a “Clasificada sin etiqueta” y se registran la fecha, la hora y el origen. La clasificación no se puede modificar después.</string>
     <string name="inspection_false_alarm">Falsa alerta</string>
     <string name="inspection_confirm_alert">Confirmar alerta</string>
@@ -191,7 +189,8 @@
     <string name="inspection_other_detail_title">¿Cuál? (obligatorio, 1 a 100 caracteres)</string>
     <string name="inspection_other_detail_placeholder">Escriba cuál</string>
     <string name="inspection_other_detail_error">Indique la causa para poder guardar.</string>
-    <string name="inspection_save_hint">“Guardar reporte” se habilita al elegir el resultado y completar los campos obligatorios.</string>
+    <string name="inspection_save_hint">“Guardar reporte” se habilita al agregar al menos un dato (etiqueta, observación, mantenimiento o foto) y completar los campos obligatorios.</string>
+    <string name="inspection_classify_first">Clasifica la alerta desde su detalle para poder elegir la etiqueta.</string>
     <string name="maintenance_type_battery">Cambio o recarga de batería</string>
     <string name="maintenance_type_cleaning">Limpieza</string>
     <string name="maintenance_type_adjustment">Ajuste o reinstalación</string>
@@ -199,9 +198,6 @@
     <string name="common_other_which">Otro ¿Cuál?</string>
     <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
     <string name="common_char_counter" translatable="false">%1$d/%2$d</string>
-    <string name="inspection_result_maintenance_required">Mantenimiento requerido</string>
-    <string name="inspection_result_low_battery">Batería baja</string>
-    <string name="inspection_result_no_communication">Sin comunicación</string>
 
     <!-- Evidencia fotográfica -->
     <string name="evidence_title">Evidencias fotográficas (opcional)</string>
@@ -216,6 +212,9 @@
 
     <!-- Dispositivos -->
     <string name="devices_title">Dispositivos del tramo</string>
+    <string name="devices_sensors_show">Ver sensores</string>
+    <string name="devices_sensors_hide">Ocultar sensores</string>
+    <string name="sensor_chart_placeholder">Gráfica disponible próximamente.</string>
     <plurals name="devices_count">
         <item quantity="one">%d nodo</item>
         <item quantity="other">%d nodos</item>
@@ -275,7 +274,7 @@
     <string name="sample_history_red_alert_title">Alerta roja generada</string>
     <string name="sample_history_red_alert_detail">Riesgo de deslizamiento — el tubo se movió %1$d cm</string>
     <string name="sample_history_inspection_title">Inspección registrada</string>
-    <string name="sample_history_inspection_detail">Resultado: mantenimiento requerido</string>
+    <string name="sample_history_inspection_detail">Observación: se requiere mantenimiento</string>
     <string name="sample_history_classification_title">Clasificación del evento</string>
     <string name="sample_history_evidence_title">Evidencia adjunta</string>
     <string name="sample_history_evidence_detail">%1$d fotografías con descripción</string>

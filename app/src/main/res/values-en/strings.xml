@@ -109,7 +109,7 @@
     <string name="alert_detail_timeline">Timeline</string>
     <string name="alert_detail_timeline_end">Alert ended · %1$s</string>
     <string name="alert_detail_classification">Classification</string>
-    <string name="alert_detail_unclassified_hint">Classify it from a new inspection report.</string>
+    <string name="alert_detail_unclassified_hint">Classify it with “False alarm” or “Confirm alert” on the alert card.</string>
     <string name="alert_detail_no_tag">No tag</string>
     <plurals name="alert_detail_reports">
         <item quantity="one">Inspection reports (%d)</item>
@@ -117,9 +117,11 @@
     </plurals>
     <string name="alert_detail_no_reports">No inspection reports for this alert yet.</string>
     <string name="alert_detail_pending_sync">Pending sync</string>
-    <string name="alert_detail_report_result">Result: %1$s</string>
     <string name="alert_detail_report_maintenance">Maintenance: %1$s</string>
     <string name="alert_detail_new_inspection_report">New inspection report</string>
+    <string name="alert_detail_classify_dialog_title">Classify as “%1$s”?</string>
+    <string name="alert_detail_classify_dialog_text">The classification is saved right away and cannot be changed later. You can then add the tag, observations, maintenance and photos in the inspection report.</string>
+    <string name="alert_detail_classify_dialog_confirm">Classify</string>
     <string name="alert_detail_view_device_history">View device history</string>
     <string name="alert_detail_observations_title">Field notes</string>
     <string name="alert_detail_observations_placeholder">Describe what you see on site (saved even when offline)…</string>
@@ -155,14 +157,10 @@
     <!-- Inspection form -->
     <string name="inspection_top_bar_title">Inspection report</string>
     <string name="inspection_title">New inspection report</string>
-    <string name="inspection_result_title">Inspection result (required)</string>
     <string name="inspection_save">Save report</string>
     <string name="inspection_device_subtitle">Device %1$s · %2$s · %3$s</string>
     <string name="inspection_alert_line">%1$s · Alert %2$s · %3$s</string>
-    <string name="inspection_result_no_issues">No issues</string>
-    <string name="inspection_result_device_or_sensor_problem">Device/sensor problem</string>
-    <string name="inspection_result_physical_damage">Physical damage</string>
-    <string name="inspection_classification_title">Alert classification (optional)</string>
+    <string name="inspection_classification_title">Alert classification</string>
     <string name="inspection_classification_info">Once classified, the alert becomes “Classified, no tag” and the date, time and origin are recorded. The classification cannot be changed later.</string>
     <string name="inspection_false_alarm">False alarm</string>
     <string name="inspection_confirm_alert">Confirm alert</string>
@@ -180,16 +178,14 @@
     <string name="inspection_other_detail_title">Which? (required, 1 to 100 characters)</string>
     <string name="inspection_other_detail_placeholder">Type which</string>
     <string name="inspection_other_detail_error">Enter the detail to be able to save.</string>
-    <string name="inspection_save_hint">“Save report” is enabled once you pick a result and fill in the required fields.</string>
+    <string name="inspection_save_hint">“Save report” is enabled once you add at least one item (tag, observation, maintenance or photo) and fill in the required fields.</string>
+    <string name="inspection_classify_first">Classify the alert from its detail to pick a tag.</string>
     <string name="maintenance_type_battery">Battery change or recharge</string>
     <string name="maintenance_type_cleaning">Cleaning</string>
     <string name="maintenance_type_adjustment">Adjustment or reinstallation</string>
     <string name="maintenance_type_component_replacement">Component replacement</string>
     <string name="common_other_which">Other (which?)</string>
     <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
-    <string name="inspection_result_maintenance_required">Maintenance required</string>
-    <string name="inspection_result_low_battery">Low battery</string>
-    <string name="inspection_result_no_communication">No communication</string>
 
     <!-- Photo evidence -->
     <string name="evidence_title">Photo evidence (optional)</string>
@@ -204,6 +200,9 @@
 
     <!-- Devices -->
     <string name="devices_title">Section devices</string>
+    <string name="devices_sensors_show">Show sensors</string>
+    <string name="devices_sensors_hide">Hide sensors</string>
+    <string name="sensor_chart_placeholder">Chart coming soon.</string>
     <plurals name="devices_count">
         <item quantity="one">%d node</item>
         <item quantity="other">%d nodes</item>
@@ -257,7 +256,7 @@
     <string name="sample_history_red_alert_title">Red alert generated</string>
     <string name="sample_history_red_alert_detail">Landslide risk — the pipe moved %1$d cm</string>
     <string name="sample_history_inspection_title">Inspection logged</string>
-    <string name="sample_history_inspection_detail">Result: maintenance required</string>
+    <string name="sample_history_inspection_detail">Note: maintenance required</string>
     <string name="sample_history_classification_title">Event classification</string>
     <string name="sample_history_evidence_title">Evidence attached</string>
     <string name="sample_history_evidence_detail">%1$d photos with description</string>

@@ -2,6 +2,7 @@ package com.hivend.agatha.domain.model
 
 import java.time.Instant
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 class InspectionTest {
@@ -10,15 +11,12 @@ class InspectionTest {
     private val app = Origin.MobileApp("CEL-01")
 
     private fun report(
-        result: InspectionResult = InspectionResult.NO_ISSUES,
-        resultOtherDetail: String? = null,
         alertId: String? = "ALR-0001",
-        classification: AlertClassification? = null,
         tag: AlertTag? = null,
         tagOtherDetail: String? = null,
     ) = Inspection(
-        id = "r1", deviceId = "MP-1", alertId = alertId, result = result, resultOtherDetail = resultOtherDetail,
-        classification = classification, tag = tag, tagOtherDetail = tagOtherDetail, recordedAt = now, origin = app,
+        id = "r1", deviceId = "MP-1", alertId = alertId,
+        tag = tag, tagOtherDetail = tagOtherDetail, recordedAt = now, origin = app,
     )
 
     private val alert = Alert(
@@ -29,13 +27,13 @@ class InspectionTest {
     )
 
     @Test(expected = IllegalArgumentException::class)
-    fun otherResultRequiresDetail() {
-        report(result = InspectionResult.OTHER)
+    fun reportWithoutAlertCannotTag() {
+        report(alertId = null, tag = AlertTag.GROUND_MOVEMENT)
     }
 
     @Test(expected = IllegalArgumentException::class)
-    fun reportWithoutAlertCannotClassify() {
-        report(alertId = null, classification = AlertClassification.CONFIRMED)
+    fun otherTagRequiresDetail() {
+        report(tag = AlertTag.OTHER_CONFIRMED)
     }
 
     @Test(expected = IllegalArgumentException::class)
@@ -49,9 +47,10 @@ class InspectionTest {
     }
 
     @Test
-    fun reportClassifiesAndTagsTheAlertWithItsOrigin() {
-        val updated = alert.applyInspection(
-            report(classification = AlertClassification.FALSE_ALARM, tag = AlertTag.OTHER_FALSE_ALARM, tagOtherDetail = "Prueba de presión"),
+    fun classificationThenReportTagsTheAlertWithEachOrigin() {
+        val classified = alert.classify(AlertClassification.FALSE_ALARM, now, app)
+        val updated = classified.applyInspection(
+            report(tag = AlertTag.OTHER_FALSE_ALARM, tagOtherDetail = "Prueba de presión"),
         )
         assertEquals(ManagementStatus.CLASSIFIED_WITH_TAG, updated.managementStatus)
         assertEquals(app, updated.classification?.origin)
@@ -65,5 +64,21 @@ class InspectionTest {
         val updated = classified.applyInspection(report(tag = AlertTag.GROUND_MOVEMENT))
         assertEquals(Origin.Web, updated.classification?.origin)
         assertEquals(AlertTag.GROUND_MOVEMENT, updated.classification?.tag?.tag)
+    }
+
+    @Test
+    fun reportWithoutTagLeavesTheAlertAsItWas() {
+        assertSame(alert, alert.applyInspection(report()))
+    }
+
+    @Test(expected = IllegalStateException::class)
+    fun reportCannotTagAnUnclassifiedAlert() {
+        alert.applyInspection(report(tag = AlertTag.GROUND_MOVEMENT))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun reportTagMustMatchTheSavedClassification() {
+        alert.classify(AlertClassification.CONFIRMED, now, app)
+            .applyInspection(report(tag = AlertTag.EXTREME_WEATHER))
     }
 }

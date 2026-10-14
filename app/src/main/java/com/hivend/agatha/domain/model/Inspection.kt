@@ -2,17 +2,6 @@ package com.hivend.agatha.domain.model
 
 import java.time.Instant
 
-/** Resultado de la inspección (RN-16). Uno, obligatorio. [OTHER] es "Otro ¿Cuál?". */
-enum class InspectionResult {
-    NO_ISSUES,
-    MAINTENANCE_REQUIRED,
-    DEVICE_OR_SENSOR_PROBLEM,
-    PHYSICAL_DAMAGE,
-    LOW_BATTERY,
-    NO_COMMUNICATION,
-    OTHER,
-}
-
 /** Tipo de mantenimiento realizado en campo (RN-16, HU-5.4). Opcional, varios. */
 enum class MaintenanceType {
     BATTERY_CHANGE_OR_RECHARGE,
@@ -56,16 +45,15 @@ data class MaintenanceRecord(
  * alerta. No se edita: un reporte nuevo lo complementa. Guarda fecha-hora y [origin] en vez de
  * un usuario (RN-10) y se crea sin conexión con un [id] generado en el celular (HU-7.2).
  *
- * Si la alerta asociada estaba Sin clasificar, el reporte puede clasificarla ([classification]);
- * si ya estaba clasificada sin etiqueta, puede agregar la etiqueta ([tag]) — HU-5.2.
+ * La clasificación no viaja en el reporte: se guarda antes, como un envío propio, al tocar
+ * "Falsa alerta" / "Confirmar alerta" en el detalle de la alerta. El reporte solo agrega la
+ * etiqueta ([tag]) que le falta a una alerta ya clasificada (HU-5.2). Desde el 14/10/2026 ya
+ * no lleva "Resultado de la inspección" (RN-16), por decisión de Nelson.
  */
 data class Inspection(
     val id: String,
     val deviceId: String,
     val alertId: String?,
-    val result: InspectionResult,
-    val resultOtherDetail: String? = null,
-    val classification: AlertClassification? = null,
     val tag: AlertTag? = null,
     val tagOtherDetail: String? = null,
     /** Observación libre (HU-5.3). La escribe una persona: no se traduce. */
@@ -76,16 +64,10 @@ data class Inspection(
     val origin: Origin,
 ) {
     init {
-        requireOtherDetail(result == InspectionResult.OTHER, resultOtherDetail, "Result")
         require((observations?.length ?: 0) <= TextLimits.OBSERVATIONS) { "Observations too long" }
-        require(alertId != null || (classification == null && tag == null)) {
-            "Only a report tied to an alert can classify or tag it"
-        }
+        require(alertId != null || tag == null) { "Only a report tied to an alert can tag it" }
         if (tag != null) requireOtherDetail(tag.requiresDetail, tagOtherDetail, "Tag")
         else require(tagOtherDetail == null) { "Tag detail without a tag" }
-        require(classification == null || tag == null || tag.classification == classification) {
-            "Tag $tag does not belong to $classification"
-        }
         require(photos.size <= PhotoEvidence.MAX_PER_REPORT) { "At most ${PhotoEvidence.MAX_PER_REPORT} photos" }
     }
 }

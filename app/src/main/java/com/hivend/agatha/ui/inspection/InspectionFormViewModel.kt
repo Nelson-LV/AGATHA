@@ -13,10 +13,8 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.Inspection
-import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.domain.model.MaintenanceRecord
 import com.hivend.agatha.domain.model.MaintenanceType
-import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.TextLimits
 import com.hivend.agatha.domain.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -33,9 +31,6 @@ import kotlinx.coroutines.launch
 
 /** Lo que el técnico va llenando en el reporte. Ver [InspectionFormUiState] para lo derivado. */
 data class InspectionDraft(
-    val result: InspectionResult? = null,
-    val resultOtherDetail: String = "",
-    val classification: AlertClassification? = null,
     val tag: AlertTag? = null,
     val tagOtherDetail: String = "",
     val observations: String = "",
@@ -56,19 +51,12 @@ data class InspectionFormUiState(
     val saving: Boolean = false,
     val savedSuccessfully: Boolean = false,
 ) {
-    /** HU-5.2: solo se clasifica si la alerta está Sin clasificar según lo último sincronizado. */
-    val canClassify: Boolean get() = alert?.managementStatus == ManagementStatus.UNCLASSIFIED
+    /** Clasificación ya guardada desde el detalle; el reporte la muestra en solo lectura. */
+    val classification: AlertClassification? get() = alert?.classification?.classification
 
-    /** Clasificación con la que se etiqueta: la elegida ahora o la que ya tenía la alerta. */
-    val effectiveClassification: AlertClassification?
-        get() = if (canClassify) draft.classification else alert?.classification?.classification
-
-    /** La etiqueta solo se puede elegir si la alerta aún no tiene una (RN-06). */
+    /** La etiqueta solo se puede elegir si la alerta está clasificada y aún no tiene una (RN-06). */
     val canTag: Boolean
-        get() = effectiveClassification != null && alert?.classification?.tag == null
-
-    val resultDetailMissing: Boolean
-        get() = draft.result == InspectionResult.OTHER && draft.resultOtherDetail.isBlank()
+        get() = classification != null && alert?.classification?.tag == null
 
     val tagDetailMissing: Boolean
         get() = canTag && draft.tag?.requiresDetail == true && draft.tagOtherDetail.isBlank()
@@ -79,15 +67,21 @@ data class InspectionFormUiState(
                 (MaintenanceType.OTHER in draft.maintenanceTypes && draft.maintenanceOtherDetail.isBlank())
             )
 
+    /** Sin "Resultado" obligatorio, el reporte necesita al menos un dato que guardar. */
+    val hasContent: Boolean
+        get() = (canTag && draft.tag != null) || draft.observations.isNotBlank() ||
+            draft.maintenanceDone || draft.photos.isNotEmpty()
+
     val canSave: Boolean
-        get() = draft.result != null && !resultDetailMissing && !tagDetailMissing && !maintenanceIncomplete
+        get() = hasContent && !tagDetailMissing && !maintenanceIncomplete
 
     val remainingPhotos: Int get() = PhotoEvidence.MAX_PER_REPORT - draft.photos.size
 }
 
 /**
- * Reporte de inspección (HE-05): resultado RN-16, clasificación y etiqueta de la alerta
- * asociada (HU-5.2), observación (HU-5.3), mantenimiento (HU-5.4) y fotos (HE-06). Funciona sin conexión:
+ * Reporte de inspección (HE-05), segundo envío después de clasificar la alerta en el detalle:
+ * etiqueta de la clasificación guardada (HU-5.2), observación (HU-5.3), mantenimiento (HU-5.4)
+ * y fotos (HE-06). Funciona sin conexión:
  * guarda en el repositorio local con fecha-hora y origen del celular.
  */
 @HiltViewModel
@@ -110,16 +104,6 @@ class InspectionFormViewModel @Inject constructor(
 
     private fun edit(block: (InspectionDraft) -> InspectionDraft) {
         formState.update { it.copy(draft = block(it.draft)) }
-    }
-
-    fun onResultSelected(result: InspectionResult) = edit { it.copy(result = result) }
-
-    fun onResultOtherDetailChange(text: String) = edit { it.copy(resultOtherDetail = text.take(TextLimits.OTHER_DETAIL)) }
-
-    /** Tocar la clasificación elegida la quita; cambiarla borra la etiqueta de la otra lista. */
-    fun onClassificationSelected(classification: AlertClassification) = edit {
-        if (it.classification == classification) it.copy(classification = null, tag = null, tagOtherDetail = "")
-        else it.copy(classification = classification, tag = null, tagOtherDetail = "")
     }
 
     fun onTagSelected(tag: AlertTag) = edit {
@@ -171,7 +155,6 @@ class InspectionFormViewModel @Inject constructor(
     fun saveInspection() {
         val state = uiState.value
         val alert = state.alert ?: return
-        val result = state.draft.result ?: return
         if (!state.canSave || state.saving) return
         val draft = state.draft
         val tag = draft.tag.takeIf { state.canTag }
@@ -183,9 +166,6 @@ class InspectionFormViewModel @Inject constructor(
                     id = UUID.randomUUID().toString(),
                     deviceId = alert.sensorId,
                     alertId = alert.id,
-                    result = result,
-                    resultOtherDetail = draft.resultOtherDetail.trim().takeIf { result == InspectionResult.OTHER },
-                    classification = draft.classification.takeIf { state.canClassify },
                     tag = tag,
                     tagOtherDetail = draft.tagOtherDetail.trim().takeIf { tag?.requiresDetail == true },
                     observations = draft.observations.trim().ifBlank { null },

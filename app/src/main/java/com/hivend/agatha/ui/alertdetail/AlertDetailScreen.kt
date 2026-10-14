@@ -1,13 +1,8 @@
 package com.hivend.agatha.ui.alertdetail
 
-import androidx.compose.ui.graphics.vector.ImageVector
-import com.hivend.agatha.ui.theme.AgathaColors
-import androidx.compose.material.icons.filled.Sensors
-import androidx.compose.material.icons.filled.GraphicEq
-import androidx.compose.material.icons.filled.Thermostat
-import androidx.compose.material.icons.filled.BatteryChargingFull
 import com.hivend.agatha.ui.theme.AgathaDataTextStyle
 import com.hivend.agatha.ui.theme.AgathaTheme
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,10 +23,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -41,6 +37,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,6 +51,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
@@ -74,7 +73,6 @@ import coil3.compose.AsyncImage
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.R
-import androidx.annotation.StringRes
 import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.components.shortDuration
@@ -96,6 +94,23 @@ fun AlertDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val alert = uiState.alert
+    val scope = rememberCoroutineScope()
+    /** Clasificación elegida que espera confirmación: no se puede cambiar después (RN-06). */
+    var pendingChoice by remember { mutableStateOf<AlertClassification?>(null) }
+
+    pendingChoice?.let { choice ->
+        ClassifyDialog(
+            classification = choice,
+            onConfirm = {
+                pendingChoice = null
+                scope.launch {
+                    viewModel.classify(choice)
+                    onRegisterInspection(viewModel.alertId)
+                }
+            },
+            onDismiss = { pendingChoice = null },
+        )
+    }
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
@@ -113,8 +128,20 @@ fun AlertDetailScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             item { SitePill(site = alert.site) }
-            item { AlertCard(alert = alert, onNewReport = { onRegisterInspection(alert.id) }) }
-            item { ClassificationCard(alert = alert, onViewHistory = { onViewHistory(alert.sensorId) }) }
+            item {
+                AlertCard(
+                    alert = alert,
+                    onClassify = { pendingChoice = it },
+                    onNewReport = { onRegisterInspection(alert.id) },
+                )
+            }
+            item {
+                ClassificationCard(
+                    alert = alert,
+                    pendingSync = uiState.classificationPendingSync,
+                    onViewHistory = { onViewHistory(alert.sensorId) },
+                )
+            }
             item { LevelTimelineCard(alert) }
             item { ReportsCard(uiState.reports) }
             item {
@@ -128,7 +155,6 @@ fun AlertDetailScreen(
             }
             item { AccelerationGraphCard() }
             item { RecentHistoryCard(events = uiState.recentHistory) }
-            item { SensorAccordionList() }
         }
     }
 }
@@ -136,10 +162,11 @@ fun AlertDetailScreen(
 /**
  * Encabezado y datos de la alerta como en la web (referencia 02): "chip nivel + Alerta ALR-xxxx +
  * chip estado" y la grilla Dispositivo, PK, Municipio, Evento, Inicio, Fin, Indicador y nivel
- * máximo (HU-4.2, RN-04, RN-05).
+ * máximo (HU-4.2, RN-04, RN-05). Sin clasificar, la acción es "Falsa alerta" / "Confirmar
+ * alerta" (HU-5.2); ya clasificada, un nuevo reporte de inspección.
  */
 @Composable
-private fun AlertCard(alert: Alert, onNewReport: () -> Unit) {
+private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, onNewReport: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
@@ -177,17 +204,65 @@ private fun AlertCard(alert: Alert, onNewReport: () -> Unit) {
             ongoing = alert.isOngoing,
         )
 
-        Button(
-            onClick = onNewReport,
-            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-            Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
+        if (alert.classification == null) {
+            Text(
+                stringResource(R.string.inspection_classification_info),
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+            )
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                ClassificationButton(
+                    text = stringResource(R.string.inspection_false_alarm),
+                    color = AgathaTheme.colors.classificationFalseAlarm,
+                    onClick = { onClassify(AlertClassification.FALSE_ALARM) },
+                    modifier = Modifier.weight(1f),
+                )
+                ClassificationButton(
+                    text = stringResource(R.string.inspection_confirm_alert),
+                    color = AgathaTheme.colors.critical,
+                    onClick = { onClassify(AlertClassification.CONFIRMED) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        } else {
+            Button(
+                onClick = onNewReport,
+                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
+            }
         }
 
         TelemetryRow(alert)
     }
+}
+
+@Composable
+private fun ClassificationButton(text: String, color: Color, onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(
+        onClick = onClick,
+        border = BorderStroke(1.3.dp, color),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
+        modifier = modifier,
+    ) { Text(text) }
+}
+
+/** Confirma la clasificación antes de guardarla: es el primer envío y no se puede editar. */
+@Composable
+private fun ClassifyDialog(classification: AlertClassification, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.alert_detail_classify_dialog_title, stringResource(classification.labelRes()))) },
+        text = { Text(stringResource(R.string.alert_detail_classify_dialog_text)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.alert_detail_classify_dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
 }
 
 /** Grilla de dos columnas etiqueta/valor. Un "Fin" vacío se muestra como "En curso" en rojo. */
@@ -237,7 +312,7 @@ private fun LevelTimelineCard(alert: Alert) {
 
 /** Clasificación, estado de gestión y etiqueta, con fecha-hora y origen (RN-06, RN-10). */
 @Composable
-private fun ClassificationCard(alert: Alert, onViewHistory: () -> Unit) {
+private fun ClassificationCard(alert: Alert, pendingSync: Boolean, onViewHistory: () -> Unit) {
     SectionCard(title = stringResource(R.string.alert_detail_classification)) {
         val record = alert.classification
         if (record == null) {
@@ -248,6 +323,7 @@ private fun ClassificationCard(alert: Alert, onViewHistory: () -> Unit) {
                 ClassificationChip(record.classification)
                 ManagementStatusChip(alert.managementStatus)
             }
+            if (pendingSync) PendingSyncChip()
             Text(
                 stringResource(R.string.common_dot_separated, formatDateTime(record.classifiedAt), record.origin.label()),
                 color = AgathaTheme.colors.textSecondary,
@@ -295,20 +371,15 @@ private fun ReportsCard(reports: List<Inspection>) {
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    StatusChip(
-                        text = stringResource(R.string.alert_detail_pending_sync),
-                        containerColor = AgathaTheme.colors.offlineContainer,
-                        contentColor = AgathaTheme.colors.offline,
+                    PendingSyncChip()
+                }
+                report.tag?.let { tag ->
+                    Text(
+                        stringResource(R.string.inspection_saved_tag, report.tagOtherDetail ?: stringResource(tag.labelRes())),
+                        color = AgathaTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
                     )
                 }
-                Text(
-                    stringResource(
-                        R.string.alert_detail_report_result,
-                        report.resultOtherDetail ?: stringResource(report.result.labelRes()),
-                    ),
-                    color = AgathaTheme.colors.textPrimary,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
                 report.maintenance?.let { maintenance ->
                     val types = maintenance.types.sortedBy { it.ordinal }.map {
                         if (it == MaintenanceType.OTHER) maintenance.otherDetail.orEmpty() else stringResource(it.labelRes())
@@ -340,6 +411,15 @@ private fun ReportsCard(reports: List<Inspection>) {
             }
         }
     }
+}
+
+@Composable
+private fun PendingSyncChip() {
+    StatusChip(
+        text = stringResource(R.string.alert_detail_pending_sync),
+        containerColor = AgathaTheme.colors.offlineContainer,
+        contentColor = AgathaTheme.colors.offline,
+    )
 }
 
 @Composable
@@ -521,59 +601,6 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
                     )
                 }
             }
-        }
-    }
-}
-
-private data class SensorInfo(
-    val icon: ImageVector,
-    @param:StringRes val titleRes: Int,
-    @param:StringRes val detailRes: Int,
-    val color: AgathaColors.() -> Color,
-)
-
-private val sensors = listOf(
-    SensorInfo(Icons.Filled.Sensors, R.string.sensor_motion_title, R.string.sensor_motion_detail) { critical },
-    SensorInfo(Icons.Filled.GraphicEq, R.string.sensor_acoustic_title, R.string.sensor_acoustic_detail) { warning },
-    SensorInfo(Icons.Filled.Thermostat, R.string.sensor_environment_title, R.string.sensor_environment_detail) { brand },
-    SensorInfo(Icons.Filled.BatteryChargingFull, R.string.sensor_power_title, R.string.sensor_power_detail) { positive },
-)
-
-@Composable
-private fun SensorAccordionList() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        sensors.forEach { sensor -> AccordionRow(sensor) }
-    }
-}
-
-@Composable
-private fun AccordionRow(sensor: SensorInfo) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(12.dp))
-            .clickable { expanded = !expanded }
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Icon(sensor.icon, contentDescription = null, tint = sensor.color(AgathaTheme.colors), modifier = Modifier.size(20.dp))
-                Text(stringResource(sensor.titleRes), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
-            }
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = AgathaTheme.colors.textSecondary)
-        }
-        if (expanded) {
-            Text(
-                stringResource(sensor.detailRes),
-                color = AgathaTheme.colors.textSecondary,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
-            )
         }
     }
 }

@@ -3,13 +3,16 @@ package com.hivend.agatha.ui.alertdetail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hivend.agatha.core.device.DeviceOriginProvider
 import com.hivend.agatha.core.navigation.AgathaDestination
 import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -28,6 +31,8 @@ data class AlertDetailUiState(
     val recentHistory: List<HistoryEvent> = emptyList(),
     /** Reportes de inspección de esta alerta, el más reciente primero (HU-4.2). */
     val reports: List<Inspection> = emptyList(),
+    /** La clasificación se hizo en este celular y aún no se envía a la web. */
+    val classificationPendingSync: Boolean = false,
     /** Texto que se ve en el campo de observaciones (borrador o lo ya guardado). */
     val observations: String = "",
     /** true cuando hay cambios en el campo que aún no se guardaron. */
@@ -39,6 +44,7 @@ class AlertDetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val alertRepository: AlertRepository,
     historyRepository: HistoryRepository,
+    private val originProvider: DeviceOriginProvider,
 ) : ViewModel() {
 
     val alertId: String =
@@ -60,13 +66,15 @@ class AlertDetailViewModel @Inject constructor(
         alertRepository.observeAlert(alertId),
         deviceHistory,
         alertRepository.observeInspections(alertId),
+        alertRepository.observeClassificationPendingSync(alertId),
         observationsDraft,
-    ) { alert, history, reports, draft ->
+    ) { alert, history, reports, pendingSync, draft ->
         val saved = alert?.observations.orEmpty()
         AlertDetailUiState(
             alert = alert,
             recentHistory = history.take(4),
             reports = reports,
+            classificationPendingSync = pendingSync,
             observations = draft ?: saved,
             observationsDirty = draft != null && draft != saved,
         )
@@ -82,5 +90,14 @@ class AlertDetailViewModel @Inject constructor(
             alertRepository.saveObservations(alertId, draft)
             observationsDraft.value = null
         }
+    }
+
+    /**
+     * Primer envío (HU-5.2): guarda la clasificación con fecha-hora y origen del celular, sin
+     * esperar al reporte. Termina antes de que la pantalla abra el reporte de inspección, que
+     * así ya muestra las etiquetas de esa clasificación.
+     */
+    suspend fun classify(classification: AlertClassification) {
+        alertRepository.classifyAlert(alertId, classification, Instant.now(), originProvider.current())
     }
 }

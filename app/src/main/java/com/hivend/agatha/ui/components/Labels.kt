@@ -13,7 +13,6 @@ import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorType
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
-import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.domain.model.Notice
 
 /*
@@ -101,17 +100,6 @@ fun EventType.labelRes(): Int = when (this) {
     EventType.EVIDENCE -> R.string.event_type_evidence
     EventType.OBSERVATION -> R.string.event_type_observation
     EventType.MAINTENANCE -> R.string.event_type_maintenance
-}
-
-@StringRes
-fun InspectionResult.labelRes(): Int = when (this) {
-    InspectionResult.NO_ISSUES -> R.string.inspection_result_no_issues
-    InspectionResult.MAINTENANCE_REQUIRED -> R.string.inspection_result_maintenance_required
-    InspectionResult.DEVICE_OR_SENSOR_PROBLEM -> R.string.inspection_result_device_or_sensor_problem
-    InspectionResult.PHYSICAL_DAMAGE -> R.string.inspection_result_physical_damage
-    InspectionResult.LOW_BATTERY -> R.string.inspection_result_low_battery
-    InspectionResult.NO_COMMUNICATION -> R.string.inspection_result_no_communication
-    InspectionResult.OTHER -> R.string.common_other_which
 }
 
 @StringRes

@@ -4,7 +4,6 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PhotoCamera
@@ -36,7 +35,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
@@ -68,7 +66,6 @@ import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertTag
-import com.hivend.agatha.domain.model.InspectionResult
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.TextLimits
 import com.hivend.agatha.ui.components.BackTopBar
@@ -82,9 +79,9 @@ import com.hivend.agatha.ui.theme.AgathaTheme
 
 /**
  * Reporte de inspección (HE-05, HU-5.1 a 5.4). Adapta a una sola pantalla los diálogos de la
- * web (docs/referencias-web/02 a 04): resultado RN-16, clasificación Confirmada / Falsa alerta
- * con la lista de etiquetas de esa clasificación, observación con contador, mantenimiento y
- * evidencias fotográficas.
+ * web (docs/referencias-web/02 a 04): clasificación ya guardada en solo lectura con la lista de
+ * etiquetas de esa clasificación, observación con contador, mantenimiento y evidencias
+ * fotográficas. La clasificación se elige antes, en el detalle de la alerta.
  * Funciona sin conexión: el guardado solo escribe en el repositorio local.
  */
 @Composable
@@ -115,28 +112,8 @@ fun InspectionFormScreen(
             item { ReportHeader(alert) }
 
             item {
-                FormCard {
-                    SectionTitle(stringResource(R.string.inspection_result_title))
-                    RadioOptions(
-                        options = InspectionResult.entries,
-                        label = { it.labelRes() },
-                        selected = draft.result,
-                        onSelected = viewModel::onResultSelected,
-                    )
-                    if (draft.result == InspectionResult.OTHER) {
-                        OtherDetailField(
-                            value = draft.resultOtherDetail,
-                            onValueChange = viewModel::onResultOtherDetailChange,
-                            showError = uiState.resultDetailMissing,
-                        )
-                    }
-                }
-            }
-
-            item {
                 ClassificationSection(
                     uiState = uiState,
-                    onClassificationSelected = viewModel::onClassificationSelected,
                     onTagSelected = viewModel::onTagSelected,
                     onTagOtherDetailChange = viewModel::onTagOtherDetailChange,
                 )
@@ -237,14 +214,13 @@ private fun ReportHeader(alert: Alert) {
 }
 
 /**
- * HU-5.2. Sin clasificar: par de botones "Falsa alerta" / "Confirmar alerta" (opcional) y,
- * elegida una, la lista de causas de esa clasificación. Ya clasificada: solo lectura, y si
- * falta la etiqueta se puede agregar. Con etiqueta: solo lectura.
+ * HU-5.2. La clasificación ya se guardó desde el detalle de la alerta (primer envío): aquí se
+ * muestra en solo lectura y, si falta la etiqueta, se ofrece la lista de causas de esa
+ * clasificación. Sin clasificar (no debería llegar así), se indica volver al detalle.
  */
 @Composable
 private fun ClassificationSection(
     uiState: InspectionFormUiState,
-    onClassificationSelected: (AlertClassification) -> Unit,
     onTagSelected: (AlertTag) -> Unit,
     onTagOtherDetailChange: (String) -> Unit,
 ) {
@@ -252,30 +228,14 @@ private fun ClassificationSection(
     val saved = alert.classification
     FormCard {
         SectionTitle(stringResource(R.string.inspection_classification_title))
-        if (uiState.canClassify) {
+        if (saved == null) {
             Banner(
                 icon = Icons.Filled.Info,
-                text = stringResource(R.string.inspection_classification_info),
+                text = stringResource(R.string.inspection_classify_first),
                 container = AgathaTheme.colors.brandContainer,
                 content = AgathaTheme.colors.onBrandContainer,
             )
-            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                ClassificationButton(
-                    text = stringResource(R.string.inspection_false_alarm),
-                    selected = uiState.draft.classification == AlertClassification.FALSE_ALARM,
-                    color = AgathaTheme.colors.classificationFalseAlarm,
-                    onClick = { onClassificationSelected(AlertClassification.FALSE_ALARM) },
-                    modifier = Modifier.weight(1f),
-                )
-                ClassificationButton(
-                    text = stringResource(R.string.inspection_confirm_alert),
-                    selected = uiState.draft.classification == AlertClassification.CONFIRMED,
-                    color = AgathaTheme.colors.critical,
-                    onClick = { onClassificationSelected(AlertClassification.CONFIRMED) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-        } else if (saved != null) {
+        } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ClassificationChip(saved.classification)
                 Text(
@@ -301,7 +261,7 @@ private fun ClassificationSection(
             }
         }
 
-        val classification = uiState.effectiveClassification
+        val classification = uiState.classification
         if (uiState.canTag && classification != null) {
             SectionTitle(
                 stringResource(
@@ -323,23 +283,6 @@ private fun ClassificationSection(
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun ClassificationButton(text: String, selected: Boolean, color: Color, onClick: () -> Unit, modifier: Modifier) {
-    if (selected) {
-        Button(onClick = onClick, colors = ButtonDefaults.buttonColors(containerColor = color), modifier = modifier) {
-            Icon(Icons.Filled.CheckCircle, contentDescription = null, modifier = Modifier.size(16.dp).padding(end = 2.dp))
-            Text(text)
-        }
-    } else {
-        OutlinedButton(
-            onClick = onClick,
-            border = BorderStroke(1.3.dp, color),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
-            modifier = modifier,
-        ) { Text(text) }
     }
 }
 
