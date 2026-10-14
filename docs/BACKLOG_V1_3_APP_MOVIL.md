@@ -33,7 +33,7 @@ identificador del celular configurado en la app; la web registra "Web").
 | Evento | Fuga · Movimiento · Fuga y Movimiento | RN-12 |
 | Línea de tiempo | Lista de (nivel, fecha-hora) por alerta | RN-05. La lista y el mapa muestran el nivel actual; el historial, el nivel máximo. |
 | Fin de alerta | Fecha del primer cálculo Normal, o de la clasificación como Falsa alerta | RN-04. "En curso" mientras esté activa. |
-| Resultado de inspección | Sin novedad · Mantenimiento requerido · Problema del dispositivo/sensor · Daño físico · Batería baja · Sin comunicación · Otro ¿Cuál? | RN-16. Uno, obligatorio. |
+| Resultado de inspección | Sin novedad · Mantenimiento requerido · Problema del dispositivo/sensor · Daño físico · Batería baja · Sin comunicación · Otro ¿Cuál? | RN-16. Uno, obligatorio. **Retirado de la app el 14/10/2026** (ver "Cambio del 14/10/2026" en HE-05). |
 | Mantenimiento realizado | Cambio o recarga de batería · Limpieza · Ajuste o reinstalación · Reemplazo de componente · Otro ¿Cuál? | RN-16. Opcional, varios. |
 | Estado de sincronización | Pendiente · Sincronizando · Sincronizado · Error | RN-17 |
 | Origen | Web · App móvil (+ id del celular) | RN-10 |
@@ -73,6 +73,23 @@ registro, 5 MB c/u (la app comprime a ≤ 5 MB), descripción máx. 200; fechas
 - **HU-5.3 Observaciones (AGT-31):** texto libre máx. 500, con fecha-hora, también offline.
 - **HU-5.4 Mantenimiento (AGT-154, nueva):** interruptor "Se realizó mantenimiento", tipos
   RN-16 (varios), descripción opcional; aparece en el historial del dispositivo.
+
+> **Cambio del 14/10/2026 (Nelson), se aparta de HU-5.1, HU-5.2 y RN-16.** Falta reflejarlo
+> en las historias de Jira (AGT-29, AGT-30) y en el backlog de la web.
+> - El reporte ya **no tiene "Resultado de la inspección"**: ni en la pantalla ni en el
+>   modelo (`InspectionResult` se eliminó). Para guardar basta un dato: etiqueta,
+>   observación, mantenimiento o foto.
+> - La clasificación **sale del reporte** y pasa al detalle de la alerta: en lugar de "Nuevo
+>   reporte de inspección", una alerta Sin clasificar muestra "Falsa alerta" / "Confirmar
+>   alerta". Tras confirmar en un diálogo, la clasificación se guarda de inmediato como
+>   **primer envío** (fecha-hora, origen, "Pendiente de sincronizar") y se abre el reporte.
+> - El reporte es el **segundo envío**: muestra la clasificación en solo lectura y ofrece la
+>   etiqueta de esa clasificación (incluido "Otro ¿Cuál?") si aún no la tiene, más
+>   observación, mantenimiento y fotos. Una alerta ya clasificada conserva el botón "Nuevo
+>   reporte de inspección" para completar lo que falte.
+> - Las secciones de sensores (Movimiento y orientación, Acústica, Condiciones ambientales,
+>   Energía del dispositivo) salieron del detalle de la alerta y están en la pestaña
+>   Dispositivos ("Ver sensores" en cada nodo), con el espacio de su gráfica futura.
 
 **HE-06 — Evidencia fotográfica, opcional (AGT-10)**
 - **HU-6.1 (AGT-32):** cámara o galería, hasta 5 por reporte, compresión automática,
@@ -145,7 +162,7 @@ lista, quitar "Cerrar alerta" y los estados propios, y usar las etiquetas RN-07 
 - `Alert` necesita: id "ALR-xxxx", PK, municipio, evento, inicio, fin, línea de tiempo,
   valor del indicador, etiqueta, origen y fecha de clasificación.
 - `Inspection` pasa a ser un **reporte** de dispositivo (alerta opcional) con
-  `InspectionResult` de RN-16, mantenimiento y observaciones acumulables; las categorías
+  mantenimiento y observaciones acumulables (sin resultado RN-16 desde el 14/10/2026); las categorías
   propias (`EventCategory`) se sustituyen por las etiquetas RN-07.
 - `SensorNode` necesita PK, municipio, estado de comunicación, motivo del aviso y batería
   informativa.
