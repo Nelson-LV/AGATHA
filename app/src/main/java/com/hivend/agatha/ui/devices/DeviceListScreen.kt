@@ -80,8 +80,8 @@ fun DeviceListScreen(
 }
 
 /**
- * Ficha del nodo con sus secciones de sensores plegadas debajo. Son el lugar de las gráficas
- * por sensor que llegarán con los datos reales (antes estaban en el detalle de la alerta).
+ * Ficha del nodo con sus secciones de sensores plegadas debajo, con las gráficas de las
+ * últimas 24 h que llegan de la API de tablero (antes estaban en el detalle de la alerta).
  */
 @Composable
 private fun DeviceWithSensors(node: SensorNode, onViewHistory: () -> Unit) {
@@ -96,6 +96,6 @@ private fun DeviceWithSensors(node: SensorNode, onViewHistory: () -> Unit) {
                 .clickable { showSensors = !showSensors }
                 .padding(horizontal = 4.dp, vertical = 4.dp),
         )
-        if (showSensors) SensorSections()
+        if (showSensors) SensorSections(nodeId = node.id)
     }
 }

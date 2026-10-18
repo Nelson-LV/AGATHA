@@ -1,15 +1,11 @@
 package com.hivend.agatha.ui.components
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -26,7 +22,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,51 +32,78 @@ import androidx.compose.ui.unit.dp
 import com.hivend.agatha.R
 import com.hivend.agatha.ui.theme.AgathaColors
 import com.hivend.agatha.ui.theme.AgathaTheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.hivend.agatha.domain.model.SensorSection
+import com.hivend.agatha.domain.model.TelemetryDevice
+import com.hivend.agatha.ui.telemetry.TelemetryUiState
+import com.hivend.agatha.ui.telemetry.TelemetryViewModel
+import kotlin.math.roundToInt
 
-private data class SensorInfo(
-    val icon: ImageVector,
-    @param:StringRes val titleRes: Int,
-    @param:StringRes val detailRes: Int,
-    val color: AgathaColors.() -> Color,
-)
+private val SensorSection.icon: ImageVector
+    get() = when (this) {
+        SensorSection.MOTION -> Icons.Filled.Sensors
+        SensorSection.LEAK -> Icons.Filled.GraphicEq
+        SensorSection.ENVIRONMENT -> Icons.Filled.Thermostat
+        SensorSection.POWER -> Icons.Filled.BatteryChargingFull
+    }
 
-private val sensors = listOf(
-    SensorInfo(Icons.Filled.Sensors, R.string.sensor_motion_title, R.string.sensor_motion_detail) { critical },
-    SensorInfo(Icons.Filled.GraphicEq, R.string.sensor_acoustic_title, R.string.sensor_acoustic_detail) { warning },
-    SensorInfo(Icons.Filled.Thermostat, R.string.sensor_environment_title, R.string.sensor_environment_detail) { brand },
-    SensorInfo(Icons.Filled.BatteryChargingFull, R.string.sensor_power_title, R.string.sensor_power_detail) { positive },
-)
+private fun SensorSection.color(colors: AgathaColors): Color = when (this) {
+    SensorSection.MOTION -> colors.critical
+    SensorSection.LEAK -> colors.warning
+    SensorSection.ENVIRONMENT -> colors.brand
+    SensorSection.POWER -> colors.positive
+}
+
+/** Todas las variables que muestran las secciones: se piden juntas, en una sola llamada. */
+private val allSectionKeys: Set<String> = SensorSection.entries.flatMap { it.keys }.toSet()
 
 /**
- * Secciones de sensores de un dispositivo (movimiento, acústica, ambiente, energía). Antes
- * vivían en el detalle de la alerta; desde el 14/10/2026 están en la pestaña Dispositivos. Cada
- * una deja el espacio de la gráfica que llegará con los datos reales del nodo.
+ * Secciones de sensores de un dispositivo (movimiento, fuga, ambiente, energía), en la pestaña
+ * Dispositivos desde el 14/10/2026. Al mostrarse piden las últimas 24 h del nodo [nodeId] a la
+ * API de tablero (solo con conexión) y cada sección dibuja sus gráficas; Energía muestra la
+ * última batería y el último dato recibido.
  */
 @Composable
-fun SensorSections(modifier: Modifier = Modifier) {
+fun SensorSections(nodeId: String, modifier: Modifier = Modifier) {
+    val viewModel: TelemetryViewModel = hiltViewModel(key = "sensors-$nodeId")
+    LaunchedEffect(nodeId) { viewModel.load(nodeId, allSectionKeys) }
+    val state by viewModel.state.collectAsStateWithLifecycle()
+
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier) {
-        sensors.forEach { sensor -> SensorRow(sensor) }
+        Text(
+            stringResource(R.string.telemetry_window_24h),
+            color = AgathaTheme.colors.textTertiary,
+            style = MaterialTheme.typography.labelSmall,
+        )
+        SensorSection.entries.forEach { section ->
+            SensorRow(section = section, state = state, onRetry = viewModel::retry)
+        }
     }
 }
 
 @Composable
-private fun SensorRow(sensor: SensorInfo) {
-    var expanded by remember { mutableStateOf(false) }
+private fun SensorRow(section: SensorSection, state: TelemetryUiState, onRetry: () -> Unit) {
+    var expanded by rememberSaveable(section) { mutableStateOf(false) }
     Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
             .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(12.dp))
-            .clickable { expanded = !expanded }
             .padding(horizontal = 14.dp, vertical = 13.dp),
     ) {
         Row(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp),
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { expanded = !expanded },
         ) {
-            Icon(sensor.icon, contentDescription = null, tint = sensor.color(AgathaTheme.colors), modifier = Modifier.size(20.dp))
+            Icon(section.icon, contentDescription = null, tint = section.color(AgathaTheme.colors), modifier = Modifier.size(20.dp))
             Text(
-                stringResource(sensor.titleRes),
+                stringResource(section.titleRes()),
                 color = AgathaTheme.colors.textPrimary,
                 style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
@@ -94,25 +116,32 @@ private fun SensorRow(sensor: SensorInfo) {
         }
         if (expanded) {
             Text(
-                stringResource(sensor.detailRes),
+                stringResource(section.detailRes()),
                 color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
             )
-            Box(
-                contentAlignment = Alignment.Center,
-                modifier = Modifier
-                    .padding(top = 8.dp)
-                    .fillMaxWidth()
-                    .height(96.dp)
-                    .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(10.dp)),
-            ) {
-                Text(
-                    stringResource(R.string.sensor_chart_placeholder),
-                    color = AgathaTheme.colors.textTertiary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+            TelemetryStateContent(state = state, onRetry = onRetry) { telemetry ->
+                if (section == SensorSection.POWER) {
+                    PowerSummary(telemetry.device)
+                } else {
+                    section.charts.forEach { keys ->
+                        val series = keys.mapNotNull { telemetry.series(it) }
+                        if (series.isNotEmpty()) TelemetryChart(series = series, from = telemetry.from, to = telemetry.to)
+                    }
+                }
             }
         }
+    }
+}
+
+/** Batería informativa (sin color, Backlog 1.3) y hora del último dato recibido. */
+@Composable
+private fun PowerSummary(device: TelemetryDevice) {
+    val empty = stringResource(R.string.common_empty_value)
+    val battery = device.lastBatteryLevel?.let { stringResource(R.string.common_percent, it.roundToInt()) } ?: empty
+    val lastData = device.lastConnection?.let { formatDateTime(it) } ?: empty
+    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+        Text(stringResource(R.string.telemetry_battery_last, battery), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.telemetry_last_data, lastData), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
     }
 }

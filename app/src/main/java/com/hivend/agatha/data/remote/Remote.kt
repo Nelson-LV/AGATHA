@@ -13,5 +13,8 @@
  *
  * Las dependencias de Retrofit/OkHttp/kotlinx.serialization ya están declaradas en
  * app/build.gradle.kts.
+ *
+ * Ya integrado (17/10/2026): la API de tablero de solo lectura (`dashboard/DashboardApi`), con
+ * un cliente mínimo en `NetworkModule`, para las gráficas de telemetría.
  */
 package com.hivend.agatha.data.remote

@@ -272,7 +272,8 @@ mismo fondo para que no haya destello al abrir.
 | `positive` | `#15803D` | `#5BD68A` | "Iniciar/Continuar inspección", "Guardar", conectado |
 | `stateClassified` | `#6D3FC0` | `#C8B5FF` | Chip "Clasificada" |
 | `nodeNormal` / `nodeCaution` / `nodeNotice` | `#22C55E` / `#EAB308` / `#9CA3AF` | `#4ADE80` / `#FACC15` / `#9CA3AF` | Nodos del mapa: en línea, amarilla, sin comunicación |
-| `chartLine` / `chartGrid` | `#3B82F6` / `#F0F0F0` | `#60A5FA` / `#262C35` | Serie y cuadrícula de la gráfica del detalle |
+| `chartLine` / `chartGrid` | `#3B82F6` / `#F0F0F0` | `#60A5FA` / `#262C35` | Serie y cuadrícula de las gráficas de telemetría |
+| `chartLineSecondary` | `#F59E0B` | `#FBBF24` | Segunda serie de una gráfica compartida (pitch/roll, B1/B2) |
 
 Los valores partieron de los prototipos de Figma (`AGATHA — Prototipos App Móvil`, nodos
 `2:2`, `1:4` y `34:398`) y se ajustaron para contraste y para el modo oscuro, que el
@@ -365,8 +366,19 @@ Todas las pantallas ya son **interactivas** (no son solo maquetas estáticas): n
 actualizan estado, guardan formularios y reflejan esos cambios donde corresponda. Lo hacen
 contra `data/repository/InMemory*Repository`, que mantiene el estado en un
 `MutableStateFlow` sembrado con `SampleAgathaData` (los mismos 4 sensores, sitio y textos
-del prototipo de Figma: `MP-1156`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
-"Güepsa – San José de Pare").
+del prototipo de Figma: `MP-11556`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
+"Güepsa – San José de Pare"). Desde el 17/10/2026 el primero usa el código del dispositivo
+real de la plataforma (`MP-11556`, PK34+470; el prototipo decía `MP-1156`) para que sus
+gráficas muestren datos reales.
+
+**Excepción, telemetría real (17/10/2026):** las gráficas de "Ver sensores" (Dispositivos) y
+"Ver gráfica" (detalle de alerta, HU-4.2) leen la API de tablero del backend
+(`data/remote/dashboard/DashboardApi`, base `AGATHA_API_BASE_URL`, por defecto
+`https://129.213.118.230/`) a través de `TelemetryRepository`. Son solo con conexión y no se
+guardan en el celular. El nodo de la app se relaciona con el dispositivo de la API por el
+código en su nombre ("Sensor MP-11556 PK34-470"); un nodo sin dispositivo muestra "todavía no
+tiene datos en la plataforma". Los huecos de datos no se rellenan y el umbral del indicador no
+se dibuja hasta que el endpoint lo traiga.
 
 Los datos de ejemplo **también se traducen**: sus textos son claves `sample_*` en
 `values/` y `values-en/strings.xml`, envueltas en `LocalizedText.Resource`, y lo

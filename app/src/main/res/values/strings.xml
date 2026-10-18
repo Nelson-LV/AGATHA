@@ -86,7 +86,6 @@
     <string name="origin_mobile_app">App móvil · %1$s</string>
 
     <!-- Leyendas de mapa y gráfica -->
-    <string name="legend_normal">Normal</string>
     <string name="legend_connected">Conectado</string>
     <string name="legend_alert">Alerta</string>
     <string name="legend_critical">Crítico</string>
@@ -138,7 +137,6 @@
     <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio (se guarda incluso sin conexión)…</string>
     <string name="alert_detail_observations_save">Guardar observaciones</string>
     <string name="alert_detail_observations_saved">Observaciones guardadas</string>
-    <string name="alert_detail_acceleration_chart">GRÁFICA ACELERACIÓN 24H</string>
     <string name="alert_detail_device_history">HISTORIAL DEL DISPOSITIVO</string>
     <string name="telemetry_confidence">CONFIANZA</string>
     <string name="telemetry_acceleration">ACELERACIÓN</string>
@@ -214,7 +212,6 @@
     <string name="devices_title">Dispositivos del tramo</string>
     <string name="devices_sensors_show">Ver sensores</string>
     <string name="devices_sensors_hide">Ocultar sensores</string>
-    <string name="sensor_chart_placeholder">Gráfica disponible próximamente.</string>
     <plurals name="devices_count">
         <item quantity="one">%d nodo</item>
         <item quantity="other">%d nodos</item>
@@ -296,4 +293,31 @@
     <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
     <string name="sample_sync_conflict_local">Clasificación: Confirmada · Fuga confirmada en campo · %1$s</string>
     <string name="sample_sync_conflict_server">Estado: Cerrada por Operador Web · %1$s</string>
+    <!-- Telemetría (API de tablero): gráficas de "Ver sensores" y "Ver gráfica" -->
+    <string name="telemetry_window_24h">Últimas 24 h · hora de Colombia · solo con conexión</string>
+    <string name="telemetry_loading">Cargando datos del sensor…</string>
+    <string name="telemetry_no_data">Sin datos en las últimas 24 h</string>
+    <string name="telemetry_error_no_connection">Sin conexión. Las gráficas solo se ven con internet.</string>
+    <string name="telemetry_error_device_not_found">Este dispositivo todavía no tiene datos en la plataforma.</string>
+    <string name="telemetry_error_server">La plataforma no pudo entregar los datos. Intenta de nuevo.</string>
+    <string name="telemetry_y_range">Mín. %1$s · Máx. %2$s</string>
+    <string name="telemetry_chart_description">%1$s, últimas 24 h: mínimo %2$s, máximo %3$s</string>
+    <string name="telemetry_value_unit" translatable="false">%1$s %2$s</string>
+    <string name="telemetry_series_separator" translatable="false">%1$s / %2$s</string>
+    <string name="telemetry_battery_last">Última batería informada: %1$s</string>
+    <string name="telemetry_last_data">Último dato recibido: %1$s</string>
+    <string name="telemetry_threshold_pending">Umbral pendiente de validar: no se dibuja todavía.</string>
+    <string name="telemetry_variable_temperature">Temperatura</string>
+    <string name="telemetry_variable_humidity">Humedad</string>
+    <string name="telemetry_variable_b1">B1 fuga 500–1200 Hz</string>
+    <string name="telemetry_variable_b2">B2 fuga 1200–2000 Hz</string>
+    <string name="telemetry_variable_indicator">Indicador I (24 h)</string>
+    <string name="telemetry_variable_density">Densidad D (24 h)</string>
+    <string name="telemetry_variable_drift">Deriva</string>
+    <string name="telemetry_variable_pitch">Pitch</string>
+    <string name="telemetry_variable_roll">Roll</string>
+    <string name="telemetry_variable_acceleration">Aceleración (magnitud promedio)</string>
+    <string name="alert_detail_indicator_chart">INDICADOR · ÚLTIMAS 24 H</string>
+    <string name="alert_detail_view_chart">Ver gráfica</string>
+    <string name="alert_detail_hide_chart">Ocultar gráfica</string>
 </resources>

@@ -19,6 +19,10 @@ val localProperties = Properties().apply {
     }
 }
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
+// API de tablero del backend (solo lectura, sin autenticación). Se puede cambiar por máquina
+// con AGATHA_API_BASE_URL en local.properties; termina en "/" como pide Retrofit.
+val agathaApiBaseUrl: String =
+    localProperties.getProperty("AGATHA_API_BASE_URL", "https://129.213.118.230/")
 
 android {
     namespace = "com.hivend.agatha"
@@ -36,6 +40,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resValue("string", "google_maps_key", mapsApiKey)
+        buildConfigField("String", "AGATHA_API_BASE_URL", "\"$agathaApiBaseUrl\"")
     }
 
     buildTypes {
@@ -61,6 +66,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     // Genera el locale_config a partir de res/values(-en): habilita el selector de idioma por

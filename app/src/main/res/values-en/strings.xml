@@ -76,7 +76,6 @@
     <string name="origin_mobile_app">Mobile app · %1$s</string>
 
     <!-- Map and chart legends -->
-    <string name="legend_normal">Normal</string>
     <string name="legend_connected">Online</string>
     <string name="legend_alert">Alert</string>
     <string name="legend_critical">Critical</string>
@@ -127,7 +126,6 @@
     <string name="alert_detail_observations_placeholder">Describe what you see on site (saved even when offline)…</string>
     <string name="alert_detail_observations_save">Save notes</string>
     <string name="alert_detail_observations_saved">Notes saved</string>
-    <string name="alert_detail_acceleration_chart">24H ACCELERATION CHART</string>
     <string name="alert_detail_device_history">DEVICE HISTORY</string>
     <string name="telemetry_confidence">CONFIDENCE</string>
     <string name="telemetry_acceleration">ACCELERATION</string>
@@ -202,7 +200,6 @@
     <string name="devices_title">Section devices</string>
     <string name="devices_sensors_show">Show sensors</string>
     <string name="devices_sensors_hide">Hide sensors</string>
-    <string name="sensor_chart_placeholder">Chart coming soon.</string>
     <plurals name="devices_count">
         <item quantity="one">%d node</item>
         <item quantity="other">%d nodes</item>
@@ -278,4 +275,29 @@
     <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
     <string name="sample_sync_conflict_local">Classification: Confirmed · Leak confirmed in the field · %1$s</string>
     <string name="sample_sync_conflict_server">Status: Closed by web operator · %1$s</string>
+    <!-- Telemetry (dashboard API): "View sensors" and "View chart" charts -->
+    <string name="telemetry_window_24h">Last 24 h · Colombia time · online only</string>
+    <string name="telemetry_loading">Loading sensor data…</string>
+    <string name="telemetry_no_data">No data in the last 24 h</string>
+    <string name="telemetry_error_no_connection">Offline. Charts are only available with an internet connection.</string>
+    <string name="telemetry_error_device_not_found">This device has no data on the platform yet.</string>
+    <string name="telemetry_error_server">The platform could not return the data. Try again.</string>
+    <string name="telemetry_y_range">Min %1$s · Max %2$s</string>
+    <string name="telemetry_chart_description">%1$s, last 24 h: minimum %2$s, maximum %3$s</string>
+    <string name="telemetry_battery_last">Last reported battery: %1$s</string>
+    <string name="telemetry_last_data">Last data received: %1$s</string>
+    <string name="telemetry_threshold_pending">Threshold pending validation: not drawn yet.</string>
+    <string name="telemetry_variable_temperature">Temperature</string>
+    <string name="telemetry_variable_humidity">Humidity</string>
+    <string name="telemetry_variable_b1">B1 leak 500–1200 Hz</string>
+    <string name="telemetry_variable_b2">B2 leak 1200–2000 Hz</string>
+    <string name="telemetry_variable_indicator">Indicator I (24 h)</string>
+    <string name="telemetry_variable_density">Density D (24 h)</string>
+    <string name="telemetry_variable_drift">Drift</string>
+    <string name="telemetry_variable_pitch">Pitch</string>
+    <string name="telemetry_variable_roll">Roll</string>
+    <string name="telemetry_variable_acceleration">Acceleration (average magnitude)</string>
+    <string name="alert_detail_indicator_chart">INDICATOR · LAST 24 H</string>
+    <string name="alert_detail_view_chart">View chart</string>
+    <string name="alert_detail_hide_chart">Hide chart</string>
 </resources>

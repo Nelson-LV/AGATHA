@@ -4,10 +4,12 @@ import com.hivend.agatha.data.repository.InMemoryAlertRepository
 import com.hivend.agatha.data.repository.InMemoryHistoryRepository
 import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
 import com.hivend.agatha.data.repository.InMemorySyncRepository
+import com.hivend.agatha.data.repository.RemoteTelemetryRepository
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
 import com.hivend.agatha.domain.repository.SensorNodeRepository
 import com.hivend.agatha.domain.repository.SyncRepository
+import com.hivend.agatha.domain.repository.TelemetryRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -39,4 +41,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindSyncRepository(impl: InMemorySyncRepository): SyncRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTelemetryRepository(impl: RemoteTelemetryRepository): TelemetryRepository
 }

@@ -14,6 +14,8 @@ import com.hivend.agatha.domain.model.SensorType
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.Notice
+import com.hivend.agatha.domain.model.SensorSection
+import com.hivend.agatha.domain.model.TelemetryError
 
 /*
  * Textos visibles de los enums del dominio y de la navegación. El dominio no conoce
@@ -133,4 +135,46 @@ fun BottomTab.labelRes(): Int = when (this) {
     BottomTab.Map -> R.string.tab_map
     BottomTab.History -> R.string.tab_history
     BottomTab.Sync -> R.string.tab_sync
+}
+
+@StringRes
+fun SensorSection.titleRes(): Int = when (this) {
+    SensorSection.MOTION -> R.string.sensor_motion_title
+    SensorSection.LEAK -> R.string.sensor_acoustic_title
+    SensorSection.ENVIRONMENT -> R.string.sensor_environment_title
+    SensorSection.POWER -> R.string.sensor_power_title
+}
+
+@StringRes
+fun SensorSection.detailRes(): Int = when (this) {
+    SensorSection.MOTION -> R.string.sensor_motion_detail
+    SensorSection.LEAK -> R.string.sensor_acoustic_detail
+    SensorSection.ENVIRONMENT -> R.string.sensor_environment_detail
+    SensorSection.POWER -> R.string.sensor_power_detail
+}
+
+@StringRes
+fun TelemetryError.messageRes(): Int = when (this) {
+    TelemetryError.NO_CONNECTION -> R.string.telemetry_error_no_connection
+    TelemetryError.DEVICE_NOT_FOUND -> R.string.telemetry_error_device_not_found
+    TelemetryError.SERVER -> R.string.telemetry_error_server
+}
+
+/**
+ * Nombre traducido de una variable del catálogo del backend (`/api/dashboard/variables`).
+ * null para una clave nueva que la app aún no conoce: entonces se muestra el nombre del backend.
+ */
+@StringRes
+fun telemetryVariableLabelRes(key: String): Int? = when (key) {
+    "temperatura" -> R.string.telemetry_variable_temperature
+    "humedad" -> R.string.telemetry_variable_humidity
+    "b1" -> R.string.telemetry_variable_b1
+    "b2" -> R.string.telemetry_variable_b2
+    "indicador" -> R.string.telemetry_variable_indicator
+    "densidad" -> R.string.telemetry_variable_density
+    "deriva" -> R.string.telemetry_variable_drift
+    "pitch" -> R.string.telemetry_variable_pitch
+    "roll" -> R.string.telemetry_variable_roll
+    "aceleracion" -> R.string.telemetry_variable_acceleration
+    else -> null
 }

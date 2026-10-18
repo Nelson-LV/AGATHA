@@ -99,6 +99,8 @@ data class AgathaColors(
     // ---- Gráficas (paleta del frontend web) ----
     /** Serie principal de una gráfica: "Línea 1" de la web (`#3b82f6`). */
     val chartLine: Color,
+    /** Segunda serie cuando dos variables comparten gráfica (pitch y roll, B1 y B2). */
+    val chartLineSecondary: Color,
     /** Cuadrícula de la gráfica: "Grid de gráficas" de la web (`#f0f0f0`). */
     val chartGrid: Color,
 )
@@ -172,6 +174,7 @@ val LightAgathaColors = AgathaColors(
     mapLabelContainer = Color(0xD9FFFFFF),
 
     chartLine = Color(0xFF3B82F6),
+    chartLineSecondary = Color(0xFFF59E0B),
     chartGrid = Color(0xFFF0F0F0),
 )
 
@@ -244,6 +247,7 @@ val DarkAgathaColors = AgathaColors(
     mapLabelContainer = Color(0xD9161B22),
 
     chartLine = Color(0xFF60A5FA),
+    chartLineSecondary = Color(0xFFFBBF24),
     chartGrid = Color(0xFF262C35),
 )
 

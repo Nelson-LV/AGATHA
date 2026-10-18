@@ -3,7 +3,6 @@ package com.hivend.agatha.ui.alertdetail
 import com.hivend.agatha.ui.theme.AgathaDataTextStyle
 import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -38,15 +37,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.hivend.agatha.domain.model.SensorSection
+import com.hivend.agatha.ui.components.TelemetryChart
+import com.hivend.agatha.ui.components.TelemetryStateContent
+import com.hivend.agatha.ui.telemetry.TelemetryViewModel
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -153,7 +154,7 @@ fun AlertDetailScreen(
                     onSave = viewModel::saveObservations,
                 )
             }
-            item { AccelerationGraphCard() }
+            item { IndicatorChartCard(sensorId = alert.sensorId) }
             item { RecentHistoryCard(events = uiState.recentHistory) }
         }
     }
@@ -519,8 +520,14 @@ private fun TelemetryStat(label: String, value: String, isData: Boolean = true) 
 }
 
 
+/**
+ * "Ver gráfica" (HU-4.2): el indicador del dispositivo en las últimas 24 h, pedido a la API de
+ * tablero solo cuando el técnico abre la gráfica y solo con conexión. El umbral no se dibuja:
+ * el endpoint todavía no lo trae y no se inventa un valor.
+ */
 @Composable
-private fun AccelerationGraphCard() {
+private fun IndicatorChartCard(sensorId: String) {
+    var open by rememberSaveable { mutableStateOf(false) }
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
@@ -528,49 +535,31 @@ private fun AccelerationGraphCard() {
             .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
             .padding(14.dp),
     ) {
-        Text(stringResource(R.string.alert_detail_acceleration_chart), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)
-        val colors = AgathaTheme.colors
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp),
-        ) {
-            // Mismo estilo que las gráficas de la web: cuadrícula punteada gris y serie azul.
-            val gridEffect = PathEffect.dashPathEffect(floatArrayOf(6f, 6f))
-            for (i in 0..4) {
-                val y = size.height * i / 4f
-                drawLine(colors.chartGrid, Offset(0f, y), Offset(size.width, y), strokeWidth = 1.dp.toPx(), pathEffect = gridEffect)
-            }
-            for (i in 0..6) {
-                val x = size.width * i / 6f
-                drawLine(colors.chartGrid, Offset(x, 0f), Offset(x, size.height), strokeWidth = 1.dp.toPx(), pathEffect = gridEffect)
-            }
-            val points = listOf(
-                Offset(size.width * 0.06f, size.height * 0.82f) to colors.nodeNormal,
-                Offset(size.width * 0.5f, size.height * 0.45f) to colors.nodeAlert,
-                Offset(size.width * 0.92f, size.height * 0.14f) to colors.nodeCritical,
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(R.string.alert_detail_indicator_chart),
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
             )
-            points.zipWithNext().forEach { (from, to) ->
-                drawLine(color = colors.chartLine, start = from.first, end = to.first, strokeWidth = 2.dp.toPx(), cap = StrokeCap.Round)
-            }
-            points.forEach { (offset, color) ->
-                drawCircle(color = color, radius = 5.dp.toPx(), center = offset)
-                drawCircle(color = colors.nodeOutline, radius = 5.dp.toPx(), center = offset, style = Stroke(width = 1.5.dp.toPx()))
+            TextButton(onClick = { open = !open }) {
+                Text(stringResource(if (open) R.string.alert_detail_hide_chart else R.string.alert_detail_view_chart))
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LegendDot(stringResource(R.string.legend_normal), AgathaTheme.colors.nodeNormal)
-            LegendDot(stringResource(R.string.legend_alert), AgathaTheme.colors.nodeAlert)
-            LegendDot(stringResource(R.string.legend_critical), AgathaTheme.colors.nodeCritical)
+        if (open) {
+            val viewModel: TelemetryViewModel = hiltViewModel(key = "indicator-$sensorId")
+            LaunchedEffect(sensorId) { viewModel.load(sensorId, setOf(SensorSection.INDICATOR_KEY)) }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            TelemetryStateContent(state = state, onRetry = viewModel::retry) { telemetry ->
+                val series = listOfNotNull(telemetry.series(SensorSection.INDICATOR_KEY))
+                TelemetryChart(series = series, from = telemetry.from, to = telemetry.to)
+                Text(
+                    stringResource(R.string.telemetry_threshold_pending),
+                    color = AgathaTheme.colors.textTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
         }
-    }
-}
-
-@Composable
-private fun LegendDot(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Box(Modifier.size(6.dp).background(color, CircleShape))
-        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
     }
 }
 

@@ -35,4 +35,4 @@ sealed class AgathaDestination(val route: String) {
 }
 
 /** El historial por defecto que abre el tab inferior "Historial" antes de elegir un nodo. */
-const val DEFAULT_HISTORY_DEVICE_ID = "MP-1156"
+const val DEFAULT_HISTORY_DEVICE_ID = "MP-11556"

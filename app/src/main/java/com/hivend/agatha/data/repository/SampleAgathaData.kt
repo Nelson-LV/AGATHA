@@ -52,8 +52,8 @@ internal object SampleAgathaData {
         Alert(
             id = "ALR-0142",
             pointNumber = 3,
-            sensorId = "MP-1156",
-            pk = "PK37+800",
+            sensorId = "MP-11556",
+            pk = "PK34+470",
             site = SITE,
             municipality = MUNICIPALITY,
             event = AlertEvent.MOVEMENT,
@@ -168,8 +168,8 @@ internal object SampleAgathaData {
 
     val nodes: List<SensorNode> = listOf(
         SensorNode(
-            id = "MP-1156",
-            pk = "PK37+800",
+            id = "MP-11556",
+            pk = "PK34+470",
             site = SITE,
             sensorType = SensorType.MOTION,
             status = AlertLevel.RED,
@@ -214,7 +214,7 @@ internal object SampleAgathaData {
     )
 
     fun historyFor(deviceId: String): List<HistoryEvent> = when (deviceId) {
-        "MP-1156" -> listOf(
+        "MP-11556" -> listOf(
             HistoryEvent(
                 "12:42", EventType.ALERT,
                 text(R.string.sample_history_red_alert_title),
