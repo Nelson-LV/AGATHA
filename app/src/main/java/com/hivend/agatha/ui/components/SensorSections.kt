@@ -64,12 +64,12 @@ private val allSectionKeys: Set<String> = SensorSection.entries.flatMap { it.key
  * Secciones de sensores de un dispositivo (movimiento, fuga, ambiente, energía), en la pestaña
  * Dispositivos desde el 14/10/2026. Al mostrarse piden las últimas 24 h del nodo [nodeId] a la
  * API de tablero (solo con conexión) y cada sección dibuja sus gráficas; Energía muestra la
- * última batería y el último dato recibido.
+ * última batería y el último dato recibido. Cada cambio de [refreshKey] las vuelve a pedir.
  */
 @Composable
-fun SensorSections(nodeId: String, modifier: Modifier = Modifier) {
+fun SensorSections(nodeId: String, modifier: Modifier = Modifier, refreshKey: Int = 0) {
     val viewModel: TelemetryViewModel = hiltViewModel(key = "sensors-$nodeId")
-    LaunchedEffect(nodeId) { viewModel.load(nodeId, allSectionKeys) }
+    LaunchedEffect(nodeId, refreshKey) { viewModel.load(nodeId, allSectionKeys, refreshKey) }
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(verticalArrangement = Arrangement.spacedBy(8.dp), modifier = modifier) {

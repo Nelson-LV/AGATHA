@@ -72,4 +72,13 @@ class RemoteTelemetryRepositoryTest {
         repository.recentTelemetry("MP-11556", emptySet())
         assertEquals(1, api.devicesCalls)
     }
+
+    @Test
+    fun `manual refresh asks the server again even with a fresh cache`() = runBlocking {
+        val api = FakeApi()
+        val repository = repository(api)
+        repository.devices()
+        repository.devices(refresh = true)
+        assertEquals(2, api.devicesCalls)
+    }
 }

@@ -64,4 +64,23 @@ class TelemetryTest {
         val all = SensorSection.entries.flatMap { it.charts.flatten() }
         assertEquals(all.size, all.toSet().size)
     }
+
+    @Test
+    fun `node code and PK come from the platform name`() {
+        val device = TelemetryDevice(11556, "Sensor MP-11556 PK34-470", null, null)
+        assertEquals("MP-11556", device.nodeCode)
+        assertEquals("PK34+470", device.pk)
+        val bare = TelemetryDevice(11557, "Sensor 11557", null, null)
+        assertEquals("MP-11557", bare.nodeCode)
+        assertEquals(null, bare.pk)
+    }
+
+    @Test
+    fun `a device is connected while its last data is recent`() {
+        val now = Instant.parse("2026-10-18T02:00:00Z")
+        fun device(minutesAgo: Long?) = TelemetryDevice(1, "Sensor 1", minutesAgo?.let { now.minusSeconds(it * 60) }, null)
+        assertTrue(device(15).isConnected(now))
+        assertFalse(device(60).isConnected(now))
+        assertFalse(device(null).isConnected(now))
+    }
 }

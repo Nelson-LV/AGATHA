@@ -16,6 +16,21 @@ data class TelemetryDevice(
     /** Último nivel de batería informado, en %. */
     val lastBatteryLevel: Double?,
 ) {
+    /** Código del nodo en la app: el "MP-xxxx" del nombre o, si no lo trae, "MP-" + [id]. */
+    val nodeCode: String
+        get() = CODE.find(name)?.value?.uppercase() ?: "MP-$id"
+
+    /** PK del nombre en el formato de la web ("PK34-470" → "PK34+470"); null si no lo trae. */
+    val pk: String?
+        get() = PK.find(name)?.let { "PK${it.groupValues[1]}+${it.groupValues[2]}" }
+
+    /**
+     * true si el último dato llegó hace menos de [CONNECTED_WINDOW]. El nodo envía una lectura
+     * cada ~15 min, así que se toleran dos lecturas perdidas antes de darlo por desconectado.
+     */
+    fun isConnected(now: Instant): Boolean =
+        lastConnection?.let { Duration.between(it, now) < CONNECTED_WINDOW } ?: false
+
     /**
      * true si este dispositivo es el nodo [nodeId] de la app ("MP-11556"): por el código en
      * [name] ("Sensor MP-11556 PK34-470") o, si el nombre no lo trae ("Sensor 11556", como en
@@ -25,6 +40,12 @@ data class TelemetryDevice(
         val byName = Regex("(^|[^A-Za-z0-9])${Regex.escape(nodeId)}([^A-Za-z0-9]|$)", RegexOption.IGNORE_CASE)
             .containsMatchIn(name)
         return byName || Regex("\\d+$").find(nodeId)?.value?.toIntOrNull() == id
+    }
+
+    private companion object {
+        val CODE = Regex("MP-\\d+", RegexOption.IGNORE_CASE)
+        val PK = Regex("PK\\s?(\\d+)\\s?[-+]\\s?(\\d+)", RegexOption.IGNORE_CASE)
+        val CONNECTED_WINDOW: Duration = Duration.ofMinutes(45)
     }
 }
 

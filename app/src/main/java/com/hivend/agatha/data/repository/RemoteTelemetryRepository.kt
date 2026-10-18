@@ -36,9 +36,12 @@ class RemoteTelemetryRepository @Inject constructor(
     private var cachedDevices: List<TelemetryDevice>? = null
     private var cachedAt: Instant = Instant.EPOCH
 
+    override suspend fun devices(refresh: Boolean): TelemetryResult<List<TelemetryDevice>> =
+        call { TelemetryResult.Success(loadDevices(refresh).sortedBy { it.nodeCode }) }
+
     override suspend fun findDevice(nodeId: String): TelemetryResult<TelemetryDevice> =
         call {
-            val device = devices().firstOrNull { it.matchesNode(nodeId) }
+            val device = loadDevices().firstOrNull { it.matchesNode(nodeId) }
             if (device == null) TelemetryResult.Failure(TelemetryError.DEVICE_NOT_FOUND) else TelemetryResult.Success(device)
         }
 
@@ -47,7 +50,7 @@ class RemoteTelemetryRepository @Inject constructor(
         keys: Set<String>,
         window: Duration,
     ): TelemetryResult<DeviceTelemetry> = call {
-        val device = devices().firstOrNull { it.matchesNode(nodeId) }
+        val device = loadDevices().firstOrNull { it.matchesNode(nodeId) }
             ?: return@call TelemetryResult.Failure(TelemetryError.DEVICE_NOT_FOUND)
         // Un minuto de margen: la API rechaza un fin en el futuro (FUTURE_DATE) y los relojes
         // del celular y del servidor no siempre coinciden.
@@ -69,9 +72,9 @@ class RemoteTelemetryRepository @Inject constructor(
         )
     }
 
-    private suspend fun devices(): List<TelemetryDevice> = devicesLock.withLock {
+    private suspend fun loadDevices(refresh: Boolean = false): List<TelemetryDevice> = devicesLock.withLock {
         val cached = cachedDevices
-        if (cached != null && Duration.between(cachedAt, now()) < DEVICES_TTL) return cached
+        if (!refresh && cached != null && Duration.between(cachedAt, now()) < DEVICES_TTL) return cached
         api.devices().map { it.toDomain() }.also {
             cachedDevices = it
             cachedAt = now()

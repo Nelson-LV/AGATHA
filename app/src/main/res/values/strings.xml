@@ -320,4 +320,8 @@
     <string name="alert_detail_indicator_chart">INDICADOR · ÚLTIMAS 24 H</string>
     <string name="alert_detail_view_chart">Ver gráfica</string>
     <string name="alert_detail_hide_chart">Ocultar gráfica</string>
+    <string name="devices_updated_at">Conectado · Actualizado %1$s</string>
+    <string name="devices_offline">Sin conexión · desliza hacia abajo para reintentar</string>
+    <string name="devices_refresh">Actualizar dispositivos y gráficas</string>
+    <string name="devices_empty">La plataforma todavía no tiene dispositivos registrados.</string>
 </resources>

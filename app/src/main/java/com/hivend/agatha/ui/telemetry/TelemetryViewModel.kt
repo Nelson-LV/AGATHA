@@ -37,11 +37,17 @@ class TelemetryViewModel @Inject constructor(
     private var request: Pair<String, Set<String>>? = null
     private var job: Job? = null
 
-    /** Pide las variables [keys] del nodo [nodeId]; repetir la misma petición no la vuelve a enviar. */
-    fun load(nodeId: String, keys: Set<String>) {
+    private var refreshKey = 0
+
+    /**
+     * Pide las variables [keys] del nodo [nodeId]. Repetir la misma petición no la vuelve a
+     * enviar, salvo que [refreshKey] cambie (actualización manual de la pantalla).
+     */
+    fun load(nodeId: String, keys: Set<String>, refreshKey: Int = 0) {
         val next = nodeId to keys
-        if (next == request) return
+        if (next == request && refreshKey == this.refreshKey) return
         request = next
+        this.refreshKey = refreshKey
         fetch()
     }
 

@@ -191,8 +191,14 @@ de login) debe replicar esta misma forma.
 Un solo `NavHost` (`core/navigation/AgathaApp.kt`), con una barra inferior que **solo se
 muestra en las 5 pantallas raíz** — igual que en el prototipo de Figma, donde las pantallas
 de detalle/formulario reemplazan la barra por una flecha de regreso. La pestaña
-**Dispositivos** no estaba en el prototipo: lista todos los nodos con la misma ficha que el
-mapa (`ui/components/DeviceInfoCard.kt`).
+**Dispositivos** no estaba en el prototipo. Desde el 17/10/2026 lista solo los dispositivos
+reales de la API de tablero (sin los nodos de ejemplo, sin nivel ni tipo), con su batería y
+su último dato, y se actualiza a mano deslizando hacia abajo o con el botón de actualizar.
+
+"Ver historial" (desde Mapa, Dispositivos o el detalle de una alerta) abre la pestaña
+Historial como **cambio de pestaña** (`navigateToHistory`), no apilada sobre la pantalla de
+origen. Así cada pestaña conserva su propia pila: al tocar Mapa o Dispositivos después de
+ver el historial se vuelve a esa pantalla, y Alertas conserva el detalle abierto.
 
 ```
 ┌─ alerts ─┬─ devices ──┬─ map ─┬─ history/{deviceId} ─┬─ sync ─┐   ← bottom bar

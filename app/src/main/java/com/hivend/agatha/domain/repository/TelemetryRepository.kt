@@ -11,6 +11,12 @@ import java.time.Duration
  */
 interface TelemetryRepository {
 
+    /**
+     * Todos los dispositivos de la plataforma, ordenados por código. Con [refresh] se piden de
+     * nuevo al servidor aunque haya una copia reciente en memoria.
+     */
+    suspend fun devices(refresh: Boolean = false): TelemetryResult<List<TelemetryDevice>>
+
     /** Dispositivo de la plataforma que corresponde al nodo [nodeId] de la app. */
     suspend fun findDevice(nodeId: String): TelemetryResult<TelemetryDevice>
 
