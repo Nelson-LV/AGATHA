@@ -51,6 +51,13 @@ class TelemetryTest {
     }
 
     @Test
+    fun `device named only by number matches the node code through its id`() {
+        val device = TelemetryDevice(11556, "Sensor 11556", null, null)
+        assertTrue(device.matchesNode("MP-11556"))
+        assertFalse(device.matchesNode("MP-1189"))
+    }
+
+    @Test
     fun `sections request each variable once and keep pitch and roll together`() {
         assertEquals(listOf("pitch", "roll"), SensorSection.MOTION.charts[1])
         assertTrue(SensorSection.POWER.keys.isEmpty())

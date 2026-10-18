@@ -16,10 +16,16 @@ data class TelemetryDevice(
     /** Último nivel de batería informado, en %. */
     val lastBatteryLevel: Double?,
 ) {
-    /** true si [name] nombra el nodo [nodeId] de la app ("MP-11556"), como palabra completa. */
-    fun matchesNode(nodeId: String): Boolean =
-        Regex("(^|[^A-Za-z0-9])${Regex.escape(nodeId)}([^A-Za-z0-9]|$)", RegexOption.IGNORE_CASE)
+    /**
+     * true si este dispositivo es el nodo [nodeId] de la app ("MP-11556"): por el código en
+     * [name] ("Sensor MP-11556 PK34-470") o, si el nombre no lo trae ("Sensor 11556", como en
+     * la documentación del endpoint), porque el número del código es el [id].
+     */
+    fun matchesNode(nodeId: String): Boolean {
+        val byName = Regex("(^|[^A-Za-z0-9])${Regex.escape(nodeId)}([^A-Za-z0-9]|$)", RegexOption.IGNORE_CASE)
             .containsMatchIn(name)
+        return byName || Regex("\\d+$").find(nodeId)?.value?.toIntOrNull() == id
+    }
 }
 
 /** De dónde sale la serie: lectura directa del sensor o cálculo del backend. */
