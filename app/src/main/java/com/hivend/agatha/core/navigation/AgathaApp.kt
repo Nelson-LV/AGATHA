@@ -78,13 +78,13 @@ fun AgathaApp() {
 
             composable(BottomTab.Devices.route) {
                 DeviceListScreen(
-                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
                 )
             }
 
             composable(BottomTab.Map.route) {
                 SensorMapScreen(
-                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
                 )
             }
 
@@ -106,7 +106,7 @@ fun AgathaApp() {
                 AlertDetailScreen(
                     onBack = { navController.popBackStack() },
                     onRegisterInspection = { alertId -> navController.navigate(InspectionForm.buildRoute(alertId)) },
-                    onViewHistory = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
                 )
             }
 
@@ -167,5 +167,19 @@ private fun NavHostController.navigateToTab(tab: BottomTab) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * "Ver historial" desde Mapa, Dispositivos o el detalle de una alerta. El historial es una
+ * pestaña, así que se abre como cambio de pestaña y no apilado sobre la pantalla actual: si se
+ * apilara, la pestaña de origen guardaría el historial en su pila y al tocarla de nuevo
+ * volvería a mostrarlo en vez de su propia pantalla. No restaura el historial anterior porque
+ * se abre el del dispositivo elegido.
+ */
+private fun NavHostController.navigateToHistory(deviceId: String) {
+    navigate(BottomTab.History.buildRoute(deviceId)) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
     }
 }
