@@ -314,4 +314,11 @@
     <string name="push_body_pk">PK %1$s</string>
     <string name="push_body_started">Started %1$s</string>
 
+    <!-- Notification permission (HU-4.1) -->
+    <string name="notifications_permission_title">Turn on notifications</string>
+    <string name="notifications_permission_rationale">AGATHA tells you right away when a device raises an alert or when an alert rises in level. Without this permission you will only see alerts when you open the app.</string>
+    <string name="notifications_permission_allow">Allow</string>
+    <string name="notifications_permission_later">Not now</string>
+    <string name="notifications_disabled_banner">Notifications are off: you will not be told about new alerts.</string>
+    <string name="notifications_open_settings">Open settings</string>
 </resources>

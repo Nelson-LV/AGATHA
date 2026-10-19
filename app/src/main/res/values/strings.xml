@@ -335,4 +335,11 @@
     <string name="push_body_pk">PK %1$s</string>
     <string name="push_body_started">Inicio %1$s</string>
 
+    <!-- Permiso de notificaciones (HU-4.1) -->
+    <string name="notifications_permission_title">Activa las notificaciones</string>
+    <string name="notifications_permission_rationale">AGATHA te avisa al instante cuando un dispositivo genera una alerta o cuando una alerta sube de nivel. Sin este permiso solo verás las alertas al abrir la app.</string>
+    <string name="notifications_permission_allow">Permitir</string>
+    <string name="notifications_permission_later">Ahora no</string>
+    <string name="notifications_disabled_banner">Notificaciones desactivadas: no recibirás avisos de alertas nuevas.</string>
+    <string name="notifications_open_settings">Abrir ajustes</string>
 </resources>

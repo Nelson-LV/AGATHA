@@ -41,6 +41,7 @@ import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ManagementStatusChip
+import com.hivend.agatha.ui.components.NotificationPermissionNotice
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
@@ -76,6 +77,8 @@ fun AlertInboxScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp),
             modifier = Modifier.weight(1f),
         ) {
+            item { NotificationPermissionNotice() }
+
             item { SitePill(site = alerts.firstOrNull()?.site ?: stringResource(R.string.common_empty_value)) }
 
             item {
