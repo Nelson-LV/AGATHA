@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.navigation.NavBackStackEntry
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -44,12 +45,25 @@ import com.hivend.agatha.ui.sync.SyncScreen
  * pestañas ([BottomTab]) muestran [AgathaBottomNavBar]; el resto de pantallas se apilan a
  * pantalla completa, igual que en el prototipo Figma. Ver
  * docs/ARQUITECTURA_Y_DISENO.md § "Navegación" para el diagrama completo de rutas.
+ *
+ * [alertToOpen] es la alerta de un push tocado (HU-4.1): se abre su detalle sobre la lista de
+ * alertas, también en arranque en frío, y se avisa con [onAlertOpened] para no repetirlo.
  */
 @Composable
-fun AgathaApp() {
+fun AgathaApp(
+    alertToOpen: String? = null,
+    onAlertOpened: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentTab = BottomTab.all.find { it.route == backStackEntry?.destination?.route }
+
+    LaunchedEffect(alertToOpen) {
+        if (alertToOpen != null) {
+            navController.navigate(AlertDetail.buildRoute(alertToOpen))
+            onAlertOpened()
+        }
+    }
 
     Scaffold(
         bottomBar = {

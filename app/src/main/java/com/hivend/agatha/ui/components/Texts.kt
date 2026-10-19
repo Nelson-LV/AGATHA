@@ -34,7 +34,7 @@ fun relativeTimeAgo(minutes: Int): String = when {
 }
 
 /** Hora de Colombia (UTC-5), la que usa la web en todas sus fechas (Backlog 1.3 § 2). */
-private val COLOMBIA: ZoneId = ZoneId.of("America/Bogota")
+internal val COLOMBIA: ZoneId = ZoneId.of("America/Bogota")
 
 /** Fecha-hora con el formato de la web: dd/mm/aaaa HH:mm (24 h), hora de Colombia. */
 @Composable

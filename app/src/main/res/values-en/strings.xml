@@ -304,4 +304,14 @@
     <string name="devices_offline">Offline · pull down to try again</string>
     <string name="devices_refresh">Refresh devices and charts</string>
     <string name="devices_empty">The platform has no registered devices yet.</string>
+
+    <!-- Alert push (HU-4.1) -->
+    <string name="push_channel_alerts_name">Alerts</string>
+    <string name="push_channel_alerts_description">New alerts and alerts that rise in level</string>
+    <string name="push_title_new">New alert %1$s: %2$s</string>
+    <string name="push_title_level_up">Alert %1$s rose to %2$s</string>
+    <string name="push_body_device">Device %1$s</string>
+    <string name="push_body_pk">PK %1$s</string>
+    <string name="push_body_started">Started %1$s</string>
+
 </resources>

@@ -324,4 +324,15 @@
     <string name="devices_offline">Sin conexión · desliza hacia abajo para reintentar</string>
     <string name="devices_refresh">Actualizar dispositivos y gráficas</string>
     <string name="devices_empty">La plataforma todavía no tiene dispositivos registrados.</string>
+
+    <!-- Push de alertas (HU-4.1) -->
+    <string name="push_channel_alerts_id" translatable="false">agatha_alerts</string>
+    <string name="push_channel_alerts_name">Alertas</string>
+    <string name="push_channel_alerts_description">Alertas nuevas y alertas que suben de nivel</string>
+    <string name="push_title_new">Nueva alerta %1$s: %2$s</string>
+    <string name="push_title_level_up">La alerta %1$s subió a %2$s</string>
+    <string name="push_body_device">Dispositivo %1$s</string>
+    <string name="push_body_pk">PK %1$s</string>
+    <string name="push_body_started">Inicio %1$s</string>
+
 </resources>
