@@ -7,6 +7,9 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    // Reads app/google-services.json (not committed), which must list both
+    // com.hivend.agatha and com.hivend.agatha.debug.
+    alias(libs.plugins.google.services)
 }
 
 // Local, machine-specific secrets (never committed — see .gitignore). Falls back to an
@@ -143,6 +146,10 @@ dependencies {
     implementation(libs.coil.network.okhttp)
 
     implementation(libs.datastore.preferences)
+
+    // Alert push notifications (HE-04) through Firebase Cloud Messaging.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
