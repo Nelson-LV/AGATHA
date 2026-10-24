@@ -8,6 +8,6 @@ import kotlinx.coroutines.flow.flowOf
 @Singleton
 class InMemoryHistoryRepository @Inject constructor() : HistoryRepository {
 
-    override fun observeHistory(deviceId: String) =
-        flowOf(SampleAgathaData.historyFor(deviceId))
+    override fun observeHistoryForNode(nodeId: String) =
+        flowOf(SampleAgathaData.historyFor(nodeId))
 }

@@ -3,8 +3,15 @@ package com.hivend.agatha.domain.repository
 import com.hivend.agatha.domain.model.SensorNode
 import kotlinx.coroutines.flow.Flow
 
-/** Puerto hacia los nodos de sensores mostrados en el mapa de campo (HE-08). */
+/** Flow-based access to cached sensor nodes. */
 interface SensorNodeRepository {
-    fun observeNodes(): Flow<List<SensorNode>>
-    fun observeNode(nodeId: String): Flow<SensorNode?>
+    fun observeSensorNodes(): Flow<List<SensorNode>>
+
+    fun getSensorNodeById(nodeId: String): Flow<SensorNode?>
+
+    /** Compatibility alias for existing map consumers. */
+    fun observeNodes(): Flow<List<SensorNode>> = observeSensorNodes()
+
+    /** Compatibility alias for existing node-detail consumers. */
+    fun observeNode(nodeId: String): Flow<SensorNode?> = getSensorNodeById(nodeId)
 }

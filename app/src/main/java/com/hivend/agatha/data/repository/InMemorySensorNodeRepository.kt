@@ -11,8 +11,8 @@ class InMemorySensorNodeRepository @Inject constructor() : SensorNodeRepository 
 
     private val nodes = MutableStateFlow(SampleAgathaData.nodes)
 
-    override fun observeNodes() = nodes
+    override fun observeSensorNodes() = nodes
 
-    override fun observeNode(nodeId: String) =
+    override fun getSensorNodeById(nodeId: String) =
         nodes.map { list -> list.find { it.id == nodeId } }
 }
