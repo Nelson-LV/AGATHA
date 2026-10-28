@@ -1,154 +1,240 @@
 package com.hivend.agatha.ui.map
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.MyLocation
-import androidx.compose.material3.Icon
-import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.SensorNode
+import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.ui.components.AgathaHeader
-import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.SitePill
-import com.hivend.agatha.ui.components.DeviceInfoCard
-import com.hivend.agatha.ui.components.nodeColor
-import androidx.compose.ui.res.stringResource
-import com.hivend.agatha.R
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
-/**
- * Mapa de nodos (HE-08). Corresponde al nodo 34:530 de Figma. El lienzo es un
- * [Canvas] estático con las posiciones relativas de [NodoSensor] — ver
- * docs/ARQUITECTURA_Y_DISENO.md § "Mapa de nodos: mock-up vs. SDK real" para el plan de
- * reemplazo por `com.google.maps.android:maps-compose` cuando existan coordenadas reales.
- */
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun SensorMapScreen(
     onViewHistory: (String) -> Unit,
     modifier: Modifier = Modifier,
+    onStartInspection: (String) -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
 ) {
-    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+    Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AgathaHeader()
-        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text("Otero–Santana pipeline", style = MaterialTheme.typography.titleMedium)
+            Text(
+                if (state.isOffline) "Offline" else "Online",
+                color = if (state.isOffline) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
 
-        Column(modifier = Modifier.weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            SitePill(site = uiState.nodes.firstOrNull()?.site ?: stringResource(R.string.common_empty_value))
+        StatusFilterRow(
+            selectedStatus = state.statusFilter,
+            onSelectStatus = viewModel::setStatusFilter,
+        )
 
-            Box(modifier = Modifier.weight(1f)) {
-                MapCanvas(
-                    nodes = uiState.nodes,
-                    selected = uiState.selectedNode,
-                    onNodeClick = viewModel::selectNode,
-                    modifier = Modifier.fillMaxSize(),
+        Box(modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp)) {
+            OsmdroidMapView(
+                route = state.route,
+                nodes = state.visibleNodes,
+                selectedNodeId = state.selectedNode?.id,
+                onNodeTap = viewModel::selectNode,
+                modifier = Modifier.fillMaxSize(),
+            )
+
+            if (state.isLoading || state.isRouteLoading) {
+                Surface(
+                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    tonalElevation = 4.dp,
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                        Text("Loading offline map data", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+            } else if (state.routeError) {
+                Text(
+                    "Pipeline data is unavailable",
+                    modifier = Modifier.align(Alignment.TopCenter).padding(12.dp),
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall,
                 )
-                ZoomControls(modifier = Modifier.padding(10.dp))
-                Legend(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
             }
 
-            uiState.selectedNode?.let { node ->
-                DeviceInfoCard(node = node, onViewHistory = { onViewHistory(node.id) })
-            }
+            MapLegend(modifier = Modifier.align(Alignment.BottomStart).padding(10.dp))
+        }
+    }
+
+    state.selectedNode?.let { node ->
+        ModalBottomSheet(
+            onDismissRequest = viewModel::clearSelection,
+            sheetState = sheetState,
+        ) {
+            NodeDetailsSheet(
+                node = node,
+                onViewHistory = { onViewHistory(node.id) },
+                onStartInspection = { onStartInspection(node.id) },
+            )
         }
     }
 }
 
 @Composable
-private fun MapCanvas(
-    nodes: List<SensorNode>,
-    selected: SensorNode?,
-    onNodeClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
+private fun StatusFilterRow(
+    selectedStatus: SensorNodeStatus?,
+    onSelectStatus: (SensorNodeStatus?) -> Unit,
 ) {
-    // Un Canvas de solo-dibujo no puede recibir toques por posición sin más trabajo; los
-    // nodos son además clicables por su propia burbuja posicionada con offset, así que el
-    // Canvas de abajo únicamente pinta el fondo y el resto se compone con Box + offset.
-    Box(modifier = modifier.background(AgathaTheme.colors.mapCanvas, RoundedCornerShape(10.dp))) {
-        BoxWithConstraints(Modifier.fillMaxSize()) {
-            val widthPx = constraints.maxWidth.toFloat()
-            val heightPx = constraints.maxHeight.toFloat()
-            nodes.forEach { node ->
-                val isSelected = node.id == selected?.id
-                Box(
-                    modifier = Modifier
-                        .offset {
-                            IntOffset(
-                                (node.normalizedX * widthPx).toInt(),
-                                (node.normalizedY * heightPx).toInt(),
-                            )
-                        }
-                        .size(if (isSelected) 22.dp else 14.dp)
-                        .background(node.status.nodeColor(), CircleShape)
-                        .then(if (isSelected) Modifier.border(2.dp, AgathaTheme.colors.nodeOutline, CircleShape) else Modifier)
-                        .clickable { onNodeClick(node.id) },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ZoomControls(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(6.dp)),
-    ) {
-        listOf(
-            Icons.Filled.Add to R.string.map_zoom_in,
-            Icons.Filled.Remove to R.string.map_zoom_out,
-            Icons.Filled.MyLocation to R.string.map_recenter,
-        ).forEach { (icon, descriptionRes) ->
-            Box(modifier = Modifier.size(32.dp), contentAlignment = Alignment.Center) {
-                Icon(icon, contentDescription = stringResource(descriptionRes), tint = AgathaTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
-            }
-        }
-    }
-}
-
-@Composable
-private fun Legend(modifier: Modifier = Modifier) {
     Row(
+        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.background(AgathaTheme.colors.mapLabelContainer, RoundedCornerShape(6.dp)).padding(horizontal = 6.dp, vertical = 4.dp),
     ) {
-        LegendDot(stringResource(R.string.legend_connected), AgathaTheme.colors.nodeNormal)
-        LegendDot(stringResource(R.string.legend_alert), AgathaTheme.colors.nodeAlert)
-        LegendDot(stringResource(R.string.legend_critical), AgathaTheme.colors.nodeCritical)
+        FilterChip(
+            selected = selectedStatus == null,
+            onClick = { onSelectStatus(null) },
+            label = { Text("All") },
+        )
+        SensorNodeStatus.entries.forEach { status ->
+            FilterChip(
+                selected = selectedStatus == status,
+                onClick = { onSelectStatus(status) },
+                label = { Text(status.displayName()) },
+            )
+        }
     }
 }
 
 @Composable
-private fun LegendDot(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Box(Modifier.size(6.dp).background(color, CircleShape))
-        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
+private fun NodeDetailsSheet(
+    node: SensorNode,
+    onViewHistory: () -> Unit,
+    onStartInspection: () -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).padding(bottom = 28.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Text(node.id, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+        NodeDetailRow("Pipeline location", node.pk.toDisplayPk())
+        NodeDetailRow("Municipality", node.municipality.ifBlank { "Not available" })
+        NodeDetailRow("Communication", if (node.nodeStatus == SensorNodeStatus.NO_COMMUNICATION) "No communication" else "Connected")
+        NodeDetailRow("Status", node.nodeStatus.displayName())
+        NodeDetailRow("Battery", node.batteryLevel?.let { "$it%" } ?: "Not available")
+        NodeDetailRow("Last reading", node.lastReportTimestamp?.let(::formatTimestamp) ?: "Not available")
+        Spacer(Modifier.height(4.dp))
+        Button(onClick = onViewHistory, modifier = Modifier.fillMaxWidth()) {
+            Text("View history")
+        }
+        OutlinedButton(onClick = onStartInspection, modifier = Modifier.fillMaxWidth()) {
+            Text("Start inspection")
+        }
     }
 }
+
+@Composable
+private fun NodeDetailRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(label, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium)
+        Text(value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+    }
+}
+
+@Composable
+private fun MapLegend(modifier: Modifier = Modifier) {
+    Surface(modifier = modifier, shape = RoundedCornerShape(10.dp), tonalElevation = 4.dp) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            SensorNodeStatus.entries.forEach { status ->
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(9.dp).background(status.legendColor(), CircleShape))
+                    Text(status.shortDisplayName(), style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        }
+    }
+}
+
+private fun SensorNodeStatus.displayName(): String = when (this) {
+    SensorNodeStatus.NORMAL -> "Normal"
+    SensorNodeStatus.YELLOW -> "Yellow"
+    SensorNodeStatus.ORANGE -> "Orange"
+    SensorNodeStatus.RED -> "Red"
+    SensorNodeStatus.NO_COMMUNICATION -> "No communication"
+}
+
+private fun SensorNodeStatus.shortDisplayName(): String = when (this) {
+    SensorNodeStatus.NORMAL -> "Normal"
+    SensorNodeStatus.YELLOW -> "Yellow"
+    SensorNodeStatus.ORANGE -> "Orange"
+    SensorNodeStatus.RED -> "Red"
+    SensorNodeStatus.NO_COMMUNICATION -> "Offline"
+}
+
+private fun SensorNodeStatus.legendColor(): Color = when (this) {
+    SensorNodeStatus.NORMAL -> Color(0xFF2E7D32)
+    SensorNodeStatus.YELLOW -> Color(0xFFF5BE00)
+    SensorNodeStatus.ORANGE -> Color(0xFFEF6C00)
+    SensorNodeStatus.RED -> Color(0xFFC62828)
+    SensorNodeStatus.NO_COMMUNICATION -> Color(0xFF757575)
+}
+
+private fun String.toDisplayPk(): String {
+    val normalized = trim().replace(Regex("^PK\\s*", RegexOption.IGNORE_CASE), "")
+    return if (normalized.isEmpty()) "PK not available" else "PK $normalized"
+}
+
+private fun formatTimestamp(timestamp: java.time.Instant): String =
+    DateTimeFormatter.ofPattern("MMM d, yyyy HH:mm", Locale.ENGLISH)
+        .withZone(ZoneId.systemDefault())
+        .format(timestamp)
 
