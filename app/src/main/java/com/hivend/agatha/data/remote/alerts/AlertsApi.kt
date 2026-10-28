@@ -35,7 +35,7 @@ interface AlertsApi {
     // Los envíos devuelven el cuerpo crudo: el éxito se decide por el código HTTP, y el cuerpo
     // (ver [ActionBodyDto]) solo se lee para los avisos; así un cambio en él no pierde un envío.
 
-    /** 201 SAVED, 200 ALREADY_RECEIVED o 409 SAVED_AS_CONFLICT_OBSERVATION (cuerpo en errorBody). */
+    /** 201 SAVED, 200 ALREADY_RECEIVED o 409 SAVED_AS_CONFLICT_OBSERVATION (cuerpo en errorBody), todos con `outcome` en el cuerpo. */
     @POST("api/alerts/{id}/classification")
     suspend fun classify(@Path("id") id: String, @Body body: ClassificationRequestDto): Response<ResponseBody>
 
@@ -174,7 +174,7 @@ data class ObservationRequestDto(
  */
 @Serializable
 data class ActionBodyDto(
-    val status: String? = null,
+    val outcome: String? = null,
     val code: String? = null,
     val message: String? = null,
     val existing: ExistingClassificationDto? = null,

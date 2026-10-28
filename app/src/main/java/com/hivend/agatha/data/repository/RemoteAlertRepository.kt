@@ -326,7 +326,7 @@ class RemoteAlertRepository @Inject constructor(
             val body = decodeBody(response.errorBody()?.string())
             val code = response.code()
             when {
-                code == HTTP_CONFLICT && body?.status == STATUS_SAVED_AS_CONFLICT -> Posted.SavedAsConflict(body)
+                code == HTTP_CONFLICT && body?.outcome == OUTCOME_SAVED_AS_CONFLICT -> Posted.SavedAsConflict(body)
                 code == HTTP_NOT_FOUND -> Posted.NotFound
                 code >= 500 || code == HTTP_TIMEOUT || code == HTTP_TOO_MANY -> Posted.Transient
                 else -> Posted.Rejected(code, body)
@@ -376,6 +376,6 @@ class RemoteAlertRepository @Inject constructor(
         const val HTTP_CONFLICT = 409
         const val HTTP_TIMEOUT = 408
         const val HTTP_TOO_MANY = 429
-        const val STATUS_SAVED_AS_CONFLICT = "SAVED_AS_CONFLICT_OBSERVATION"
+        const val OUTCOME_SAVED_AS_CONFLICT = "SAVED_AS_CONFLICT_OBSERVATION"
     }
 }

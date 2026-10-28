@@ -201,7 +201,7 @@ class RemoteAlertRepositoryTest {
         api.classifyResponse = { Response.error(503, body()) }
 
         repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at, phone)
-        api.classifyResponse = { Response.success(200, body("""{"status":"ALREADY_RECEIVED"}""")) }
+        api.classifyResponse = { Response.success(200, body("""{"outcome":"ALREADY_RECEIVED"}""")) }
         val retry = repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at.plusSeconds(60), phone)
 
         assertEquals(AlertResult.Success(ClassifyOutcome.Saved), retry)
@@ -219,7 +219,7 @@ class RemoteAlertRepositoryTest {
             Response.error(
                 409,
                 body(
-                    """{"status":"SAVED_AS_CONFLICT_OBSERVATION",
+                    """{"code":"CONFLICT","outcome":"SAVED_AS_CONFLICT_OBSERVATION",
                         "existing":{"classification":"FALSA_ALERTA","classified_at":"2026-10-20T10:00:00-05:00","origin":"WEB"}}""",
                 ),
             )
