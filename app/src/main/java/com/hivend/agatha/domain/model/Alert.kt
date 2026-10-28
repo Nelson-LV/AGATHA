@@ -1,6 +1,5 @@
 package com.hivend.agatha.domain.model
 
-import java.time.Duration
 import java.time.Instant
 
 /**
@@ -46,67 +45,42 @@ data class LevelChange(
     val indicatorValue: Double? = null,
 )
 
-/** Valor del indicador del dispositivo y el umbral con el que se compara (HU-4.2). */
-data class IndicatorReading(
-    val value: Double,
-    val threshold: Double,
-)
-
-/** Intensidad de la aceleración medida por el sensor de movimiento. */
-enum class AccelerationLevel {
-    LOW,
-    MEDIUM,
-    HIGH,
-}
-
-/** Confianza reportada por el motor de reglas/IA y variables de telemetría más recientes. */
-data class AlertTelemetry(
-    val confidencePercentage: Int,
-    val acceleration: AccelerationLevel,
-    val batteryPercentage: Int,
-    val isRealData: Boolean,
-)
-
 /**
  * Alerta temprana generada por un dispositivo del gasoducto (HE-04), con los datos que
- * muestra la web (Backlog 1.3). Es el agregado raíz que enlaza con [Inspection] y con el
+ * entrega la API de gestión de alertas (la misma de la web, Backlog 1.3). Es el agregado raíz que enlaza con [Inspection] y con el
  * historial ([HistoryEvent]) del mismo dispositivo ([sensorId]).
  *
  * La clasificación ([classification]) y la etiqueta solo se agregan, nunca se editan
  * (RN-06): usar [classify] y [addTag], que validan esas reglas.
  */
 data class Alert(
-    /** Identificador de la web, "ALR-xxxx". */
+    /** Código de la web, "ALR-xxxxxx": también sirve como {id} en la API. */
     val id: String,
-    val pointNumber: Int,
-    /** Dispositivo que generó la alerta. */
-    val sensorId: String,
+    /** Id numérico del punto de medición (`measuring_point_id`), el que usa la API. */
+    val deviceId: Int,
     val pk: String,
-    val site: String,
-    val municipality: String,
     val event: AlertEvent,
-    val description: LocalizedText,
-    /** Nivel actual del indicador: lo que muestran la lista y el mapa (RN-05). */
+    /** Nivel actual del indicador: lo que muestran la lista y el mapa (RN-05). Al terminar, el máximo. */
     val level: AlertLevel,
-    /** Niveles que tomó la alerta, en orden cronológico (RN-05). Nunca vacía. */
-    val levelTimeline: List<LevelChange>,
+    /** Nivel máximo alcanzado: lo que muestra el historial (RN-05). */
+    val maxLevel: AlertLevel,
+    /** Niveles que tomó la alerta, en orden cronológico (RN-05). Vacía hasta cargar el detalle. */
+    val levelTimeline: List<LevelChange> = emptyList(),
     val startedAt: Instant,
     /** Primer cálculo Normal o clasificación como Falsa alerta (RN-04); null = "En curso". */
     val endedAt: Instant? = null,
-    /** null cuando el indicador no es calculable (aviso, RN-02). */
-    val indicator: IndicatorReading? = null,
+    /** Último valor calculado del indicador; null si todavía no hay (aviso, RN-02). */
+    val indicatorValue: Double? = null,
     val classification: ClassificationRecord? = null,
-    val telemetry: AlertTelemetry,
-    /** Observaciones de campo escritas por el técnico (texto libre, no se traduce). */
-    val observations: String = "",
+    /** Observaciones y conflictos registrados en la alerta, en orden cronológico. */
+    val observations: List<AlertObservation> = emptyList(),
 ) {
     init {
-        require(levelTimeline.isNotEmpty()) { "An alert has at least one level" }
         require(levelTimeline.all { it.level.isAlert }) { "The timeline only holds alert levels" }
     }
 
-    /** Nivel máximo alcanzado: lo que muestra el historial (RN-05). */
-    val maxLevel: AlertLevel get() = levelTimeline.maxOf { it.level }
+    /** Identificador del dispositivo como lo nombra la app y la telemetría: "MP-11556". */
+    val sensorId: String get() = "MP-$deviceId"
 
     val isOngoing: Boolean get() = endedAt == null
 
@@ -116,9 +90,6 @@ data class Alert(
             classification.tag == null -> ManagementStatus.CLASSIFIED_WITHOUT_TAG
             else -> ManagementStatus.CLASSIFIED_WITH_TAG
         }
-
-    fun minutesSinceStart(now: Instant = Instant.now()): Int =
-        Duration.between(startedAt, now).toMinutes().toInt().coerceAtLeast(0)
 
     /**
      * Clasifica una alerta Sin clasificar (HU-5.2). Una Falsa alerta en curso termina en ese
@@ -166,3 +137,24 @@ fun List<Alert>.forAlertList(): List<Alert> =
             compareBy<Alert> { it.managementStatus != ManagementStatus.UNCLASSIFIED }
                 .thenByDescending { it.startedAt },
         )
+
+/** Tipo de entrada en las observaciones de una alerta. */
+enum class ObservationKind {
+    /** Observación de campo escrita por una persona. */
+    NOTE,
+
+    /** Otra clasificación que llegó cuando la alerta ya estaba clasificada: se guarda, no la reemplaza. */
+    CLASSIFICATION_CONFLICT,
+
+    /** Otra etiqueta que llegó cuando la alerta ya tenía una. */
+    TAG_CONFLICT,
+}
+
+/** Observación guardada en la alerta, con fecha-hora y origen (RN-10). No se edita. */
+data class AlertObservation(
+    val id: Long,
+    val text: String,
+    val kind: ObservationKind,
+    val origin: Origin?,
+    val recordedAt: Instant?,
+)

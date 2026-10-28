@@ -1,6 +1,7 @@
 package com.hivend.agatha.data.remote
 
 import com.hivend.agatha.BuildConfig
+import com.hivend.agatha.data.remote.alerts.AlertsApi
 import com.hivend.agatha.data.remote.dashboard.DashboardApi
 import dagger.Module
 import dagger.Provides
@@ -17,8 +18,9 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
 
 /**
- * Cliente HTTP mínimo hacia el backend de AGATHA, para la API de tablero (gráficas de HU-4.2 y
- * de "Ver sensores"). Base: [BuildConfig.AGATHA_API_BASE_URL] (HTTPS). El cliente Retrofit
+ * Cliente HTTP hacia el backend de AGATHA: la API de tablero (gráficas de HU-4.2 y de "Ver
+ * sensores") y la de gestión de alertas (lista, detalle, clasificación, etiqueta y
+ * observaciones). Base: [BuildConfig.AGATHA_API_BASE_URL] (HTTPS). El cliente Retrofit
  * base del equipo puede reemplazar este módulo; [DashboardApi] no depende de cómo se arme.
  */
 @Module
@@ -55,4 +57,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideDashboardApi(retrofit: Retrofit): DashboardApi = retrofit.create()
+
+    @Provides
+    @Singleton
+    fun provideAlertsApi(retrofit: Retrofit): AlertsApi = retrofit.create()
 }

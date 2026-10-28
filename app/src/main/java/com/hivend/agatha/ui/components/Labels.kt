@@ -3,7 +3,6 @@ package com.hivend.agatha.ui.components
 import androidx.annotation.StringRes
 import com.hivend.agatha.R
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
-import com.hivend.agatha.domain.model.AccelerationLevel
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
@@ -111,13 +110,6 @@ fun MaintenanceType.labelRes(): Int = when (this) {
     MaintenanceType.ADJUSTMENT_OR_REINSTALLATION -> R.string.maintenance_type_adjustment
     MaintenanceType.COMPONENT_REPLACEMENT -> R.string.maintenance_type_component_replacement
     MaintenanceType.OTHER -> R.string.common_other_which
-}
-
-@StringRes
-fun AccelerationLevel.labelRes(): Int = when (this) {
-    AccelerationLevel.LOW -> R.string.acceleration_low
-    AccelerationLevel.MEDIUM -> R.string.acceleration_medium
-    AccelerationLevel.HIGH -> R.string.acceleration_high
 }
 
 @StringRes

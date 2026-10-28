@@ -1,9 +1,9 @@
 package com.hivend.agatha.core.di
 
-import com.hivend.agatha.data.repository.InMemoryAlertRepository
-import com.hivend.agatha.data.repository.InMemoryHistoryRepository
+import com.hivend.agatha.data.repository.AlertHistoryRepository
 import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
 import com.hivend.agatha.data.repository.InMemorySyncRepository
+import com.hivend.agatha.data.repository.RemoteAlertRepository
 import com.hivend.agatha.data.repository.RemoteTelemetryRepository
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.HistoryRepository
@@ -28,7 +28,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindAlertRepository(impl: InMemoryAlertRepository): AlertRepository
+    abstract fun bindAlertRepository(impl: RemoteAlertRepository): AlertRepository
 
     @Binds
     @Singleton
@@ -36,7 +36,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindHistoryRepository(impl: InMemoryHistoryRepository): HistoryRepository
+    abstract fun bindHistoryRepository(impl: AlertHistoryRepository): HistoryRepository
 
     @Binds
     @Singleton

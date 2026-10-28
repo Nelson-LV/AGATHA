@@ -22,7 +22,10 @@ import java.time.format.DateTimeFormatter
 @ReadOnlyComposable
 fun LocalizedText.resolve(): String = when (this) {
     is LocalizedText.Plain -> value
-    is LocalizedText.Resource -> stringResource(id, *args.toTypedArray())
+    // Los argumentos que son otro LocalizedText (el nombre de un nivel, de una etiqueta…) se resuelven antes.
+    is LocalizedText.Resource -> stringResource(id, *Array(args.size) { index ->
+        args[index].let { if (it is LocalizedText) it.resolve() else it }
+    })
 }
 
 /** "justo ahora", "hace 5 min", "hace 2 h". */

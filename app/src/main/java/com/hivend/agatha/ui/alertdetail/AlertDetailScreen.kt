@@ -40,6 +40,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.hivend.agatha.domain.model.SensorSection
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.text.style.TextAlign
+import com.hivend.agatha.domain.model.AlertObservation
+import com.hivend.agatha.domain.model.ObservationKind
+import com.hivend.agatha.domain.model.TextLimits
+import com.hivend.agatha.ui.components.UiMessage
+import com.hivend.agatha.ui.components.toUiMessage
 import com.hivend.agatha.ui.components.TelemetryChart
 import com.hivend.agatha.ui.components.TelemetryStateContent
 import com.hivend.agatha.ui.telemetry.TelemetryViewModel
@@ -64,7 +76,6 @@ import com.hivend.agatha.ui.components.shortLabelRes
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.label
 import com.hivend.agatha.domain.model.AlertLevel
-import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
@@ -95,7 +106,18 @@ fun AlertDetailScreen(
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val alert = uiState.alert
-    val scope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { message ->
+            snackbarHostState.showSnackbar(
+                when (message) {
+                    is UiMessage.Res -> resources.getString(message.id)
+                    is UiMessage.Raw -> message.text
+                },
+            )
+        }
+    }
     /** Clasificación elegida que espera confirmación: no se puede cambiar después (RN-06). */
     var pendingChoice by remember { mutableStateOf<AlertClassification?>(null) }
 
@@ -104,22 +126,42 @@ fun AlertDetailScreen(
             classification = choice,
             onConfirm = {
                 pendingChoice = null
-                scope.launch {
-                    viewModel.classify(choice)
-                    onRegisterInspection(viewModel.alertId)
-                }
+                viewModel.classify(choice) { onRegisterInspection(viewModel.alertId) }
             },
             onDismiss = { pendingChoice = null },
         )
     }
 
-    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
+    Box(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
+    Column(modifier = Modifier.fillMaxSize()) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
-        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+        ConnectivityBar(
+            connected = uiState.loadFailure == null,
+            message = stringResource(
+                when {
+                    uiState.loadFailure != null -> R.string.connectivity_offline_local_data
+                    uiState.loading -> R.string.connectivity_syncing
+                    else -> R.string.connectivity_connected_live
+                },
+            ),
+        )
+        if (uiState.loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AgathaTheme.colors.brand)
 
         if (alert == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(stringResource(R.string.alert_detail_not_found), color = AgathaTheme.colors.textSecondary)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+            ) {
+                val failure = uiState.loadFailure
+                if (!uiState.loading || failure != null) {
+                    Text(
+                        failure?.toUiMessage()?.resolve() ?: stringResource(R.string.alert_detail_not_found),
+                        color = AgathaTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (failure != null) TextButton(onClick = viewModel::load) { Text(stringResource(R.string.common_retry)) }
+                }
             }
             return@Column
         }
@@ -128,7 +170,6 @@ fun AlertDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SitePill(site = alert.site) }
             item {
                 AlertCard(
                     alert = alert,
@@ -143,19 +184,22 @@ fun AlertDetailScreen(
                     onViewHistory = { onViewHistory(alert.sensorId) },
                 )
             }
-            item { ReportsCard(uiState.reports) }
+            item { ReportsCard(uiState.reports, uiState.pendingReportIds) }
             item {
                 ObservationsCard(
-                    text = uiState.observations,
-                    dirty = uiState.observationsDirty,
-                    hasSaved = alert.observations.isNotBlank(),
-                    onTextChange = viewModel::onObservationsChange,
-                    onSave = viewModel::saveObservations,
+                    observations = alert.observations,
+                    draft = uiState.observationDraft,
+                    canAdd = uiState.canAddObservation,
+                    saving = uiState.savingObservation,
+                    onDraftChange = viewModel::onObservationChange,
+                    onAdd = viewModel::addObservation,
                 )
             }
             item { IndicatorChartCard(sensorId = alert.sensorId) }
             item { RecentHistoryCard(events = uiState.recentHistory) }
         }
+    }
+    SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
     }
 }
 
@@ -185,19 +229,16 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
             )
             ManagementStatusChip(alert.managementStatus)
         }
-        Text(alert.description.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
-
         DataGrid(
             listOf(
                 stringResource(R.string.alert_detail_device) to alert.sensorId,
                 stringResource(R.string.alert_detail_pk) to alert.pk,
-                stringResource(R.string.alert_detail_municipality) to alert.municipality,
                 stringResource(R.string.alert_detail_event) to stringResource(alert.event.labelRes()),
                 stringResource(R.string.alert_detail_start) to formatDateTime(alert.startedAt),
                 stringResource(R.string.alert_detail_end) to (alert.endedAt?.let { formatDateTime(it) } ?: ""),
                 stringResource(R.string.alert_detail_indicator) to (
-                    alert.indicator?.let { stringResource(R.string.alert_detail_indicator_value, it.value, it.threshold) }
-                        ?: stringResource(R.string.notice_indicator_unavailable)
+                    alert.indicatorValue?.let { stringResource(R.string.alert_detail_indicator_value, it) }
+                        ?: stringResource(R.string.common_empty_value)
                     ),
                 stringResource(R.string.alert_detail_max_level) to stringResource(alert.maxLevel.shortLabelRes()),
             ),
@@ -236,8 +277,6 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
                 Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
             }
         }
-
-        TelemetryRow(alert)
     }
 }
 
@@ -303,11 +342,14 @@ private fun ClassificationCard(alert: Alert, pendingSync: Boolean, onViewHistory
                 ManagementStatusChip(alert.managementStatus)
             }
             if (pendingSync) PendingSyncChip()
-            Text(
-                stringResource(R.string.common_dot_separated, formatDateTime(record.classifiedAt), record.origin.label()),
-                color = AgathaTheme.colors.textSecondary,
-                style = MaterialTheme.typography.bodySmall,
-            )
+            val whenAndWho = listOfNotNull(record.classifiedAt?.let { formatDateTime(it) }, record.origin?.label())
+            if (whenAndWho.isNotEmpty()) {
+                Text(
+                    whenAndWho.reduce { first, second -> stringResource(R.string.common_dot_separated, first, second) },
+                    color = AgathaTheme.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
             val tag = record.tag
             Text(
                 if (tag == null) stringResource(R.string.alert_detail_no_tag)
@@ -330,7 +372,7 @@ private fun ClassificationCard(alert: Alert, pendingSync: Boolean, onViewHistory
  * con fecha-hora y origen. No se editan; los guardados en el celular esperan sincronizarse.
  */
 @Composable
-private fun ReportsCard(reports: List<Inspection>) {
+private fun ReportsCard(reports: List<Inspection>, pendingIds: Set<String>) {
     SectionCard(title = pluralStringResource(R.plurals.alert_detail_reports, reports.size, reports.size)) {
         if (reports.isEmpty()) {
             Text(stringResource(R.string.alert_detail_no_reports), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
@@ -350,7 +392,7 @@ private fun ReportsCard(reports: List<Inspection>) {
                         style = MaterialTheme.typography.labelMedium,
                         modifier = Modifier.weight(1f),
                     )
-                    PendingSyncChip()
+                    if (report.id in pendingIds) PendingSyncChip()
                 }
                 report.tag?.let { tag ->
                     Text(
@@ -374,6 +416,13 @@ private fun ReportsCard(reports: List<Inspection>) {
                 }
                 report.observations?.let {
                     Text(it, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                }
+                if (report.maintenance != null || report.photos.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.alert_detail_report_local_only),
+                        color = AgathaTheme.colors.textTertiary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
                 }
                 if (report.photos.isNotEmpty()) {
                     Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -416,16 +465,18 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
 }
 
 /**
- * Observaciones de campo al mismo nivel que la información de la alerta: el técnico las
- * escribe sin tener que entrar a un reporte de inspección.
+ * Observaciones de campo al mismo nivel que la información de la alerta: el técnico las agrega
+ * una a una sin entrar a un reporte de inspección. No se editan (RN-06); las que dejó la web o
+ * un conflicto de sincronización aparecen en la misma lista, con su fecha-hora y origen.
  */
 @Composable
 private fun ObservationsCard(
-    text: String,
-    dirty: Boolean,
-    hasSaved: Boolean,
-    onTextChange: (String) -> Unit,
-    onSave: () -> Unit,
+    observations: List<AlertObservation>,
+    draft: String,
+    canAdd: Boolean,
+    saving: Boolean,
+    onDraftChange: (String) -> Unit,
+    onAdd: () -> Unit,
 ) {
     Column(
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -438,65 +489,57 @@ private fun ObservationsCard(
             Icon(Icons.Filled.EditNote, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(20.dp))
             Text(stringResource(R.string.alert_detail_observations_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
         }
+        if (observations.isEmpty()) {
+            Text(stringResource(R.string.alert_detail_observations_empty), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        observations.forEach { observation ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+            ) {
+                val whenAndWho = listOfNotNull(observation.recordedAt?.let { formatDateTime(it) }, observation.origin?.label())
+                if (whenAndWho.isNotEmpty()) {
+                    Text(
+                        whenAndWho.reduce { first, second -> stringResource(R.string.common_dot_separated, first, second) },
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+                observation.kind.labelRes()?.let {
+                    StatusChip(
+                        text = stringResource(it),
+                        containerColor = AgathaTheme.colors.offlineContainer,
+                        contentColor = AgathaTheme.colors.offline,
+                    )
+                }
+                Text(observation.text, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
         OutlinedTextField(
-            value = text,
-            onValueChange = onTextChange,
+            value = draft,
+            onValueChange = onDraftChange,
             placeholder = { Text(stringResource(R.string.alert_detail_observations_placeholder)) },
+            supportingText = { Text(stringResource(R.string.common_char_counter, draft.length, TextLimits.OBSERVATIONS)) },
             minLines = 3,
             modifier = Modifier.fillMaxWidth(),
         )
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            if (hasSaved && !dirty) {
-                Text(stringResource(R.string.alert_detail_observations_saved), color = AgathaTheme.colors.positive, style = MaterialTheme.typography.bodySmall)
-            } else {
-                Box(Modifier)
-            }
-            OutlinedButton(onClick = onSave, enabled = dirty) {
-                Text(stringResource(R.string.alert_detail_observations_save))
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onAdd, enabled = canAdd) {
+                Text(stringResource(if (saving) R.string.common_saving else R.string.alert_detail_observations_save))
             }
         }
     }
 }
 
-@Composable
-private fun TelemetryRow(alert: Alert) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
-            .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            TelemetryStat(stringResource(R.string.telemetry_confidence), stringResource(R.string.common_percent, alert.telemetry.confidencePercentage))
-            TelemetryStat(stringResource(R.string.telemetry_acceleration), stringResource(alert.telemetry.acceleration.labelRes()), isData = false)
-            TelemetryStat(stringResource(R.string.telemetry_time_ago), shortDuration(alert.minutesSinceStart()))
-            TelemetryStat(stringResource(R.string.telemetry_battery), stringResource(R.string.common_percent, alert.telemetry.batteryPercentage))
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(Modifier.size(6.dp).background(if (alert.telemetry.isRealData) AgathaTheme.colors.positive else AgathaTheme.colors.textTertiary, CircleShape))
-            Text(
-                stringResource(if (alert.telemetry.isRealData) R.string.telemetry_real_data else R.string.telemetry_simulated_data),
-                color = AgathaTheme.colors.stateClosed,
-                style = MaterialTheme.typography.bodyMedium,
-            )
-        }
-    }
+@StringRes
+private fun ObservationKind.labelRes(): Int? = when (this) {
+    ObservationKind.NOTE -> null
+    ObservationKind.CLASSIFICATION_CONFLICT -> R.string.observation_kind_classification_conflict
+    ObservationKind.TAG_CONFLICT -> R.string.observation_kind_tag_conflict
 }
-
-@Composable
-private fun TelemetryStat(label: String, value: String, isData: Boolean = true) {
-    Column {
-        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelMedium)
-        Text(value, color = AgathaTheme.colors.textPrimary, style = if (isData) AgathaDataTextStyle else MaterialTheme.typography.titleSmall)
-    }
-}
-
 
 /**
  * "Ver gráfica" (HU-4.2): el indicador del dispositivo en las últimas 24 h, pedido a la API de
@@ -554,7 +597,7 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
         events.forEach { event ->
             Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
                 Text(
-                    stringResource(R.string.common_dot_separated, event.time, event.title.resolve()),
+                    stringResource(R.string.common_dot_separated, formatDateTime(event.at), event.title.resolve()),
                     color = AgathaTheme.colors.textPrimary,
                     style = MaterialTheme.typography.labelLarge,
                 )

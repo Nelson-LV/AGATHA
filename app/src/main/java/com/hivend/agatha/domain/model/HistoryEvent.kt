@@ -1,5 +1,7 @@
 package com.hivend.agatha.domain.model
 
+import java.time.Instant
+
 /** Tipo de entrada mostrada en la línea de tiempo de un dispositivo (HU-8.3). */
 enum class EventType {
     ALERT,
@@ -15,7 +17,7 @@ enum class EventType {
  * clasificaciones, evidencias, observaciones y mantenimientos (HE-08, RNF-MOV-07).
  */
 data class HistoryEvent(
-    val time: String,
+    val at: Instant,
     val type: EventType,
     val title: LocalizedText,
     val detail: LocalizedText,

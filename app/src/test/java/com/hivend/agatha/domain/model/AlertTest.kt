@@ -13,22 +13,18 @@ class AlertTest {
 
     private fun alert(vararg levels: AlertLevel) = Alert(
         id = "ALR-0001",
-        pointNumber = 1,
-        sensorId = "MP-1",
+        deviceId = 1,
         pk = "PK1+000",
-        site = "Site",
-        municipality = "Town",
         event = AlertEvent.LEAK,
-        description = LocalizedText.Plain(""),
         level = levels.last(),
+        maxLevel = levels.max(),
         levelTimeline = levels.mapIndexed { i, level -> LevelChange(level, start.plusSeconds(60L * i)) },
         startedAt = start,
-        telemetry = AlertTelemetry(90, AccelerationLevel.LOW, 80, isRealData = true),
     )
 
     @Test
-    fun maxLevelIsTheHighestInTheTimeline() {
-        assertEquals(AlertLevel.RED, alert(AlertLevel.YELLOW, AlertLevel.RED, AlertLevel.ORANGE).maxLevel)
+    fun sensorIdIsTheMeasuringPointName() {
+        assertEquals("MP-1", alert(AlertLevel.RED).sensorId)
     }
 
     @Test(expected = IllegalArgumentException::class)

@@ -42,6 +42,7 @@ import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
+import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.resolve
 
@@ -55,10 +56,14 @@ fun DeviceHistoryScreen(
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val events by viewModel.events.collectAsStateWithLifecycle()
+    val failure by viewModel.failure.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
-        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_local_data))
+        ConnectivityBar(
+            connected = failure == null,
+            message = stringResource(if (failure == null) R.string.connectivity_connected_live else R.string.connectivity_offline_local_data),
+        )
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
@@ -107,7 +112,7 @@ private fun HistoryRow(event: HistoryEvent) {
         }
         Column(modifier = Modifier.padding(start = 10.dp)) {
             Text(
-                stringResource(R.string.common_dot_separated, event.time, stringResource(event.type.labelRes())),
+                stringResource(R.string.common_dot_separated, formatDateTime(event.at), stringResource(event.type.labelRes())),
                 color = event.type.color(),
                 style = MaterialTheme.typography.labelSmall,
             )

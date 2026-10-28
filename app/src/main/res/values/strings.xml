@@ -55,7 +55,7 @@
     <string name="level_orange">Naranja</string>
     <string name="level_yellow">Amarillo</string>
     <string name="level_normal">Normal</string>
-    <string name="alert_list_location">Disp. %1$s · %2$s · %3$s</string>
+    <string name="alert_list_location">Disp. %1$s · %2$s</string>
 
     <!-- Avisos (RN-02): gris, no son alertas -->
     <string name="notice_no_communication">Sin comunicación</string>
@@ -97,7 +97,7 @@
         <item quantity="one">%d activa</item>
         <item quantity="other">%d activas</item>
     </plurals>
-    <string name="inbox_empty">Sin alertas naranjas ni rojas. Todos los puntos están en condiciones normales.</string>
+    <string name="inbox_empty">No hay alertas sin clasificar ni activas. Todos los puntos están en condiciones normales.</string>
     <string name="inbox_nav_map">Mapa de nodos</string>
     <string name="inbox_nav_history">Historial</string>
     <string name="inbox_nav_sync">Sincronización</string>
@@ -108,13 +108,12 @@
     <string name="alert_detail_alert_id">Alerta %1$s</string>
     <string name="alert_detail_device">Dispositivo</string>
     <string name="alert_detail_pk" translatable="false">PK</string>
-    <string name="alert_detail_municipality">Municipio</string>
     <string name="alert_detail_event">Evento</string>
     <string name="alert_detail_start">Inicio</string>
     <string name="alert_detail_end">Fin</string>
     <string name="alert_detail_ongoing">En curso</string>
     <string name="alert_detail_indicator">Indicador</string>
-    <string name="alert_detail_indicator_value">%1$.2f (umbral %2$.2f)</string>
+    <string name="alert_detail_indicator_value" translatable="false">%1$.2f</string>
     <string name="alert_detail_max_level">Nivel máximo</string>
     <string name="alert_detail_timeline">Línea de tiempo de evolución del evento</string>
     <string name="alert_detail_timeline_duration">Duración acumulada: %1$s</string>
@@ -136,9 +135,8 @@
     <string name="alert_detail_classify_dialog_confirm">Clasificar</string>
     <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
     <string name="alert_detail_observations_title">Observaciones de campo</string>
-    <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio (se guarda incluso sin conexión)…</string>
-    <string name="alert_detail_observations_save">Guardar observaciones</string>
-    <string name="alert_detail_observations_saved">Observaciones guardadas</string>
+    <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio…</string>
+    <string name="alert_detail_observations_save">Agregar observación</string>
     <string name="alert_detail_device_history">HISTORIAL DEL DISPOSITIVO</string>
     <string name="telemetry_confidence">CONFIANZA</string>
     <string name="telemetry_acceleration">ACELERACIÓN</string>
@@ -169,7 +167,7 @@
     <string name="inspection_top_bar_title">Reporte de inspección</string>
     <string name="inspection_title">Nuevo reporte de inspección</string>
     <string name="inspection_save">Guardar reporte</string>
-    <string name="inspection_device_subtitle">Dispositivo %1$s · %2$s · %3$s</string>
+    <string name="inspection_device_subtitle">Dispositivo %1$s · %2$s</string>
     <string name="inspection_alert_line">%1$s · Alerta %2$s · %3$s</string>
     <string name="inspection_classification_title">Clasificación de la alerta</string>
     <string name="inspection_classification_info">Al clasificar, la alerta pasa a “Clasificada sin etiqueta” y se registran la fecha, la hora y el origen. La clasificación no se puede modificar después.</string>
@@ -268,26 +266,6 @@
         e InMemorySyncRepository.kt). También se traducen: la demo debe verse completa en el
         idioma del dispositivo. Desaparecen cuando la API central entregue datos reales.
     -->
-    <string name="sample_alert_landslide_risk">Riesgo de deslizamiento — El tubo se movió %1$d cm de su posición original</string>
-    <string name="sample_alert_possible_gas_leak">Posible fuga de gas</string>
-    <string name="sample_alert_leak_indicator_yellow">Indicador de fuga por encima del umbral amarillo</string>
-    <string name="sample_alert_test_scenario">Escenario de prueba — simulación</string>
-    <string name="sample_normal_conditions">Condiciones normales</string>
-    <string name="sample_history_red_alert_title">Alerta roja generada</string>
-    <string name="sample_history_red_alert_detail">Riesgo de deslizamiento — el tubo se movió %1$d cm</string>
-    <string name="sample_history_inspection_title">Inspección registrada</string>
-    <string name="sample_history_inspection_detail">Observación: se requiere mantenimiento</string>
-    <string name="sample_history_classification_title">Clasificación del evento</string>
-    <string name="sample_history_evidence_title">Evidencia adjunta</string>
-    <string name="sample_history_evidence_detail">%1$d fotografías con descripción</string>
-    <string name="sample_history_observation_title">Observación de campo</string>
-    <string name="sample_history_observation_detail">Se detecta erosión leve en el talud norte</string>
-    <string name="sample_history_maintenance_title">Mantenimiento realizado</string>
-    <string name="sample_history_maintenance_detail">Ajuste de anclaje y limpieza del sensor</string>
-    <string name="sample_history_completed">Completado</string>
-    <string name="sample_history_alert_ended_title">Fin de la alerta</string>
-    <string name="sample_history_alert_ended_detail">El indicador volvió a Normal · Confirmada, etiqueta: Movimiento de tierra</string>
-    <string name="sample_history_all_points_stable">Todos los puntos estables</string>
     <string name="sample_sync_inspection_title">Inspección · Punto %1$d</string>
     <string name="sample_sync_inspection_detail">Registrada %1$s · esperando conexión</string>
     <string name="sample_sync_evidence_title">Foto evidencia · Punto %1$d</string>
@@ -347,4 +325,30 @@
     <string name="notifications_permission_later">Ahora no</string>
     <string name="notifications_disabled_banner">Notificaciones desactivadas: no recibirás avisos de alertas nuevas.</string>
     <string name="notifications_open_settings">Abrir ajustes</string>
+    <string name="connectivity_syncing">Sincronizando…</string>
+    <string name="alert_list_refresh">Actualizar alertas</string>
+    <string name="common_retry">Reintentar</string>
+    <string name="alert_error_no_connection">Sin conexión con el servidor. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="alert_error_server">El servidor no pudo atender la solicitud. Inténtalo más tarde.</string>
+    <string name="alert_error_rejected">El servidor rechazó el envío.</string>
+    <string name="alert_classify_saved_offline">Clasificación guardada en el celular; se enviará cuando haya conexión.</string>
+    <string name="alert_classify_conflict_confirmed">Esta alerta ya estaba clasificada como Confirmada. Tu clasificación quedó registrada como observación.</string>
+    <string name="alert_classify_conflict_false_alarm">Esta alerta ya estaba clasificada como Falsa alerta. Tu clasificación quedó registrada como observación.</string>
+    <string name="alert_detail_observations_empty">Aún no hay observaciones.</string>
+    <string name="observation_kind_classification_conflict">Conflicto de clasificación</string>
+    <string name="observation_kind_tag_conflict">Conflicto de etiqueta</string>
+    <string name="alert_detail_report_local_only">El mantenimiento y las fotos se guardan solo en este celular por ahora.</string>
+    <string name="history_alert_started">Alerta %1$s generada</string>
+    <string name="history_alert_detail" translatable="false">%1$s · %2$s</string>
+    <string name="history_alert_ended">Fin de la alerta</string>
+    <string name="history_alert_ended_detail">Nivel máximo: %1$s</string>
+    <string name="history_classification_title">Clasificación del evento</string>
+    <string name="history_classification_detail" translatable="false">%1$s · %2$s</string>
+    <string name="history_inspection_title">Inspección registrada</string>
+    <string name="history_inspection_detail_default">Reporte sin observaciones</string>
+    <string name="history_maintenance_title">Mantenimiento realizado</string>
+    <string name="history_maintenance_detail_default">Detalle en el reporte de inspección</string>
+    <string name="history_evidence_title">Evidencia adjunta</string>
+    <string name="history_evidence_detail">Fotografías: %1$d</string>
+    <string name="connectivity_connected_live">Conectado · Al día</string>
 </resources>
