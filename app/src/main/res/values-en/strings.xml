@@ -105,8 +105,9 @@
     <string name="alert_detail_indicator">Indicator</string>
     <string name="alert_detail_indicator_value">%1$.2f (threshold %2$.2f)</string>
     <string name="alert_detail_max_level">Maximum level</string>
-    <string name="alert_detail_timeline">Timeline</string>
-    <string name="alert_detail_timeline_end">Alert ended · %1$s</string>
+    <string name="alert_detail_timeline">Event evolution timeline</string>
+    <string name="alert_detail_timeline_duration">Accumulated duration: %1$s</string>
+    <string name="alert_detail_timeline_current">(Current)</string>
     <string name="alert_detail_classification">Classification</string>
     <string name="alert_detail_unclassified_hint">Classify it with “False alarm” or “Confirm alert” on the alert card.</string>
     <string name="alert_detail_no_tag">No tag</string>
@@ -184,6 +185,7 @@
     <string name="maintenance_type_component_replacement">Component replacement</string>
     <string name="common_other_which">Other (which?)</string>
     <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
+    <string name="common_time_pattern">HH:mm</string>
 
     <!-- Photo evidence -->
     <string name="evidence_title">Photo evidence (optional)</string>

@@ -42,6 +42,8 @@ enum class AlertEvent {
 data class LevelChange(
     val level: AlertLevel,
     val at: Instant,
+    /** Valor del indicador cuando tomó ese nivel, si el backend lo informa. */
+    val indicatorValue: Double? = null,
 )
 
 /** Valor del indicador del dispositivo y el umbral con el que se compara (HU-4.2). */

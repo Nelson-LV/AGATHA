@@ -143,7 +143,6 @@ fun AlertDetailScreen(
                     onViewHistory = { onViewHistory(alert.sensorId) },
                 )
             }
-            item { LevelTimelineCard(alert) }
             item { ReportsCard(uiState.reports) }
             item {
                 ObservationsCard(
@@ -204,6 +203,8 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
             ),
             ongoing = alert.isOngoing,
         )
+
+        LevelTimeline(alert)
 
         if (alert.classification == null) {
             Text(
@@ -283,29 +284,6 @@ private fun DataGrid(items: List<Pair<String, String>>, ongoing: Boolean) {
                         }
                     }
                 }
-            }
-        }
-    }
-}
-
-/** Línea de tiempo de niveles (RN-05): cada cambio de nivel con su fecha-hora. */
-@Composable
-private fun LevelTimelineCard(alert: Alert) {
-    SectionCard(title = stringResource(R.string.alert_detail_timeline)) {
-        alert.levelTimeline.forEach { change ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LevelChip(change.level)
-                Text(formatDateTime(change.at), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
-        alert.endedAt?.let { ended ->
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                LevelChip(AlertLevel.GREEN)
-                Text(
-                    stringResource(R.string.alert_detail_timeline_end, formatDateTime(ended)),
-                    color = AgathaTheme.colors.textSecondary,
-                    style = MaterialTheme.typography.bodyMedium,
-                )
             }
         }
     }

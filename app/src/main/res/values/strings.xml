@@ -116,8 +116,10 @@
     <string name="alert_detail_indicator">Indicador</string>
     <string name="alert_detail_indicator_value">%1$.2f (umbral %2$.2f)</string>
     <string name="alert_detail_max_level">Nivel máximo</string>
-    <string name="alert_detail_timeline">Línea de tiempo</string>
-    <string name="alert_detail_timeline_end">Fin de la alerta · %1$s</string>
+    <string name="alert_detail_timeline">Línea de tiempo de evolución del evento</string>
+    <string name="alert_detail_timeline_duration">Duración acumulada: %1$s</string>
+    <string name="alert_detail_timeline_current">(Actual)</string>
+    <string name="alert_detail_timeline_value" translatable="false">%1$.2f</string>
     <string name="alert_detail_classification">Clasificación</string>
     <string name="alert_detail_unclassified_hint">Clasifícala con “Falsa alerta” o “Confirmar alerta” en la tarjeta de la alerta.</string>
     <string name="alert_detail_no_tag">Sin etiqueta</string>
@@ -195,6 +197,7 @@
     <string name="maintenance_type_component_replacement">Reemplazo de componente</string>
     <string name="common_other_which">Otro ¿Cuál?</string>
     <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
+    <string name="common_time_pattern">HH:mm</string>
     <string name="common_char_counter" translatable="false">%1$d/%2$d</string>
 
     <!-- Evidencia fotográfica -->
@@ -247,6 +250,8 @@
     <string name="time_hours_ago">hace %1$d h</string>
     <string name="duration_minutes" translatable="false">%1$d min</string>
     <string name="duration_hours" translatable="false">%1$d h</string>
+    <string name="duration_hours_minutes" translatable="false">%1$dh %2$02dm</string>
+    <string name="duration_minutes_short" translatable="false">%1$dm</string>
 
     <!-- Valores del dominio (enums y números que la UI formatea) -->
     <string name="node_name">Nodo %1$s</string>

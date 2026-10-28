@@ -60,8 +60,8 @@ internal object SampleAgathaData {
             description = text(R.string.sample_alert_landslide_risk, 5),
             level = AlertLevel.RED,
             levelTimeline = listOf(
-                LevelChange(AlertLevel.ORANGE, minutesAgo(5)),
-                LevelChange(AlertLevel.RED, minutesAgo(3)),
+                LevelChange(AlertLevel.ORANGE, minutesAgo(5), indicatorValue = 2.1),
+                LevelChange(AlertLevel.RED, minutesAgo(3), indicatorValue = 5.0),
             ),
             startedAt = minutesAgo(5),
             indicator = IndicatorReading(value = 2.8, threshold = 1.5),
