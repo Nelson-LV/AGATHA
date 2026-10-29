@@ -321,4 +321,37 @@
     <string name="notifications_permission_later">Not now</string>
     <string name="notifications_disabled_banner">Notifications are off: you will not be told about new alerts.</string>
     <string name="notifications_open_settings">Open settings</string>
+
+    <!-- Map screen (HE-08) -->
+    <string name="map_legend_title">Legend</string>
+    <string name="map_legend_status_heading">Point status:</string>
+    <string name="map_legend_yellow_alert">Yellow alert</string>
+    <string name="map_legend_orange_alert">Orange alert</string>
+    <string name="map_legend_red_alert">Red alert</string>
+    <string name="map_legend_no_communication">No communication / not operational</string>
+    <string name="map_legend_red_unclassified_hint">(blinks while unclassified)</string>
+    <string name="map_legend_alert_notice">Alert + notice</string>
+    <string name="map_legend_alert_notice_hint">(keeps the alert color)</string>
+    <string name="map_legend_pipeline_heading">Pipeline</string>
+    <string name="map_legend_steel">Steel</string>
+    <string name="map_legend_flexible">Flexible</string>
+    <string name="map_legend_river">River</string>
+    <string name="map_legend_creek">Creek</string>
+    <string name="map_legend_expand">Expand legend</string>
+    <string name="map_legend_collapse">Collapse legend</string>
+    <string name="map_title">Otero–Santana pipeline</string>
+    <string name="map_status_online">Online</string>
+    <string name="map_status_offline">Offline</string>
+    <string name="map_filter_all">All</string>
+    <string name="map_node_id">ID</string>
+    <string name="map_node_communication">Communication</string>
+    <string name="map_node_status">Status</string>
+    <string name="map_node_last_reading">Last reading</string>
+    <string name="map_communication_online">Online</string>
+    <string name="map_action_view_history">View history</string>
+    <string name="map_action_start_inspection">Start inspection</string>
+    <string name="map_loading">Loading map data</string>
+    <string name="map_route_unavailable">Unable to load the pipeline route</string>
+    <string name="map_value_not_available">Not available</string>
+    <string name="map_device_not_installed">No device installed</string>
 </resources>

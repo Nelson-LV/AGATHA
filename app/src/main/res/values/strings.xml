@@ -342,4 +342,37 @@
     <string name="notifications_permission_later">Ahora no</string>
     <string name="notifications_disabled_banner">Notificaciones desactivadas: no recibirás avisos de alertas nuevas.</string>
     <string name="notifications_open_settings">Abrir ajustes</string>
+
+    <!-- Map screen (HE-08) -->
+    <string name="map_legend_title">Leyenda</string>
+    <string name="map_legend_status_heading">Estado del punto:</string>
+    <string name="map_legend_yellow_alert">Alerta amarilla</string>
+    <string name="map_legend_orange_alert">Alerta naranja</string>
+    <string name="map_legend_red_alert">Alerta roja</string>
+    <string name="map_legend_no_communication">Sin comunicación / no operativo</string>
+    <string name="map_legend_red_unclassified_hint">(titila mientras esté sin clasificar)</string>
+    <string name="map_legend_alert_notice">Alerta + aviso</string>
+    <string name="map_legend_alert_notice_hint">(conserva el color de la alerta)</string>
+    <string name="map_legend_pipeline_heading">Tubería</string>
+    <string name="map_legend_steel">Acero</string>
+    <string name="map_legend_flexible">Flexible</string>
+    <string name="map_legend_river">Río</string>
+    <string name="map_legend_creek">Quebrada</string>
+    <string name="map_legend_expand">Expandir leyenda</string>
+    <string name="map_legend_collapse">Contraer leyenda</string>
+    <string name="map_title">Gasoducto Otero–Santana</string>
+    <string name="map_status_online">En línea</string>
+    <string name="map_status_offline">Sin conexión</string>
+    <string name="map_filter_all">Todos</string>
+    <string name="map_node_id">ID</string>
+    <string name="map_node_communication">Comunicación</string>
+    <string name="map_node_status">Estado</string>
+    <string name="map_node_last_reading">Última lectura</string>
+    <string name="map_communication_online">En línea</string>
+    <string name="map_action_view_history">Ver historial</string>
+    <string name="map_action_start_inspection">Iniciar inspección</string>
+    <string name="map_loading">Cargando datos del mapa</string>
+    <string name="map_route_unavailable">No se pudo cargar el trazado</string>
+    <string name="map_value_not_available">No disponible</string>
+    <string name="map_device_not_installed">Sin dispositivo instalado</string>
 </resources>
