@@ -386,6 +386,14 @@ código en su nombre ("Sensor MP-11556 PK34-470"); un nodo sin dispositivo muest
 tiene datos en la plataforma". Los huecos de datos no se rellenan y el umbral del indicador no
 se dibuja hasta que el endpoint lo traiga.
 
+**Cliente compartido para las APIs nuevas (29/10/2026).** Todas usan el `Retrofit` de
+`data/remote/NetworkModule`: cada API va en su subpaquete `data/remote/<api>/` (interfaz,
+DTOs, mappers) con su `@Provides` en ese módulo. Los repositorios envuelven cada llamada en
+`apiCall(json) { … }` (`data/remote/ApiResult.kt`), que devuelve `ApiResult.Success` o
+`ApiResult.Failure(ApiError)`: `NoConnection`, `Http(code, body)` con el `{code, message}` del
+backend, o `InvalidResponse`. `isRetryable` (sin conexión, 408, 429, 5xx) dice si la cola de
+sincronización debe reintentar (RN-17) e `isConflict` (409) señala el conflicto RN-18.
+
 Los datos de ejemplo **también se traducen**: sus textos son claves `sample_*` en
 `values/` y `values-en/strings.xml`, envueltas en `LocalizedText.Resource`, y lo
 estructurado (tiempos, tipo de sensor, aceleración) son minutos o enums que la UI formatea.
