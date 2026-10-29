@@ -22,7 +22,7 @@
     <string name="tab_sync">Sync</string>
 
     <!-- Connectivity bar -->
-    <string name="connectivity_connected_recent">Online · Synced 2 min ago</string>
+    <string name="connectivity_online">Online</string>
     <string name="connectivity_connected_synced">Online · Synced %1$s</string>
     <string name="connectivity_offline_local_data">Offline · showing local data</string>
     <string name="connectivity_offline_saved_locally">Offline · saved on this device</string>
@@ -82,6 +82,7 @@
 
     <!-- Alert inbox -->
     <string name="inbox_connected_chip">ONLINE</string>
+    <string name="inbox_offline_chip">OFFLINE</string>
     <string name="inbox_my_alerts">My alerts</string>
     <plurals name="inbox_active_count">
         <item quantity="one">%d active</item>

@@ -38,6 +38,7 @@ import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
@@ -58,7 +59,11 @@ fun DeviceHistoryScreen(
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
-        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_local_data))
+        val online = LocalOnline.current
+        ConnectivityBar(
+            connected = online,
+            message = stringResource(if (online) R.string.connectivity_online else R.string.connectivity_offline_local_data),
+        )
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),

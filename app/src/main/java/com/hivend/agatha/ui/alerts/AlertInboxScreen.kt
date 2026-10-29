@@ -40,6 +40,7 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.NotificationPermissionNotice
 import com.hivend.agatha.ui.components.SitePill
@@ -67,10 +68,18 @@ fun AlertInboxScreen(
     val alerts by viewModel.alerts.collectAsStateWithLifecycle()
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+        val online = LocalOnline.current
         AgathaHeader {
-            StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
+            if (online) {
+                StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
+            } else {
+                StatusChip(text = stringResource(R.string.inbox_offline_chip), containerColor = AgathaTheme.colors.offlineContainer, contentColor = AgathaTheme.colors.offline)
+            }
         }
-        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+        ConnectivityBar(
+            connected = online,
+            message = stringResource(if (online) R.string.connectivity_online else R.string.connectivity_offline_local_data),
+        )
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),

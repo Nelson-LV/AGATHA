@@ -35,6 +35,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.DeviceInfoCard
 import com.hivend.agatha.ui.components.nodeColor
@@ -57,7 +58,11 @@ fun SensorMapScreen(
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
-        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+        val online = LocalOnline.current
+        ConnectivityBar(
+            connected = online,
+            message = stringResource(if (online) R.string.connectivity_online else R.string.connectivity_offline_local_data),
+        )
 
         Column(modifier = Modifier.weight(1f).padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             SitePill(site = uiState.nodes.firstOrNull()?.site ?: stringResource(R.string.common_empty_value))

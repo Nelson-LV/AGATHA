@@ -37,6 +37,7 @@ import com.hivend.agatha.domain.model.SyncConflict
 import com.hivend.agatha.domain.model.PendingRecord
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.relativeTimeAgo
@@ -59,9 +60,10 @@ fun SyncScreen(
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()
+        val online = LocalOnline.current
         ConnectivityBar(
-            connected = status?.connected ?: false,
-            message = if (status?.connected == true) {
+            connected = online,
+            message = if (online) {
                 stringResource(R.string.connectivity_connected_synced, relativeTimeAgo(status?.lastSuccessfulSyncMinutesAgo ?: 0))
             } else {
                 val pendingCount = status?.pending?.size ?: 0
@@ -78,7 +80,7 @@ fun SyncScreen(
             ) {
                 item { SitePill(site = stringResource(R.string.common_default_site)) }
 
-                if (!current.connected) {
+                if (!online) {
                     item { OfflineBanner() }
                 }
 

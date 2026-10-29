@@ -71,6 +71,7 @@ import com.hivend.agatha.domain.model.TextLimits
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ClassificationChip
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.label
@@ -100,7 +101,11 @@ fun InspectionFormScreen(
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
         BackTopBar(title = stringResource(R.string.inspection_top_bar_title), onBack = onBack)
-        ConnectivityBar(connected = false, message = stringResource(R.string.connectivity_offline_saved_locally))
+        val online = LocalOnline.current
+        ConnectivityBar(
+            connected = online,
+            message = stringResource(if (online) R.string.connectivity_online else R.string.connectivity_offline_saved_locally),
+        )
 
         val alert = uiState.alert ?: return@Column
 

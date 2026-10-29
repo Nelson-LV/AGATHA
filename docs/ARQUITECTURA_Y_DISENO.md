@@ -158,6 +158,11 @@ de login) debe replicar esta misma forma.
   guardar sin conexión y mostrarlo de inmediato en la UI local — nunca esperar una
   respuesta de red para dar feedback. `InMemoryAlertRepository` ya modela esto: escribe
   primero en el estado local, la sincronización es un paso aparte (`data/sync`, futuro).
+- El estado de la red es real (desde el 29/10/2026): `ConnectivityMonitor`
+  (`data/connectivity/AndroidConnectivityMonitor`, internet *validado*, así un wifi sin salida
+  cuenta como sin conexión) lo publica `MainActivity` como `LocalOnline`. Una pantalla lo lee
+  con `LocalOnline.current` para su `ConnectivityBar`, sin pasar por su ViewModel. Nunca se
+  escribe `connected = true` fijo.
 
 **Seguridad**
 - Ninguna clave (Maps API key, credenciales de Firebase) se escribe en el repositorio: se
