@@ -15,6 +15,7 @@ import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.Notice
 import com.hivend.agatha.domain.model.SensorSection
+import com.hivend.agatha.domain.model.SyncState
 import com.hivend.agatha.domain.model.TelemetryError
 
 /*
@@ -65,6 +66,15 @@ fun ManagementStatus.labelRes(): Int = when (this) {
     ManagementStatus.UNCLASSIFIED -> R.string.management_status_unclassified
     ManagementStatus.CLASSIFIED_WITHOUT_TAG -> R.string.management_status_classified_without_tag
     ManagementStatus.CLASSIFIED_WITH_TAG -> R.string.management_status_classified_with_tag
+}
+
+/** Estado de sincronización de un registro (RN-17). */
+@StringRes
+fun SyncState.labelRes(): Int = when (this) {
+    SyncState.PENDING -> R.string.sync_state_pending
+    SyncState.SYNCING -> R.string.sync_state_syncing
+    SyncState.SYNCED -> R.string.sync_state_synced
+    SyncState.ERROR -> R.string.sync_state_error
 }
 
 /** Etiquetas RN-07. Las dos variantes "Otro" comparten texto; su detalle lo escribe una persona. */

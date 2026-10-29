@@ -228,6 +228,11 @@
     <string name="sync_understood">Got it</string>
     <string name="sync_now">Sync now</string>
     <string name="sync_last_success">Last successful sync: %1$s</string>
+    <!-- Sync state of a record (RN-17) -->
+    <string name="sync_state_pending">Pending</string>
+    <string name="sync_state_syncing">Syncing</string>
+    <string name="sync_state_synced">Synced</string>
+    <string name="sync_state_error">Error</string>
 
     <!-- Relative times -->
     <string name="time_just_now">just now</string>

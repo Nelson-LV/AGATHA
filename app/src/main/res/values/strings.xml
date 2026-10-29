@@ -240,6 +240,11 @@
     <string name="sync_understood">Entendido</string>
     <string name="sync_now">Sincronizar ahora</string>
     <string name="sync_last_success">Última sincronización correcta: %1$s</string>
+    <!-- Estado de sincronización de un registro (RN-17) -->
+    <string name="sync_state_pending">Pendiente</string>
+    <string name="sync_state_syncing">Sincronizando</string>
+    <string name="sync_state_synced">Sincronizado</string>
+    <string name="sync_state_error">Error</string>
 
     <!-- Tiempos relativos (el dominio entrega minutos; ver ui/components/Texts.kt) -->
     <string name="time_just_now">justo ahora</string>

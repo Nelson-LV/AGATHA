@@ -48,8 +48,10 @@ app/src/main/java/com/hivend/agatha/
 │
 ├── data/                       # Implementaciones concretas de los puertos de dominio
 │   ├── repository/             # Hoy: InMemory*Repository con datos de muestra (§7)
-│   ├── local/                  # Futuro: Room (AppDatabase, entidades, DAOs) — ver README interno
-│   ├── remote/                 # Futuro: Retrofit (AgathaApiService, DTOs)
+│   ├── local/                  # Room: AgathaDatabase, Converters, DatabaseModule
+│   │   └── sync/               #   un subpaquete por feature (entidades + DAO); hoy la cola de salida
+│   ├── remote/                 # Retrofit: NetworkModule (cliente compartido)
+│   │   └── dashboard/          #   un subpaquete por API (interfaz Retrofit + DTOs + mappers)
 │   └── sync/                   # Futuro: WorkManager (SyncWorker)
 │
 └── ui/                         # Presentación: un paquete por pantalla + uno compartido
@@ -75,6 +77,15 @@ Cada paquete de `ui/<pantalla>/` sigue el mismo patrón de 2 archivos:
 `<Pantalla>Screen.kt` (composable, sin lógica de negocio) + `<Pantalla>ViewModel.kt`
 (estado + llamadas a repositorios). Un paquete nuevo (por ejemplo, para una futura pantalla
 de login) debe replicar esta misma forma.
+
+**Persistencia y red por feature (desde el 29/10/2026).** Cada feature guarda sus entidades y
+su DAO en `data/local/<feature>/` y los registra en `AgathaDatabase` (entidad en `entities`,
+`version` + migración, getter del DAO) y en `DatabaseModule` (`@Provides` del DAO). El
+esquema de cada versión se exporta a `app/schemas/` y se commitea. Un registro creado en el
+celular se guarda en su tabla con un UUID generado en el celular y se encola en `sync_queue`
+(`SyncQueueDao.enqueue`, una vez por registro); el envío lo hará `data/sync`. Del lado
+remoto, cada API tiene su subpaquete `data/remote/<api>/` (interfaz Retrofit, DTOs, mappers)
+sobre el `Retrofit` compartido de `NetworkModule`.
 
 ---
 
