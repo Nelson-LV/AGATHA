@@ -32,7 +32,7 @@
     <string name="tab_sync">Sync</string>
 
     <!-- Barra de conectividad -->
-    <string name="connectivity_connected_recent">Conectado · Sincronizado hace 2 min</string>
+    <string name="connectivity_online">Conectado</string>
     <string name="connectivity_connected_synced">Conectado · Sincronizado %1$s</string>
     <string name="connectivity_offline_local_data">Sin conexión · mostrando datos locales</string>
     <string name="connectivity_offline_saved_locally">Sin conexión · se guarda localmente</string>
@@ -92,6 +92,7 @@
 
     <!-- Bandeja de alertas -->
     <string name="inbox_connected_chip">CONECTADO</string>
+    <string name="inbox_offline_chip">SIN CONEXIÓN</string>
     <string name="inbox_my_alerts">Mis alertas</string>
     <plurals name="inbox_active_count">
         <item quantity="one">%d activa</item>
