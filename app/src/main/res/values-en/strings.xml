@@ -222,7 +222,6 @@
     <string name="sync_offline_title">Working offline</string>
     <string name="sync_offline_body">Your records (inspections, classifications, notes and photos) are saved on this device and will sync automatically when the signal returns.</string>
     <string name="sync_pending_title">Waiting to sync (%1$d)</string>
-    <string name="sync_pending_chip">Pending</string>
     <string name="sync_retry">Retry</string>
     <string name="sync_conflict_local">YOUR CHANGE (LOCAL)</string>
     <string name="sync_conflict_server">SERVER CHANGE</string>
@@ -234,6 +233,20 @@
     <string name="sync_state_syncing">Syncing</string>
     <string name="sync_state_synced">Synced</string>
     <string name="sync_state_error">Error</string>
+    <!-- Manual retry and queued records (HU-7.3) -->
+    <string name="sync_retry_all">Retry all</string>
+    <string name="sync_retry_offline">No connection. It will sync automatically when the connection returns.</string>
+    <string name="sync_nothing_pending">Nothing is waiting to sync.</string>
+    <string name="sync_last_success_never">No successful sync yet.</string>
+    <string name="sync_record_registered">Recorded %1$s</string>
+    <string name="sync_error_no_connection">No connection</string>
+    <string name="sync_error_server">The server answered with error %1$d</string>
+    <string name="sync_error_invalid_response">Unexpected server response</string>
+    <string name="sync_record_type_classification">Alert classification</string>
+    <string name="sync_record_type_inspection_report">Inspection report</string>
+    <string name="sync_record_type_observation">Observation</string>
+    <string name="sync_record_type_photo">Photo</string>
+    <string name="sync_record_type_push_token">Notification sign-up</string>
 
     <!-- Relative times -->
     <string name="time_just_now">just now</string>
@@ -271,16 +284,6 @@
     <string name="sample_history_alert_ended_title">Alert ended</string>
     <string name="sample_history_alert_ended_detail">The indicator returned to Normal · Confirmed, tag: Ground movement</string>
     <string name="sample_history_all_points_stable">All points stable</string>
-    <string name="sample_sync_inspection_title">Inspection · Point %1$d</string>
-    <string name="sample_sync_inspection_detail">Logged %1$s · waiting for connection</string>
-    <string name="sample_sync_evidence_title">Photo evidence · Point %1$d</string>
-    <string name="sample_sync_evidence_detail">%1$d images · logged %2$s</string>
-    <string name="sample_sync_classification_title">Classification · Point %1$d</string>
-    <string name="sample_sync_classification_detail">Leak confirmed in the field · send failed</string>
-    <string name="sample_sync_conflict_title">Conflict detected · Point %1$d</string>
-    <string name="sample_sync_conflict_description">This alert was also changed from the web platform while you were offline.</string>
-    <string name="sample_sync_conflict_local">Classification: Confirmed · Leak confirmed in the field · %1$s</string>
-    <string name="sample_sync_conflict_server">Status: Closed by web operator · %1$s</string>
     <!-- Telemetry (dashboard API): "View sensors" and "View chart" charts -->
     <string name="telemetry_window_24h">Last 24 h · Colombia time · online only</string>
     <string name="telemetry_loading">Loading sensor data…</string>

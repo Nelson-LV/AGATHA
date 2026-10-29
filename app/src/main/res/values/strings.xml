@@ -234,7 +234,6 @@
     <string name="sync_offline_title">Trabajando sin conexión</string>
     <string name="sync_offline_body">Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.</string>
     <string name="sync_pending_title">Pendientes por sincronizar (%1$d)</string>
-    <string name="sync_pending_chip">Pendiente</string>
     <string name="sync_retry">Reintentar</string>
     <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
     <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
@@ -246,6 +245,20 @@
     <string name="sync_state_syncing">Sincronizando</string>
     <string name="sync_state_synced">Sincronizado</string>
     <string name="sync_state_error">Error</string>
+    <!-- Reintento manual y registros de la cola (HU-7.3) -->
+    <string name="sync_retry_all">Reintentar todo</string>
+    <string name="sync_retry_offline">Sin conexión. Se sincronizará automáticamente al recuperarla.</string>
+    <string name="sync_nothing_pending">No hay registros pendientes por sincronizar.</string>
+    <string name="sync_last_success_never">Todavía no hay una sincronización correcta.</string>
+    <string name="sync_record_registered">Registrado %1$s</string>
+    <string name="sync_error_no_connection">Sin conexión</string>
+    <string name="sync_error_server">El servidor respondió con error %1$d</string>
+    <string name="sync_error_invalid_response">Respuesta inesperada del servidor</string>
+    <string name="sync_record_type_classification">Clasificación de alerta</string>
+    <string name="sync_record_type_inspection_report">Reporte de inspección</string>
+    <string name="sync_record_type_observation">Observación</string>
+    <string name="sync_record_type_photo">Foto</string>
+    <string name="sync_record_type_push_token">Registro para notificaciones</string>
 
     <!-- Tiempos relativos (el dominio entrega minutos; ver ui/components/Texts.kt) -->
     <string name="time_just_now">justo ahora</string>
@@ -289,16 +302,6 @@
     <string name="sample_history_alert_ended_title">Fin de la alerta</string>
     <string name="sample_history_alert_ended_detail">El indicador volvió a Normal · Confirmada, etiqueta: Movimiento de tierra</string>
     <string name="sample_history_all_points_stable">Todos los puntos estables</string>
-    <string name="sample_sync_inspection_title">Inspección · Punto %1$d</string>
-    <string name="sample_sync_inspection_detail">Registrada %1$s · esperando conexión</string>
-    <string name="sample_sync_evidence_title">Foto evidencia · Punto %1$d</string>
-    <string name="sample_sync_evidence_detail">%1$d imágenes · registradas %2$s</string>
-    <string name="sample_sync_classification_title">Clasificación · Punto %1$d</string>
-    <string name="sample_sync_classification_detail">Fuga confirmada en campo · error al enviar</string>
-    <string name="sample_sync_conflict_title">Conflicto detectado · Punto %1$d</string>
-    <string name="sample_sync_conflict_description">Esta alerta fue modificada también desde la plataforma web mientras estabas sin conexión.</string>
-    <string name="sample_sync_conflict_local">Clasificación: Confirmada · Fuga confirmada en campo · %1$s</string>
-    <string name="sample_sync_conflict_server">Estado: Cerrada por Operador Web · %1$s</string>
     <!-- Telemetría (API de tablero): gráficas de "Ver sensores" y "Ver gráfica" -->
     <string name="telemetry_window_24h">Últimas 24 h · hora de Colombia · solo con conexión</string>
     <string name="telemetry_loading">Cargando datos del sensor…</string>

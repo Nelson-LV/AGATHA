@@ -3,17 +3,9 @@ package com.hivend.agatha.data.local.sync
 import androidx.room.Entity
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.domain.model.SyncState
 import java.time.Instant
-
-/** Qué tipo de registro referencia una entrada de la cola. Se persiste por nombre: no renombrar. */
-enum class SyncRecordType {
-    CLASSIFICATION,
-    INSPECTION_REPORT,
-    OBSERVATION,
-    PHOTO,
-    PUSH_TOKEN,
-}
 
 /**
  * Entrada de la cola de salida (HU-7.2, RN-17). Cada feature guarda su registro en su propia

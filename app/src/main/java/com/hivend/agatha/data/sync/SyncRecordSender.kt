@@ -1,7 +1,7 @@
 package com.hivend.agatha.data.sync
 
-import com.hivend.agatha.data.local.sync.SyncRecordType
 import com.hivend.agatha.data.remote.ApiResult
+import com.hivend.agatha.domain.model.SyncRecordType
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent

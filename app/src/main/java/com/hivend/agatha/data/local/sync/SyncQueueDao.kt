@@ -27,4 +27,15 @@ interface SyncQueueDao {
 
     @Query("UPDATE sync_queue SET state = :state, attempts = :attempts, lastError = :lastError WHERE id = :id")
     suspend fun updateState(id: String, state: SyncState, attempts: Int, lastError: String?)
+
+    /**
+     * Reintento manual (HU-7.3): una entrada en Error vuelve a Pendiente con sus intentos en cero,
+     * así recupera los reintentos automáticos. Devuelve cuántas cambiaron (0 si no estaba en Error).
+     */
+    @Query("UPDATE sync_queue SET state = 'PENDING', attempts = 0, lastError = NULL WHERE id = :id AND state = 'ERROR'")
+    suspend fun resetError(id: String): Int
+
+    /** "Reintentar todo": lo mismo que [resetError] para todas las entradas en Error. */
+    @Query("UPDATE sync_queue SET state = 'PENDING', attempts = 0, lastError = NULL WHERE state = 'ERROR'")
+    suspend fun resetAllErrors(): Int
 }

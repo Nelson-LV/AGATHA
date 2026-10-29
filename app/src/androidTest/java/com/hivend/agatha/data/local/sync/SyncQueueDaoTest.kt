@@ -4,6 +4,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.hivend.agatha.data.local.AgathaDatabase
+import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.domain.model.SyncState
 import java.time.Instant
 import kotlinx.coroutines.flow.first
@@ -77,5 +78,34 @@ class SyncQueueDaoTest {
         assertEquals(3, stored.attempts)
         assertEquals("HTTP 500", stored.lastError)
         assertEquals(t0, stored.createdAt)
+    }
+
+    @Test
+    fun manualRetryOnlyResetsEntriesInError() = runTest {
+        dao.enqueue(entry("failed", SyncRecordType.PHOTO, t0))
+        dao.enqueue(entry("waiting", SyncRecordType.PHOTO, t0.plusSeconds(1)))
+        dao.updateState("failed", SyncState.ERROR, attempts = 4, lastError = "NO_CONNECTION")
+        dao.updateState("waiting", SyncState.PENDING, attempts = 2, lastError = "NO_CONNECTION")
+
+        assertEquals(1, dao.resetError("failed"))
+        assertEquals(0, dao.resetError("waiting"))
+
+        val failed = dao.get("failed")!!
+        assertEquals(SyncState.PENDING, failed.state)
+        assertEquals(0, failed.attempts)
+        assertNull(failed.lastError)
+        assertEquals(2, dao.get("waiting")!!.attempts)
+    }
+
+    @Test
+    fun retryAllResetsEveryEntryInError() = runTest {
+        dao.enqueue(entry("a", SyncRecordType.OBSERVATION, t0))
+        dao.enqueue(entry("b", SyncRecordType.OBSERVATION, t0.plusSeconds(1)))
+        dao.enqueue(entry("c", SyncRecordType.OBSERVATION, t0.plusSeconds(2)))
+        dao.updateState("a", SyncState.ERROR, attempts = 4, lastError = "HTTP 500")
+        dao.updateState("b", SyncState.ERROR, attempts = 1, lastError = "HTTP 400")
+
+        assertEquals(2, dao.resetAllErrors())
+        assertEquals(listOf(SyncState.PENDING, SyncState.PENDING, SyncState.PENDING), dao.observeUnsynced().first().map { it.state })
     }
 }

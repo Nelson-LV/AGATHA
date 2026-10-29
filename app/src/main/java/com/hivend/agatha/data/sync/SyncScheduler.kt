@@ -44,10 +44,19 @@ class SyncScheduler @Inject constructor(
      * Pide un envío en cuanto haya red. Se llama después de encolar un registro; si ya hay uno
      * programado o en curso no se duplica (KEEP), porque el worker recoge lo nuevo al terminar.
      */
-    fun syncNow() {
+    fun syncNow() = enqueueOneTime(ExistingWorkPolicy.KEEP)
+
+    /**
+     * Reintento pedido por el técnico (HU-7.3): reemplaza un envío que esté esperando su próximo
+     * reintento automático, para no hacerlo esperar. Si había un envío en curso se cancela y se
+     * repite; es seguro porque el servidor no duplica un registro con el mismo id.
+     */
+    fun retryNow() = enqueueOneTime(ExistingWorkPolicy.REPLACE)
+
+    private fun enqueueOneTime(policy: ExistingWorkPolicy) {
         workManager.enqueueUniqueWork(
             ONE_TIME_WORK,
-            ExistingWorkPolicy.KEEP,
+            policy,
             OneTimeWorkRequestBuilder<SyncWorker>()
                 .setConstraints(needsNetwork)
                 .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, 30, TimeUnit.SECONDS)

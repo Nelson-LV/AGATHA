@@ -95,6 +95,15 @@ reintentables y deja en Error los rechazos. Para que un tipo de registro salga, 
 implementa `SyncRecordSender` (llama a su API con `apiCall`) y lo registra con
 `@Binds @IntoSet`; mientras no exista su emisor, sus entradas esperan Pendientes.
 
+**Pantalla de sincronización con datos reales (desde el 29/10/2026).** `SyncScreen` lee la
+cola real a través de `RoomSyncRepository`, que reemplazó a `InMemorySyncRepository`. Cada
+registro muestra su tipo, la fecha en que se registró, su estado RN-17 y, si falló, el motivo.
+"Reintentar" (en un registro en Error) y "Reintentar todo" lo devuelven a Pendiente con sus
+reintentos automáticos de nuevo, y piden el envío de inmediato (`SyncScheduler.retryNow()`).
+Sin red, la pantalla avisa "Sin conexión. Se sincronizará automáticamente al recuperarla."
+(HU-7.3). La última sincronización correcta la guarda `LastSyncStore`. El conflicto RN-18 de
+esa pantalla vuelve con HU-7.4.
+
 ---
 
 ## 2. Patrones de diseño

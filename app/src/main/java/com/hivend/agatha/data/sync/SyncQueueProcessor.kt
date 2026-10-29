@@ -2,7 +2,6 @@ package com.hivend.agatha.data.sync
 
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
-import com.hivend.agatha.data.remote.ApiError
 import com.hivend.agatha.data.remote.ApiResult
 import com.hivend.agatha.data.remote.isRetryable
 import com.hivend.agatha.domain.model.SyncState
@@ -51,7 +50,7 @@ class SyncQueueProcessor @Inject constructor(
                     val retry = result.error.isRetryable && attempts <= MAX_RETRIES
                     val state = if (retry) SyncState.PENDING else SyncState.ERROR
                     if (retry) retryLater = true
-                    queue.updateState(entry.id, state, attempts, result.error.reason())
+                    queue.updateState(entry.id, state, attempts, SyncErrorText.encode(result.error))
                     state
                 }
             }
@@ -65,14 +64,6 @@ class SyncQueueProcessor @Inject constructor(
         // Fuera de la lista de pendientes = ya sincronizada; si no existe, no hay qué esperar.
         val state = stateById[dependency] ?: queue.get(dependency)?.state ?: return true
         return state == SyncState.SYNCED
-    }
-
-    /** Motivo técnico guardado con la entrada; la pantalla de sincronización lo traducirá. */
-    private fun ApiError.reason(): String = when (this) {
-        ApiError.NoConnection -> "NO_CONNECTION"
-        ApiError.InvalidResponse -> "INVALID_RESPONSE"
-        is ApiError.Http -> listOfNotNull("HTTP $code", body?.let { "${it.code}: ${it.message}" })
-            .joinToString(" ")
     }
 
     companion object {

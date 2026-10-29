@@ -4,8 +4,8 @@ import com.hivend.agatha.data.connectivity.AndroidConnectivityMonitor
 import com.hivend.agatha.data.repository.InMemoryAlertRepository
 import com.hivend.agatha.data.repository.InMemoryHistoryRepository
 import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
-import com.hivend.agatha.data.repository.InMemorySyncRepository
 import com.hivend.agatha.data.repository.RemoteTelemetryRepository
+import com.hivend.agatha.data.repository.RoomSyncRepository
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.repository.HistoryRepository
@@ -42,7 +42,7 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindSyncRepository(impl: InMemorySyncRepository): SyncRepository
+    abstract fun bindSyncRepository(impl: RoomSyncRepository): SyncRepository
 
     @Binds
     @Singleton

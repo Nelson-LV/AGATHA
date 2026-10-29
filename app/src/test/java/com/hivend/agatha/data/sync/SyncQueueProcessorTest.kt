@@ -2,10 +2,10 @@ package com.hivend.agatha.data.sync
 
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
-import com.hivend.agatha.data.local.sync.SyncRecordType
 import com.hivend.agatha.data.remote.ApiError
 import com.hivend.agatha.data.remote.ApiErrorBody
 import com.hivend.agatha.data.remote.ApiResult
+import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.domain.model.SyncState
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -37,6 +37,15 @@ class SyncQueueProcessorTest {
         override suspend fun updateState(id: String, state: SyncState, attempts: Int, lastError: String?) {
             entries[id] = entries.getValue(id).copy(state = state, attempts = attempts, lastError = lastError)
         }
+
+        override suspend fun resetError(id: String): Int {
+            val entry = entries[id]?.takeIf { it.state == SyncState.ERROR } ?: return 0
+            entries[id] = entry.copy(state = SyncState.PENDING, attempts = 0, lastError = null)
+            return 1
+        }
+
+        override suspend fun resetAllErrors(): Int =
+            entries.values.filter { it.state == SyncState.ERROR }.sumOf { resetError(it.id) }
 
         private fun unsyncedNow() = entries.values.filter { it.state != SyncState.SYNCED }.sortedBy { it.createdAt }
     }
@@ -158,5 +167,23 @@ class SyncQueueProcessorTest {
         processor(FakeSender(SyncRecordType.OBSERVATION, ok)).process()
 
         assertEquals(SyncState.SYNCED, state("a"))
+    }
+
+    @Test
+    fun `a manual retry after a network failure sends the record and it syncs`() = runBlocking {
+        enqueue("a", SyncRecordType.CLASSIFICATION, 0)
+        val sender = FakeSender(SyncRecordType.CLASSIFICATION, offline, offline, offline, offline, ok)
+        val processor = processor(sender)
+        repeat(1 + SyncQueueProcessor.MAX_RETRIES) { processor.process() }
+        assertEquals(SyncState.ERROR, state("a"))
+
+        // "Reintentar" (HU-7.3): vuelve a Pendiente con los reintentos automáticos de nuevo.
+        assertEquals(1, queue.resetError("a"))
+        processor.process()
+
+        val entry = queue.entries.getValue("a")
+        assertEquals(SyncState.SYNCED, entry.state)
+        assertEquals(null, entry.lastError)
+        assertEquals(5, sender.sent.size)
     }
 }
