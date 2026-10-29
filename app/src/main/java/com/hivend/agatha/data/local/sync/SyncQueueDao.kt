@@ -21,6 +21,10 @@ interface SyncQueueDao {
     @Query("SELECT * FROM sync_queue WHERE state != 'SYNCED' ORDER BY createdAt, rowid")
     fun observeUnsynced(): Flow<List<SyncQueueEntity>>
 
+    /** Lo mismo que [observeUnsynced], leído una vez (lo usa el envío en segundo plano). */
+    @Query("SELECT * FROM sync_queue WHERE state != 'SYNCED' ORDER BY createdAt, rowid")
+    suspend fun unsynced(): List<SyncQueueEntity>
+
     @Query("UPDATE sync_queue SET state = :state, attempts = :attempts, lastError = :lastError WHERE id = :id")
     suspend fun updateState(id: String, state: SyncState, attempts: Int, lastError: String?)
 }

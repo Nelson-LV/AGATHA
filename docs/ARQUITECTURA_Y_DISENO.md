@@ -52,7 +52,7 @@ app/src/main/java/com/hivend/agatha/
 │   │   └── sync/               #   un subpaquete por feature (entidades + DAO); hoy la cola de salida
 │   ├── remote/                 # Retrofit: NetworkModule (cliente compartido)
 │   │   └── dashboard/          #   un subpaquete por API (interfaz Retrofit + DTOs + mappers)
-│   └── sync/                   # Futuro: WorkManager (SyncWorker)
+│   └── sync/                   # WorkManager: SyncWorker, SyncScheduler, SyncQueueProcessor
 │
 └── ui/                         # Presentación: un paquete por pantalla + uno compartido
     ├── theme/                  # Color.kt, Type.kt, Shape.kt, Theme.kt — Material 3
@@ -83,9 +83,17 @@ su DAO en `data/local/<feature>/` y los registra en `AgathaDatabase` (entidad en
 `version` + migración, getter del DAO) y en `DatabaseModule` (`@Provides` del DAO). El
 esquema de cada versión se exporta a `app/schemas/` y se commitea. Un registro creado en el
 celular se guarda en su tabla con un UUID generado en el celular y se encola en `sync_queue`
-(`SyncQueueDao.enqueue`, una vez por registro); el envío lo hará `data/sync`. Del lado
-remoto, cada API tiene su subpaquete `data/remote/<api>/` (interfaz Retrofit, DTOs, mappers)
-sobre el `Retrofit` compartido de `NetworkModule`.
+(`SyncQueueDao.enqueue`, una vez por registro). Del lado remoto, cada API tiene su subpaquete
+`data/remote/<api>/` (interfaz Retrofit, DTOs, mappers) sobre el `Retrofit` compartido de
+`NetworkModule`.
+
+**Envío de la cola (desde el 29/10/2026).** `SyncWorker` (WorkManager, inyectado por Hilt) solo
+corre con red: `SyncScheduler.schedule()` lo pide al abrir la app y cada 15 minutos, y
+`syncNow()` se llama después de encolar un registro. El worker delega en `SyncQueueProcessor`,
+que envía en orden de registro respetando `dependsOn`, reintenta 3 veces los fallos
+reintentables y deja en Error los rechazos. Para que un tipo de registro salga, su feature
+implementa `SyncRecordSender` (llama a su API con `apiCall`) y lo registra con
+`@Binds @IntoSet`; mientras no exista su emisor, sus entradas esperan Pendientes.
 
 ---
 
@@ -168,7 +176,7 @@ sobre el `Retrofit` compartido de `NetworkModule`.
 - Cualquier pantalla que escriba datos de campo (inspección, evidencia) debe poder
   guardar sin conexión y mostrarlo de inmediato en la UI local — nunca esperar una
   respuesta de red para dar feedback. `InMemoryAlertRepository` ya modela esto: escribe
-  primero en el estado local, la sincronización es un paso aparte (`data/sync`, futuro).
+  primero en el estado local, la sincronización es un paso aparte (`data/sync`).
 
 **Seguridad**
 - Ninguna clave (Maps API key, credenciales de Firebase) se escribe en el repositorio: se

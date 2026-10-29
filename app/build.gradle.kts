@@ -127,6 +127,11 @@ dependencies {
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
+    // Background sync of the outbound queue (HE-07): WorkManager with Hilt-injected workers.
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
     // Networking against the AGATHA central API (HE-04, HE-07): NetworkModule in data/remote,
     // one subpackage per API (see docs/ARQUITECTURA_Y_DISENO.md § 1).
     implementation(libs.retrofit.core)
