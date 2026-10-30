@@ -375,4 +375,30 @@
     <string name="map_route_unavailable">No se pudo cargar el trazado</string>
     <string name="map_value_not_available">No disponible</string>
     <string name="map_device_not_installed">Sin dispositivo instalado</string>
+    <!-- History screen (HE-08) -->
+    <string name="history_loading">Cargando historial…</string>
+    <string name="history_empty_30_days">No hay eventos en los últimos 30 días</string>
+    <string name="history_event_node_pk">%1$s · PK %2$s</string>
+    <string name="history_filter_all_nodes">Todos los nodos</string>
+    <string name="history_filter_all_types">Todos los tipos</string>
+    <string name="history_clear_filters">Limpiar filtros</string>
+    <string name="history_filter_choose_from">Elegir fecha inicial</string>
+    <string name="history_filter_choose_through">Elegir fecha final</string>
+    <string name="history_filter_from">Desde: %1$s</string>
+    <string name="history_filter_through">Hasta: %1$s</string>
+    <string name="history_date_confirm">Aplicar</string>
+    <string name="history_detail_type">Tipo</string>
+    <string name="history_detail_timestamp">Fecha y hora</string>
+    <string name="history_detail_node">Nodo</string>
+    <string name="history_detail_description">Descripción</string>
+    <string name="history_detail_telemetry">Snapshot de telemetría</string>
+    <string name="history_detail_acceleration">Aceleración</string>
+    <string name="history_detail_gyroscope">Giro</string>
+    <string name="history_detail_acoustics">Acústica</string>
+    <string name="history_detail_temperature">Temperatura</string>
+    <string name="history_detail_humidity">Humedad</string>
+    <string name="history_detail_evidence_reference">Referencia de evidencia</string>
+    <string name="history_detail_origin">Origen</string>
+    <string name="history_offline_data_as_of">Sin conexión · Datos al %1$s</string>
+    <string name="history_offline_no_timestamp">Sin conexión · Sin datos disponibles</string>
 </resources>

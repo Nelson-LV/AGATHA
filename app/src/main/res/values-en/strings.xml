@@ -354,4 +354,30 @@
     <string name="map_route_unavailable">Unable to load the pipeline route</string>
     <string name="map_value_not_available">Not available</string>
     <string name="map_device_not_installed">No device installed</string>
+    <!-- History screen (HE-08) -->
+    <string name="history_loading">Loading history…</string>
+    <string name="history_empty_30_days">No events in the last 30 days</string>
+    <string name="history_event_node_pk">%1$s · PK %2$s</string>
+    <string name="history_filter_all_nodes">All nodes</string>
+    <string name="history_filter_all_types">All types</string>
+    <string name="history_clear_filters">Clear filters</string>
+    <string name="history_filter_choose_from">Choose start date</string>
+    <string name="history_filter_choose_through">Choose end date</string>
+    <string name="history_filter_from">From: %1$s</string>
+    <string name="history_filter_through">Through: %1$s</string>
+    <string name="history_date_confirm">Apply</string>
+    <string name="history_detail_type">Type</string>
+    <string name="history_detail_timestamp">Date and time</string>
+    <string name="history_detail_node">Node</string>
+    <string name="history_detail_description">Description</string>
+    <string name="history_detail_telemetry">Telemetry snapshot</string>
+    <string name="history_detail_acceleration">Acceleration</string>
+    <string name="history_detail_gyroscope">Gyroscope</string>
+    <string name="history_detail_acoustics">Acoustics</string>
+    <string name="history_detail_temperature">Temperature</string>
+    <string name="history_detail_humidity">Humidity</string>
+    <string name="history_detail_evidence_reference">Evidence reference</string>
+    <string name="history_detail_origin">Origin</string>
+    <string name="history_offline_data_as_of">Offline · Data as of %1$s</string>
+    <string name="history_offline_no_timestamp">Offline · No data available</string>
 </resources>
