@@ -25,12 +25,19 @@ data class HistoryEvent(
     val evidenceReference: String? = null,
     /** Device origin for traceability of records created from the mobile app. */
     val origin: String? = null,
-    /** Legacy presentation values retained for the existing history screen. */
+    /** Legacy presentation values retained for existing history consumers. */
     val time: String = timestamp.toString(),
     val title: LocalizedText = LocalizedText.Plain(description),
     val detail: LocalizedText = LocalizedText.Plain(description),
     val statusLabel: LocalizedText? = null,
+    /** Alert-specific fields keep classification distinct from its management workflow state. */
+    val alertId: String? = null,
+    val alertLevel: AlertLevel? = null,
+    val alertClassification: AlertClassification? = null,
 ) {
+    /** Compatibility timestamp used by the alert detail's recent-history card. */
+    val at: Instant get() = timestamp
+
     /** Compatibility constructor for the existing in-memory history preview. */
     constructor(
         time: String,

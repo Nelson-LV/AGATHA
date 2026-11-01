@@ -38,6 +38,8 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.TelemetryDevice
@@ -67,6 +69,8 @@ fun DeviceListScreen(
     viewModel: DeviceListViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
     val offline = state.error == TelemetryError.NO_CONNECTION
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {

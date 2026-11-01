@@ -9,6 +9,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
+import com.hivend.agatha.domain.model.AlertFailure
+import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.SensorNode
@@ -25,6 +27,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
@@ -35,30 +38,35 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    historyRepository: HistoryRepository,
+    private val historyRepository: HistoryRepository,
     sensorNodeRepository: SensorNodeRepository,
     @param:ApplicationContext private val applicationContext: Context,
 ) : ViewModel() {
 
     val deviceId: String = savedStateHandle[BottomTab.History.ARG_DEVICE_ID] ?: DEFAULT_HISTORY_DEVICE_ID
 
-    private val selectedNodeId = kotlinx.coroutines.flow.MutableStateFlow<String?>(
-        savedStateHandle[BottomTab.History.ARG_DEVICE_ID],
-    )
-    private val selectedEventType = kotlinx.coroutines.flow.MutableStateFlow<EventType?>(null)
-    private val dateFrom = kotlinx.coroutines.flow.MutableStateFlow<LocalDate?>(null)
-    private val dateThrough = kotlinx.coroutines.flow.MutableStateFlow<LocalDate?>(null)
-    private val nodeDataLoaded = kotlinx.coroutines.flow.MutableStateFlow(false)
-    private val historyLoaded = kotlinx.coroutines.flow.MutableStateFlow(false)
+    private val selectedNodeId: MutableStateFlow<String?> =
+        MutableStateFlow(savedStateHandle[BottomTab.History.ARG_DEVICE_ID])
+    private val selectedEventType = MutableStateFlow<EventType?>(null)
+    private val dateFrom = MutableStateFlow<LocalDate?>(null)
+    private val dateThrough = MutableStateFlow<LocalDate?>(null)
+    private val nodeDataLoaded = MutableStateFlow(false)
+    private val historyLoaded = MutableStateFlow(false)
+    private val refreshFailure = MutableStateFlow<AlertFailure?>(null)
 
     private val nodes = sensorNodeRepository.observeSensorNodes()
-        .onEach { nodeDataLoaded.value = true }
+        .onEach { allNodes ->
+            if (!nodeDataLoaded.value) {
+                nodeDataLoaded.value = true
+                if (selectedNodeId.value == null) refreshNodeIds(allNodes.map(SensorNode::id))
+            }
+        }
         .catch { exception ->
             if (exception is CancellationException) throw exception
             nodeDataLoaded.value = true
@@ -69,7 +77,9 @@ class HistoryViewModel @Inject constructor(
     private val sourceEvents = combine(nodes, selectedNodeId) { allNodes, nodeId ->
         nodeId?.let(::listOf) ?: allNodes.map(SensorNode::id)
     }.flatMapLatest { nodeIds ->
-        val historyFlows = nodeIds.distinct().map(historyRepository::observeHistoryForNode)
+        val historyFlows = nodeIds.distinct()
+            .filter { it.substringAfterLast('-').toIntOrNull() != null }
+            .map { id -> historyRepository.observeHistory(id).map { it.toEvents() } }
         if (historyFlows.isEmpty()) {
             flowOf(emptyList())
         } else {
@@ -138,8 +148,18 @@ class HistoryViewModel @Inject constructor(
         .map { state -> state.events }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    init {
+        if (selectedNodeId.value != null) refresh()
+    }
+
+    fun refresh() {
+        val nodeIds = selectedNodeId.value?.let(::listOf) ?: nodes.value.map(SensorNode::id)
+        refreshNodeIds(nodeIds)
+    }
+
     fun selectNode(nodeId: String?) {
         selectedNodeId.value = nodeId
+        refreshNodeIds(nodeId?.let(::listOf) ?: nodes.value.map(SensorNode::id))
     }
 
     fun setEventTypeFilter(eventType: EventType?) {
@@ -165,6 +185,21 @@ class HistoryViewModel @Inject constructor(
         selectedEventType.value = null
         dateFrom.value = null
         dateThrough.value = null
+        refreshNodeIds(nodes.value.map(SensorNode::id))
+    }
+
+    private fun refreshNodeIds(nodeIds: List<String>) {
+        val measurableIds = nodeIds.distinct()
+            .filter { it.substringAfterLast('-').toIntOrNull() != null }
+        if (measurableIds.isEmpty()) return
+        viewModelScope.launch {
+            var failure: AlertFailure? = null
+            measurableIds.forEach { id ->
+                val result = historyRepository.refresh(id)
+                if (result is AlertResult.Failure) failure = result.failure
+            }
+            refreshFailure.value = failure
+        }
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)

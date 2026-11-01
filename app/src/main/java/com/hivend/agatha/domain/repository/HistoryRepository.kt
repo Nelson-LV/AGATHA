@@ -1,25 +1,20 @@
 package com.hivend.agatha.domain.repository
 
-import com.hivend.agatha.domain.model.HistoryEvent
-import java.time.Instant
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.Inspection
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 
-/** Flow-based access to locally available sensor-node history. */
+/** Lo que se sabe de un dispositivo: sus alertas (API) y los reportes hechos en este celular. */
+data class DeviceHistory(
+    val alerts: List<Alert> = emptyList(),
+    val inspections: List<Inspection> = emptyList(),
+)
+
+/** Puerto hacia el historial trazable de un dispositivo (HU-8.3, RNF-MOV-07). */
 interface HistoryRepository {
-    fun observeHistoryForNode(nodeId: String): Flow<List<HistoryEvent>>
+    fun observeHistory(deviceId: String): Flow<DeviceHistory>
 
-    fun getHistoryEvents(
-        nodeId: String,
-        from: Instant? = null,
-        through: Instant? = null,
-    ): Flow<List<HistoryEvent>> = observeHistoryForNode(nodeId).map { events ->
-        events.filter { event ->
-            (from == null || !event.timestamp.isBefore(from)) &&
-                (through == null || !event.timestamp.isAfter(through))
-        }
-    }
-
-    /** Compatibility alias for existing alert and history consumers. */
-    fun observeHistory(deviceId: String): Flow<List<HistoryEvent>> = observeHistoryForNode(deviceId)
+    /** Descarga las alertas del dispositivo ("MP-11556"); [observeHistory] se actualiza solo. */
+    suspend fun refresh(deviceId: String): AlertResult<Unit>
 }

@@ -67,6 +67,7 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.MaintenanceType
+import com.hivend.agatha.domain.model.ObservationKind
 import com.hivend.agatha.domain.model.TextLimits
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ClassificationChip
@@ -121,8 +122,8 @@ fun InspectionFormScreen(
 
             item {
                 FormCard {
-                    if (alert.observations.isNotBlank()) {
-                        PreviousObservation(alert.observations)
+                    alert.observations.lastOrNull { it.kind == ObservationKind.NOTE }?.let {
+                        PreviousObservation(it.text)
                     }
                     CountedTextField(
                         title = stringResource(R.string.inspection_observations_title),
@@ -197,7 +198,7 @@ private fun ReportHeader(alert: Alert) {
     FormCard {
         Text(stringResource(R.string.inspection_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
         Text(
-            stringResource(R.string.inspection_device_subtitle, alert.sensorId, alert.pk, alert.municipality),
+            stringResource(R.string.inspection_device_subtitle, alert.sensorId, alert.pk),
             color = AgathaTheme.colors.textSecondary,
             style = MaterialTheme.typography.bodySmall,
         )
@@ -238,11 +239,14 @@ private fun ClassificationSection(
         } else {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ClassificationChip(saved.classification)
-                Text(
-                    stringResource(R.string.common_dot_separated, formatDateTime(saved.classifiedAt), saved.origin.label()),
-                    color = AgathaTheme.colors.textSecondary,
-                    style = MaterialTheme.typography.bodySmall,
-                )
+                val whenAndWho = listOfNotNull(saved.classifiedAt?.let { formatDateTime(it) }, saved.origin?.label())
+                if (whenAndWho.isNotEmpty()) {
+                    Text(
+                        whenAndWho.reduce { first, second -> stringResource(R.string.common_dot_separated, first, second) },
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                    )
+                }
             }
             Text(
                 stringResource(R.string.inspection_classification_read_only),

@@ -7,6 +7,7 @@ import com.hivend.agatha.domain.model.TelemetryError
 import com.hivend.agatha.domain.model.TelemetryResult
 import com.hivend.agatha.domain.repository.TelemetryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Duration
 import java.time.Instant
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,6 +53,18 @@ class DeviceListViewModel @Inject constructor(
         load(refresh = true)
     }
 
+    /**
+     * Al volver a la pestaña la lista se pide de nuevo si tiene más de [STALE_AFTER]: la última
+     * conexión y la batería que muestra cada tarjeta salen de ella, mientras que las gráficas se
+     * piden cada vez. Sin esto la tarjeta se quedaba en la hora de la primera carga.
+     */
+    fun onResume() {
+        val state = _uiState.value
+        if (state.loading || state.refreshing) return
+        val updatedAt = state.updatedAt
+        if (updatedAt == null || Duration.between(updatedAt, Instant.now()) > STALE_AFTER) refresh()
+    }
+
     private fun load(refresh: Boolean) {
         viewModelScope.launch {
             val result = repository.devices(refresh)
@@ -70,5 +83,9 @@ class DeviceListViewModel @Inject constructor(
                 }
             }
         }
+    }
+
+    private companion object {
+        val STALE_AFTER: Duration = Duration.ofSeconds(60)
     }
 }
