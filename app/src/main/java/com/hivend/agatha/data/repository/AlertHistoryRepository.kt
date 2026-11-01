@@ -1,6 +1,7 @@
 package com.hivend.agatha.data.repository
 
 import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.repository.DeviceHistory
 import com.hivend.agatha.domain.repository.HistoryRepository
@@ -25,7 +26,8 @@ class AlertHistoryRepository @Inject constructor(
     ) { alerts, inspections -> DeviceHistory(alerts, inspections) }
 
     override suspend fun refresh(deviceId: String): AlertResult<Unit> {
-        val numericId = deviceId.substringAfterLast('-').toIntOrNull() ?: return AlertResult.Success(Unit)
+        val numericId = deviceId.substringAfterLast('-').toIntOrNull()
+            ?: return AlertResult.Failure(AlertFailure.Rejected("INVALID_DEVICE_ID", null))
         return alertRepository.refreshDevice(numericId)
     }
 }

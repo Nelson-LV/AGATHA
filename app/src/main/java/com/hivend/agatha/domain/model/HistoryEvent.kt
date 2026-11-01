@@ -14,6 +14,11 @@ enum class EventType {
     CLASSIFICATION,
 }
 
+enum class AlertHistoryPhase {
+    GENERATED,
+    ENDED,
+}
+
 /** A timestamped event in a sensor node's device history. */
 data class HistoryEvent(
     val id: String,
@@ -34,6 +39,7 @@ data class HistoryEvent(
     val alertId: String? = null,
     val alertLevel: AlertLevel? = null,
     val alertClassification: AlertClassification? = null,
+    val alertPhase: AlertHistoryPhase? = null,
 ) {
     /** Compatibility timestamp used by the alert detail's recent-history card. */
     val at: Instant get() = timestamp

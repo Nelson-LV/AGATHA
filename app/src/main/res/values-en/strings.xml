@@ -384,4 +384,11 @@
     <string name="history_evidence_title">Evidence attached</string>
     <string name="history_evidence_detail">Photos: %1$d</string>
     <string name="connectivity_connected_live">Online · Up to date</string>
+    <string name="history_site_guepsa">Güepsa – San José de Pare</string>
+    <string name="history_site_selector">Site</string>
+    <string name="history_site_unknown">Site not in catalog</string>
+    <string name="history_sensor_selector">History for</string>
+    <string name="history_no_sensor_selected">Select a sensor</string>
+    <string name="history_alert_timestamp">%1$s · ALERT</string>
+    <string name="history_empty_alerts">No alert history for this sensor.</string>
 </resources>
