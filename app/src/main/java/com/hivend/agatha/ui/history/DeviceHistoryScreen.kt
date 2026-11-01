@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.history
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -43,6 +45,7 @@ import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertHistoryPhase
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.ui.components.AgathaHeader
@@ -82,22 +85,40 @@ fun DeviceHistoryScreen(
             onSiteSelected = viewModel::selectSite,
             onSensorSelected = viewModel::selectSensor,
         )
+        HistoryEventFilterControls(
+            selectedEventType = state.selectedEventType,
+            dateFrom = state.dateFrom,
+            dateThrough = state.dateThrough,
+            hasAdditionalFilters = state.hasAdditionalFilters,
+            onSelectEventType = viewModel::setEventTypeFilter,
+            onDateRangeSelected = viewModel::setDateRange,
+            onClearFilters = viewModel::clearFilters,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
 
         when {
             state.isLoading && state.events.isEmpty() -> HistoryLoadingState(Modifier.weight(1f))
+            state.events.isEmpty() && state.hasAdditionalFilters -> HistoryEmptyState(
+                messageRes = R.string.history_no_filter_results,
+                modifier = Modifier.weight(1f),
+            )
             state.events.isEmpty() && state.failure != null -> HistoryFailureState(
                 failure = state.failure,
                 onRetry = viewModel::refresh,
                 modifier = Modifier.weight(1f),
             )
-            state.events.isEmpty() -> HistoryEmptyState(Modifier.weight(1f))
+            state.events.isEmpty() -> HistoryEmptyState(modifier = Modifier.weight(1f))
             else -> LazyColumn(
                 modifier = Modifier.weight(1f),
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(state.events, key = HistoryEvent::id) { event ->
-                    HistoryAlertEventRow(event)
+                    when (event.type) {
+                        EventType.ALERT -> HistoryAlertEventRow(event)
+                        EventType.INSPECTION -> HistoryInspectionEventRow(event)
+                        else -> Unit
+                    }
                 }
             }
         }
@@ -244,6 +265,56 @@ fun HistoryAlertEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
 }
 
 @Composable
+private fun HistoryInspectionEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
+    val inspectionColor = AgathaTheme.colors.stateInspection
+    Surface(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        color = AgathaTheme.colors.surface,
+        tonalElevation = 1.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier = Modifier.size(38.dp).background(inspectionColor.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.Build,
+                    contentDescription = null,
+                    tint = inspectionColor,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.history_inspection_timestamp, formatDateTime(event.timestamp)),
+                    color = inspectionColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = event.title.resolve(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.Medium,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+                Text(
+                    text = event.detail.resolve(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
 private fun HistoryLoadingState(modifier: Modifier = Modifier) {
     Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -259,13 +330,16 @@ private fun HistoryLoadingState(modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HistoryEmptyState(modifier: Modifier = Modifier) {
+private fun HistoryEmptyState(
+    @StringRes messageRes: Int = R.string.history_empty_alerts,
+    modifier: Modifier = Modifier,
+) {
     Box(
         modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp),
         contentAlignment = Alignment.Center,
     ) {
         Text(
-            text = stringResource(R.string.history_empty_alerts),
+            text = stringResource(messageRes),
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

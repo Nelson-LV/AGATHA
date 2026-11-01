@@ -8,12 +8,14 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.repository.DeviceHistory
 import com.hivend.agatha.domain.repository.HistoryRepository
 import com.hivend.agatha.domain.repository.SensorNodeRepository
 import java.time.Instant
+import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -157,6 +159,46 @@ class HistoryViewModelTest {
         assertEquals(com.hivend.agatha.domain.model.AlertFailure.NoConnection, viewModel.uiState.value.failure)
         collection.cancel()
     }
+
+    @Test
+    fun changingEventAndDateFiltersIsLocalAndClearKeepsTheSensorSelection() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = FakeHistoryRepository().apply {
+                setHistory("MP-11556", alert("ALR-000007", 11556))
+            }
+            val selectionStore = HistorySelectionStore()
+            val viewModel = HistoryViewModel(
+                savedStateHandle = SavedStateHandle(
+                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+                ),
+                historyRepository = repository,
+                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
+                connectivityMonitor = FakeConnectivityMonitor(connected = true),
+                selectionStore = selectionStore,
+            )
+            val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                viewModel.uiState.collect()
+            }
+            advanceUntilIdle()
+            val refreshCount = repository.refreshCalls.size
+
+            viewModel.setEventTypeFilter(EventType.INSPECTION)
+            viewModel.setDateRange(LocalDate.now(), LocalDate.now())
+            advanceUntilIdle()
+
+            assertEquals(refreshCount, repository.refreshCalls.size)
+            assertTrue(viewModel.uiState.value.events.isEmpty())
+            assertTrue(viewModel.uiState.value.hasAdditionalFilters)
+
+            viewModel.clearFilters()
+            advanceUntilIdle()
+
+            assertEquals("MP-11556", viewModel.uiState.value.selectedSensor?.id)
+            assertEquals(listOf("ALR-000007:started"), viewModel.uiState.value.events.map(HistoryEvent::id))
+            assertTrue(!viewModel.uiState.value.hasAdditionalFilters)
+            assertEquals(refreshCount, repository.refreshCalls.size)
+            collection.cancel()
+        }
 
     private fun alert(id: String, deviceId: Int) = Alert(
         id = id,

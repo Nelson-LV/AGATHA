@@ -9,6 +9,7 @@ import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.LevelChange
 import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.model.Origin
@@ -78,6 +79,28 @@ class HistoryEventsTest {
             generated.getValue("ALR-000010").statusLabel,
         )
         assertEquals(2, generated.size)
+    }
+
+    @Test
+    fun inspectionProducesAReviewEventAtItsRecordedTimestamp() {
+        val recordedAt = Instant.parse("2026-10-10T12:00:00Z")
+        val report = Inspection(
+            id = "report-1",
+            deviceId = "MP-11556",
+            alertId = null,
+            observations = "Revisar unión del tramo",
+            recordedAt = recordedAt,
+            origin = origin,
+        )
+
+        val event = DeviceHistory(inspections = listOf(report)).toEvents().single()
+
+        assertEquals("inspection:report-1", event.id)
+        assertEquals("MP-11556", event.nodeId)
+        assertEquals(recordedAt, event.timestamp)
+        assertEquals(EventType.INSPECTION, event.type)
+        assertEquals(LocalizedText.Resource(R.string.history_inspection_title), event.title)
+        assertEquals(LocalizedText.Plain("Revisar unión del tramo"), event.detail)
     }
 
     private fun alert(

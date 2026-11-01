@@ -6,8 +6,10 @@ import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertHistoryPhase
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.repository.DeviceHistory
+import com.hivend.agatha.ui.components.labelRes as alertTagLabelRes
 import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.shortLabelRes
 
@@ -18,8 +20,35 @@ private fun res(id: Int, vararg args: Any) = LocalizedText.Resource(id, args.toL
  * de inicio y, si terminó, una de fin; la clasificación viaja como dato del evento de inicio.
  */
 fun DeviceHistory.toEvents(): List<HistoryEvent> =
-    alerts.flatMap { it.toEvents() }
+    (alerts.flatMap { it.toEvents() } + inspections.map(Inspection::toHistoryEvent))
         .sortedByDescending(HistoryEvent::timestamp)
+
+private fun Inspection.toHistoryEvent(): HistoryEvent {
+    val detail = historyDetail()
+    return HistoryEvent(
+        id = "inspection:$id",
+        nodeId = deviceId,
+        timestamp = recordedAt,
+        type = EventType.INSPECTION,
+        description = observations.orEmpty(),
+        title = res(R.string.history_inspection_title),
+        detail = detail,
+    )
+}
+
+private fun Inspection.historyDetail(): LocalizedText {
+    observations?.trim()?.takeIf(String::isNotEmpty)?.let { return LocalizedText.Plain(it) }
+    tag?.let { value ->
+        val label = res(value.alertTagLabelRes())
+        return tagOtherDetail?.takeIf(String::isNotBlank)?.let { otherDetail ->
+            res(R.string.history_inspection_tag_other_detail, label, otherDetail)
+        } ?: res(R.string.history_inspection_tag_detail, label)
+    }
+    maintenance?.description?.trim()?.takeIf(String::isNotEmpty)?.let { return LocalizedText.Plain(it) }
+    maintenance?.let { return res(R.string.history_maintenance_detail_default) }
+    if (photos.isNotEmpty()) return res(R.string.history_evidence_detail, photos.size)
+    return res(R.string.history_inspection_detail_default)
+}
 
 private fun Alert.toEvents(): List<HistoryEvent> = buildList {
     val firstLevel = levelTimeline.firstOrNull()?.level ?: maxLevel

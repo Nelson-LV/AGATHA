@@ -418,4 +418,10 @@
     <string name="history_no_sensor_selected">Selecciona un sensor</string>
     <string name="history_alert_timestamp">%1$s · ALERTA</string>
     <string name="history_empty_alerts">No hay alertas históricas para este sensor.</string>
+    <string name="history_filter_alerts">Alertas</string>
+    <string name="history_filter_inspections">Revisiones</string>
+    <string name="history_inspection_timestamp">%1$s · REVISIÓN</string>
+    <string name="history_inspection_tag_detail">Etiqueta: %1$s</string>
+    <string name="history_inspection_tag_other_detail">Etiqueta: %1$s · %2$s</string>
+    <string name="history_no_filter_results">Sin eventos para los filtros seleccionados.</string>
 </resources>

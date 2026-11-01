@@ -391,4 +391,10 @@
     <string name="history_no_sensor_selected">Select a sensor</string>
     <string name="history_alert_timestamp">%1$s · ALERT</string>
     <string name="history_empty_alerts">No alert history for this sensor.</string>
+    <string name="history_filter_alerts">Alerts</string>
+    <string name="history_filter_inspections">Reviews</string>
+    <string name="history_inspection_timestamp">%1$s · REVIEW</string>
+    <string name="history_inspection_tag_detail">Tag: %1$s</string>
+    <string name="history_inspection_tag_other_detail">Tag: %1$s · %2$s</string>
+    <string name="history_no_filter_results">No events match the selected filters.</string>
 </resources>

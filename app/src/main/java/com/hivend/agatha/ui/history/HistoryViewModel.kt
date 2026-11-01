@@ -9,11 +9,13 @@ import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.repository.HistoryRepository
 import com.hivend.agatha.domain.repository.SensorNodeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -76,6 +78,12 @@ class HistoryViewModel @Inject constructor(
 
     private val sync = MutableStateFlow(SyncState())
     private val historyLoaded = MutableStateFlow(false)
+    private val selectedEventType = MutableStateFlow<EventType?>(null)
+    private val dateFrom = MutableStateFlow<LocalDate?>(null)
+    private val dateThrough = MutableStateFlow<LocalDate?>(null)
+    private val eventFilters = combine(selectedEventType, dateFrom, dateThrough) { type, from, through ->
+        HistoryEventFilters(type, from, through)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryEventFilters())
 
     private val selection = combine(nodes, selectionStore.selection) { allNodes, stored ->
         resolveSelection(stored, allNodes)
@@ -110,15 +118,25 @@ class HistoryViewModel @Inject constructor(
     val uiState: StateFlow<HistoryState> = combine(
         selection,
         historySnapshot,
+        eventFilters,
         sync,
         connectivity,
-    ) { selected, history, syncState, connected ->
+    ) { selected, history, filters, syncState, connected ->
         HistoryState(
-            events = history.events,
+            events = filterHistoryEvents(
+                events = history.events,
+                site = selected.site,
+                sensorId = selected.selectedSensor?.id,
+                filters = filters,
+            ),
             sites = HistorySiteCatalog.sites,
             selectedSite = selected.site,
             sensors = selected.sensors,
             selectedSensor = selected.selectedSensor,
+            selectedEventType = filters.eventType,
+            dateFrom = filters.dateFrom,
+            dateThrough = filters.dateThrough,
+            hasAdditionalFilters = filters.isActive,
             isLoading = !history.loaded || (syncState.refreshing && history.events.isEmpty()),
             isRefreshing = syncState.refreshing,
             isConnected = connected,
@@ -165,6 +183,34 @@ class HistoryViewModel @Inject constructor(
         val current = selection.value
         if (current.sensors.none { it.id == sensorId }) return
         saveSelection(current.site?.id, sensorId)
+    }
+
+    fun setEventTypeFilter(eventType: EventType?) {
+        selectedEventType.value = when (eventType) {
+            null, EventType.ALERT, EventType.INSPECTION -> eventType
+            else -> null
+        }
+    }
+
+    fun setDateRange(from: LocalDate?, through: LocalDate?) {
+        val today = LocalDate.now()
+        val earliestAllowed = today.minusDays(HISTORY_DATE_WINDOW_DAYS)
+        var start = from?.coerceIn(earliestAllowed, today)
+        var end = through?.coerceIn(earliestAllowed, today)
+        if (start != null && end != null && start.isAfter(end)) {
+            val earlier = end
+            end = start
+            start = earlier
+        }
+        dateFrom.value = start
+        dateThrough.value = end
+    }
+
+    /** Clears the added event/date filters while preserving the current site and sensor. */
+    fun clearFilters() {
+        selectedEventType.value = null
+        dateFrom.value = null
+        dateThrough.value = null
     }
 
     fun refresh() {
