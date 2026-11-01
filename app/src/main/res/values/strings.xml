@@ -403,9 +403,10 @@
     <string name="history_alert_ended">Fin de la alerta</string>
     <string name="history_alert_ended_detail">Nivel máximo: %1$s</string>
     <string name="history_classification_title">Clasificación del evento</string>
-    <string name="history_classification_detail" translatable="false">%1$s · %2$s</string>
     <string name="history_inspection_title">Inspección registrada</string>
     <string name="history_inspection_detail_default">Reporte sin observaciones</string>
+    <string name="history_inspection_tag_detail">Etiqueta: %1$s</string>
+    <string name="history_inspection_tag_other_detail">Etiqueta: %1$s · %2$s</string>
     <string name="history_maintenance_title">Mantenimiento realizado</string>
     <string name="history_maintenance_detail_default">Detalle en el reporte de inspección</string>
     <string name="history_evidence_title">Evidencia adjunta</string>
@@ -419,9 +420,11 @@
     <string name="history_alert_timestamp">%1$s · ALERTA</string>
     <string name="history_empty_alerts">No hay alertas históricas para este sensor.</string>
     <string name="history_filter_alerts">Alertas</string>
-    <string name="history_filter_inspections">Revisiones</string>
-    <string name="history_inspection_timestamp">%1$s · REVISIÓN</string>
-    <string name="history_inspection_tag_detail">Etiqueta: %1$s</string>
-    <string name="history_inspection_tag_other_detail">Etiqueta: %1$s · %2$s</string>
+    <string name="history_filter_observations">OBSERVACIONES</string>
+    <string name="history_event_timestamp">%1$s · %2$s</string>
+    <string name="history_observation_title">Observación de campo</string>
+    <string name="history_maintenance_completed">Completado</string>
+    <string name="history_classification_event_tag_detail">%1$s · %2$s</string>
+    <string name="history_classification_event_tag_other_detail">%1$s · %2$s · %3$s</string>
     <string name="history_no_filter_results">Sin eventos para los filtros seleccionados.</string>
 </resources>

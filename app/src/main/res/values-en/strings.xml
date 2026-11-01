@@ -379,6 +379,8 @@
     <string name="history_classification_title">Event classification</string>
     <string name="history_inspection_title">Inspection logged</string>
     <string name="history_inspection_detail_default">Report without notes</string>
+    <string name="history_inspection_tag_detail">Tag: %1$s</string>
+    <string name="history_inspection_tag_other_detail">Tag: %1$s · %2$s</string>
     <string name="history_maintenance_title">Maintenance performed</string>
     <string name="history_maintenance_detail_default">Details in the inspection report</string>
     <string name="history_evidence_title">Evidence attached</string>
@@ -392,9 +394,11 @@
     <string name="history_alert_timestamp">%1$s · ALERT</string>
     <string name="history_empty_alerts">No alert history for this sensor.</string>
     <string name="history_filter_alerts">Alerts</string>
-    <string name="history_filter_inspections">Reviews</string>
-    <string name="history_inspection_timestamp">%1$s · REVIEW</string>
-    <string name="history_inspection_tag_detail">Tag: %1$s</string>
-    <string name="history_inspection_tag_other_detail">Tag: %1$s · %2$s</string>
+    <string name="history_filter_observations">OBSERVATIONS</string>
+    <string name="history_event_timestamp">%1$s · %2$s</string>
+    <string name="history_observation_title">Field observation</string>
+    <string name="history_maintenance_completed">Completed</string>
+    <string name="history_classification_event_tag_detail">%1$s · %2$s</string>
+    <string name="history_classification_event_tag_other_detail">%1$s · %2$s · %3$s</string>
     <string name="history_no_filter_results">No events match the selected filters.</string>
 </resources>

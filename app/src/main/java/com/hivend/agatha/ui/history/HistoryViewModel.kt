@@ -102,7 +102,7 @@ class HistoryViewModel @Inject constructor(
             flowOf(emptyList())
         } else {
             historyRepository.observeHistory(sensorId)
-                .map { history -> history.toEvents().forSensor(sensorId) }
+                .map { history -> history.toHistoryEvents().forSensor(sensorId) }
         }
     }.onEach { historyLoaded.value = true }
         .catch { exception ->
@@ -186,10 +186,7 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun setEventTypeFilter(eventType: EventType?) {
-        selectedEventType.value = when (eventType) {
-            null, EventType.ALERT, EventType.INSPECTION -> eventType
-            else -> null
-        }
+        selectedEventType.value = eventType
     }
 
     fun setDateRange(from: LocalDate?, through: LocalDate?) {

@@ -28,6 +28,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.EventType
+import com.hivend.agatha.ui.components.labelRes
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -47,7 +48,7 @@ fun HistoryEventFilterControls(
     modifier: Modifier = Modifier,
 ) {
     var datePickerTarget by remember { mutableStateOf<DatePickerTarget?>(null) }
-    val locale = LocalConfiguration.current.locales[0] ?: Locale.getDefault()
+    val locale = LocalConfiguration.current.locales[0] ?: Locale.ROOT
 
     Column(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -67,11 +68,29 @@ fun HistoryEventFilterControls(
                 onClick = { onSelectEventType(EventType.ALERT) },
                 label = { Text(stringResource(R.string.history_filter_alerts)) },
             )
-            FilterChip(
-                selected = selectedEventType == EventType.INSPECTION,
-                onClick = { onSelectEventType(EventType.INSPECTION) },
-                label = { Text(stringResource(R.string.history_filter_inspections)) },
-            )
+            listOf(
+                EventType.INSPECTION,
+                EventType.EVIDENCE,
+                EventType.MAINTENANCE,
+                EventType.OBSERVATION,
+                EventType.CLASSIFICATION,
+            ).forEach { eventType ->
+                FilterChip(
+                    selected = selectedEventType == eventType,
+                    onClick = { onSelectEventType(eventType) },
+                    label = {
+                        Text(
+                            stringResource(
+                                if (eventType == EventType.OBSERVATION) {
+                                    R.string.history_filter_observations
+                                } else {
+                                    eventType.labelRes()
+                                },
+                            ),
+                        )
+                    },
+                )
+            }
         }
 
         Row(

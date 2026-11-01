@@ -75,6 +75,32 @@ class HistoryEventFilteringTest {
     }
 
     @Test
+    fun eachNewEventTypeCanBeSelectedIndividually() {
+        val eventTypes = listOf(
+            EventType.INSPECTION,
+            EventType.EVIDENCE,
+            EventType.MAINTENANCE,
+            EventType.OBSERVATION,
+            EventType.CLASSIFICATION,
+        )
+        val events = eventTypes.mapIndexed { index, type ->
+            event("event-$index", "MP-11556", type, "2026-10-10T12:00:00Z")
+        }
+
+        eventTypes.forEach { type ->
+            val filtered = filterHistoryEvents(
+                events = events,
+                site = HistorySiteCatalog.GUEPSA,
+                sensorId = "MP-11556",
+                filters = HistoryEventFilters(eventType = type),
+                zone = ZoneOffset.UTC,
+            )
+
+            assertEquals(listOf(type), filtered.map(HistoryEvent::type))
+        }
+    }
+
+    @Test
     fun unmatchedFiltersReturnAnEmptyList() {
         val events = listOf(event("alert", "MP-11556", EventType.ALERT, "2026-10-10T12:00:00Z"))
 

@@ -16,8 +16,12 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
@@ -35,6 +39,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -52,7 +58,10 @@ import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ClassificationChip
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ManagementStatusChip
+import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.formatTime
+import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.levelColor
 import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.theme.AgathaTheme
@@ -116,8 +125,11 @@ fun DeviceHistoryScreen(
                 items(state.events, key = HistoryEvent::id) { event ->
                     when (event.type) {
                         EventType.ALERT -> HistoryAlertEventRow(event)
-                        EventType.INSPECTION -> HistoryInspectionEventRow(event)
-                        else -> Unit
+                        EventType.INSPECTION,
+                        EventType.EVIDENCE,
+                        EventType.MAINTENANCE,
+                        EventType.OBSERVATION,
+                        EventType.CLASSIFICATION -> HistoryTypedEventRow(event)
                     }
                 }
             }
@@ -265,8 +277,8 @@ fun HistoryAlertEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HistoryInspectionEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
-    val inspectionColor = AgathaTheme.colors.stateInspection
+private fun HistoryTypedEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
+    val eventColor = event.type.color()
     Surface(
         modifier = modifier.fillMaxWidth(),
         shape = RoundedCornerShape(14.dp),
@@ -279,20 +291,24 @@ private fun HistoryInspectionEventRow(event: HistoryEvent, modifier: Modifier = 
             verticalAlignment = Alignment.Top,
         ) {
             Box(
-                modifier = Modifier.size(38.dp).background(inspectionColor.copy(alpha = 0.14f), CircleShape),
+                modifier = Modifier.size(38.dp).background(eventColor.copy(alpha = 0.14f), CircleShape),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
-                    imageVector = Icons.Filled.Build,
+                    imageVector = event.type.icon(),
                     contentDescription = null,
-                    tint = inspectionColor,
+                    tint = eventColor,
                     modifier = Modifier.size(20.dp),
                 )
             }
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.history_inspection_timestamp, formatDateTime(event.timestamp)),
-                    color = inspectionColor,
+                    text = stringResource(
+                        R.string.history_event_timestamp,
+                        formatTime(event.timestamp),
+                        stringResource(event.type.labelRes()),
+                    ),
+                    color = eventColor,
                     style = MaterialTheme.typography.labelLarge,
                     fontWeight = FontWeight.SemiBold,
                 )
@@ -300,18 +316,52 @@ private fun HistoryInspectionEventRow(event: HistoryEvent, modifier: Modifier = 
                     text = event.title.resolve(),
                     color = MaterialTheme.colorScheme.onSurface,
                     style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
+                    fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.padding(top = 3.dp),
                 )
                 Text(
-                    text = event.detail.resolve(),
+                    text = event.resolvedDetail(),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 2.dp),
                 )
+                event.statusLabel?.let { status ->
+                    StatusChip(
+                        text = status.resolve(),
+                        containerColor = AgathaTheme.colors.stateClosedContainer,
+                        contentColor = AgathaTheme.colors.stateClosed,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
             }
         }
     }
+}
+
+@Composable
+private fun HistoryEvent.resolvedDetail(): String {
+    val parts = detailParts?.takeIf { it.isNotEmpty() } ?: return detail.resolve()
+    return parts.map { it.resolve() }.reduceOrNull { first, next ->
+        stringResource(R.string.common_dot_separated, first, next)
+    }.orEmpty()
+}
+
+@Composable
+private fun EventType.color(): Color = when (this) {
+    EventType.ALERT -> AgathaTheme.colors.critical
+    EventType.INSPECTION, EventType.EVIDENCE -> AgathaTheme.colors.brand
+    EventType.CLASSIFICATION -> AgathaTheme.colors.warning
+    EventType.OBSERVATION -> AgathaTheme.colors.notice
+    EventType.MAINTENANCE -> AgathaTheme.colors.positive
+}
+
+private fun EventType.icon(): ImageVector = when (this) {
+    EventType.ALERT -> Icons.Filled.Warning
+    EventType.INSPECTION -> Icons.Filled.Build
+    EventType.CLASSIFICATION -> Icons.AutoMirrored.Filled.Label
+    EventType.EVIDENCE -> Icons.Filled.PhotoCamera
+    EventType.OBSERVATION -> Icons.Filled.EditNote
+    EventType.MAINTENANCE -> Icons.Filled.CheckCircle
 }
 
 @Composable

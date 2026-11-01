@@ -34,6 +34,8 @@ data class HistoryEvent(
     val time: String = timestamp.toString(),
     val title: LocalizedText = LocalizedText.Plain(description),
     val detail: LocalizedText = LocalizedText.Plain(description),
+    /** Optional localized fragments when a record has a variable number of detail values. */
+    val detailParts: List<LocalizedText>? = null,
     val statusLabel: LocalizedText? = null,
     /** Alert-specific fields keep classification distinct from its management workflow state. */
     val alertId: String? = null,
