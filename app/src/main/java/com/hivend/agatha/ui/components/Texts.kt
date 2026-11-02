@@ -7,6 +7,7 @@ import androidx.compose.ui.res.stringResource
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.model.Origin
+import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -21,7 +22,10 @@ import java.time.format.DateTimeFormatter
 @ReadOnlyComposable
 fun LocalizedText.resolve(): String = when (this) {
     is LocalizedText.Plain -> value
-    is LocalizedText.Resource -> stringResource(id, *args.toTypedArray())
+    // Los argumentos que son otro LocalizedText (el nombre de un nivel, de una etiqueta…) se resuelven antes.
+    is LocalizedText.Resource -> stringResource(id, *Array(args.size) { index ->
+        args[index].let { if (it is LocalizedText) it.resolve() else it }
+    })
 }
 
 /** "justo ahora", "hace 5 min", "hace 2 h". */
@@ -42,6 +46,25 @@ fun formatDateTime(instant: Instant): String {
     val pattern = stringResource(R.string.common_date_time_pattern)
     val locale = LocalConfiguration.current.locales[0]
     return DateTimeFormatter.ofPattern(pattern, locale).withZone(COLOMBIA).format(instant)
+}
+
+/** Solo la hora, "HH:mm", en hora de Colombia: para los nodos de la línea de tiempo. */
+@Composable
+fun formatTime(instant: Instant): String {
+    val pattern = stringResource(R.string.common_time_pattern)
+    val locale = LocalConfiguration.current.locales[0]
+    return DateTimeFormatter.ofPattern(pattern, locale).withZone(COLOMBIA).format(instant)
+}
+
+/** Duración acumulada como la web: "3h 30m" (las horas no se pasan a días). */
+@Composable
+@ReadOnlyComposable
+fun formatDuration(duration: Duration): String {
+    val totalMinutes = duration.toMinutes().coerceAtLeast(0)
+    val hours = (totalMinutes / 60).toInt()
+    val minutes = (totalMinutes % 60).toInt()
+    return if (hours == 0) stringResource(R.string.duration_minutes_short, minutes)
+    else stringResource(R.string.duration_hours_minutes, hours, minutes)
 }
 
 /** "Web" o "App móvil · CEL-01" (RN-10). */

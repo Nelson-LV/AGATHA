@@ -36,3 +36,6 @@ sealed class AgathaDestination(val route: String) {
 
 /** El historial por defecto que abre el tab inferior "Historial" antes de elegir un nodo. */
 const val DEFAULT_HISTORY_DEVICE_ID = "MP-11556"
+
+/** Route marker used by the Historial tab; its ViewModel restores the last sensor selection. */
+const val HISTORY_LAST_SELECTED_DEVICE_ID = "_last"

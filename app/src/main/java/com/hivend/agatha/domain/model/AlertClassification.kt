@@ -52,8 +52,9 @@ enum class AlertTag(val classification: AlertClassification) {
 data class TagRecord(
     val tag: AlertTag,
     val otherDetail: String?,
-    val taggedAt: Instant,
-    val origin: Origin,
+    /** null cuando la lista de alertas no trae la fecha-hora; el detalle de la alerta sí. */
+    val taggedAt: Instant?,
+    val origin: Origin?,
 ) {
     init {
         if (tag.requiresDetail) {
@@ -72,8 +73,9 @@ data class TagRecord(
  */
 data class ClassificationRecord(
     val classification: AlertClassification,
-    val classifiedAt: Instant,
-    val origin: Origin,
+    /** null cuando la lista de alertas no trae la fecha-hora; el detalle de la alerta sí. */
+    val classifiedAt: Instant?,
+    val origin: Origin?,
     val tag: TagRecord? = null,
 ) {
     init {

@@ -20,10 +20,9 @@ class InspectionTest {
     )
 
     private val alert = Alert(
-        id = "ALR-0001", pointNumber = 1, sensorId = "MP-1", pk = "PK1", site = "S", municipality = "M",
-        event = AlertEvent.LEAK, description = LocalizedText.Plain(""), level = AlertLevel.RED,
+        id = "ALR-0001", deviceId = 1, pk = "PK1",
+        event = AlertEvent.LEAK, level = AlertLevel.RED, maxLevel = AlertLevel.RED,
         levelTimeline = listOf(LevelChange(AlertLevel.RED, now)), startedAt = now,
-        telemetry = AlertTelemetry(90, AccelerationLevel.LOW, 80, isRealData = true),
     )
 
     @Test(expected = IllegalArgumentException::class)

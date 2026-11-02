@@ -16,7 +16,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
-import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
+import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import androidx.compose.ui.res.stringResource
 
 private fun BottomTab.icon(): ImageVector = when (this) {
@@ -52,8 +52,8 @@ fun AgathaBottomNavBar(
     }
 }
 
-/** Ruta concreta a la que navega cada pestaña (Historial abre el dispositivo por defecto). */
+/** Ruta concreta a la que navega cada pestaña (Historial restaura su última selección). */
 fun BottomTab.rootRoute(): String = when (this) {
-    BottomTab.History -> BottomTab.History.buildRoute(DEFAULT_HISTORY_DEVICE_ID)
+    BottomTab.History -> BottomTab.History.buildRoute(HISTORY_LAST_SELECTED_DEVICE_ID)
     else -> route
 }

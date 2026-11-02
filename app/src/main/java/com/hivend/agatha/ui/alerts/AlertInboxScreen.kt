@@ -21,9 +21,13 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,14 +39,20 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import java.time.Duration
+import java.time.Instant
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.NotificationPermissionNotice
-import com.hivend.agatha.ui.components.SitePill
+import com.hivend.agatha.ui.components.relativeTimeAgo
+import com.hivend.agatha.ui.components.resolve
+import com.hivend.agatha.ui.components.toUiMessage
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.LevelChip
@@ -64,13 +74,32 @@ fun AlertInboxScreen(
     modifier: Modifier = Modifier,
     viewModel: AlertInboxViewModel = hiltViewModel(),
 ) {
-    val alerts by viewModel.alerts.collectAsStateWithLifecycle()
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val alerts = state.alerts
+    val failure = state.failure
+    val lastSyncedAt = state.lastSyncedAt
+
+    // Se descarga al abrir la pantalla y cada vez que se vuelve a ella (p. ej. desde un detalle).
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader {
-            StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
+            if (failure == null) {
+                StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
+            }
         }
-        ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+        ConnectivityBar(
+            connected = failure == null,
+            message = when {
+                failure != null -> stringResource(R.string.connectivity_offline_local_data)
+                lastSyncedAt == null -> stringResource(R.string.connectivity_syncing)
+                else -> stringResource(
+                    R.string.connectivity_connected_synced,
+                    relativeTimeAgo(Duration.between(lastSyncedAt, Instant.now()).toMinutes().toInt()),
+                )
+            },
+        )
+        if (state.refreshing) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AgathaTheme.colors.brand)
 
         LazyColumn(
             contentPadding = PaddingValues(16.dp),
@@ -78,8 +107,6 @@ fun AlertInboxScreen(
             modifier = Modifier.weight(1f),
         ) {
             item { NotificationPermissionNotice() }
-
-            item { SitePill(site = alerts.firstOrNull()?.site ?: stringResource(R.string.common_empty_value)) }
 
             item {
                 Column(
@@ -94,13 +121,30 @@ fun AlertInboxScreen(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = AgathaTheme.colors.textPrimary)
-                        StatusChip(
-                            text = alerts.count { it.isOngoing }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
-                            containerColor = AgathaTheme.colors.surfaceVariant,
-                            contentColor = AgathaTheme.colors.textSecondary,
-                        )
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            StatusChip(
+                                text = alerts.count { it.isOngoing }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
+                                containerColor = AgathaTheme.colors.surfaceVariant,
+                                contentColor = AgathaTheme.colors.textSecondary,
+                            )
+                            IconButton(onClick = viewModel::refresh, enabled = !state.refreshing) {
+                                Icon(
+                                    Icons.Filled.Refresh,
+                                    contentDescription = stringResource(R.string.alert_list_refresh),
+                                    tint = AgathaTheme.colors.textSecondary,
+                                )
+                            }
+                        }
                     }
-                    if (alerts.isEmpty()) {
+                    if (alerts.isEmpty() && failure != null) {
+                        Text(
+                            failure.toUiMessage().resolve(),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = AgathaTheme.colors.textSecondary,
+                            modifier = Modifier.padding(top = 12.dp),
+                        )
+                        TextButton(onClick = viewModel::refresh) { Text(stringResource(R.string.common_retry)) }
+                    } else if (alerts.isEmpty() && lastSyncedAt != null) {
                         Text(
                             stringResource(R.string.inbox_empty),
                             style = MaterialTheme.typography.bodyMedium,
@@ -155,7 +199,7 @@ private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
                     Text(alert.id, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textSecondary)
                 }
                 Text(
-                    stringResource(R.string.alert_list_location, alert.sensorId, alert.pk, alert.municipality),
+                    stringResource(R.string.alert_list_location, alert.sensorId, alert.pk),
                     style = MaterialTheme.typography.bodyMedium,
                     color = AgathaTheme.colors.textSecondary,
                 )
