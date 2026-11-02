@@ -187,7 +187,7 @@ private fun NodeDetailsSheet(
     onStartInspection: () -> Unit,
 ) {
     val configuration = LocalConfiguration.current
-    val locale = configuration.locales[0] ?: Locale.getDefault()
+    val locale = configuration.locales[0]
     val deviceInstalled = node.batteryLevel != null || node.lastReportTimestamp != null
     val normalizedPk = node.pk.trim().replace(Regex("^PK\\s*", RegexOption.IGNORE_CASE), "")
     val displayPk = if (normalizedPk.isEmpty()) {

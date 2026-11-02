@@ -57,8 +57,10 @@ internal fun OsmdroidMapView(
 ) {
     val context = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
-    remember(context) { configureOsmdroid(context) }
-    val mapView = remember(context) { createMapView(context) }
+    val mapView = remember(context) {
+        configureOsmdroid(context)
+        createMapView(context)
+    }
     val geoRoute by produceState(initialValue = emptyList<GeoPoint>(), route) {
         value = withContext(Dispatchers.IO) {
             route.map { point -> GeoPoint(point.latitude, point.longitude) }
