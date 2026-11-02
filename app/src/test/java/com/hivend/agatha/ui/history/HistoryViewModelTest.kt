@@ -1,7 +1,7 @@
 package com.hivend.agatha.ui.history
 
 import androidx.lifecycle.SavedStateHandle
-import com.hivend.agatha.core.connectivity.ConnectivityMonitor
+import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import com.hivend.agatha.domain.model.Alert
@@ -241,7 +241,7 @@ class HistoryViewModelTest {
     private class FakeConnectivityMonitor(connected: Boolean) : ConnectivityMonitor {
         private val values = MutableStateFlow(connected)
 
-        override fun observeConnected(): Flow<Boolean> = values.asStateFlow()
+        override val isOnline: Flow<Boolean> = values.asStateFlow()
     }
 }
 

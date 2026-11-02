@@ -1,29 +1,22 @@
 package com.hivend.agatha.ui.map
 
 import android.content.Context
-import android.net.ConnectivityManager
-import android.net.Network
-import android.net.NetworkCapabilities
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
+import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.repository.SensorNodeRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.channels.awaitClose
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -61,6 +54,7 @@ private data class ReferencePoint(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     sensorNodeRepository: SensorNodeRepository,
+    connectivityMonitor: ConnectivityMonitor,
     @param:ApplicationContext private val applicationContext: Context,
 ) : ViewModel() {
 
@@ -77,8 +71,7 @@ class MapViewModel @Inject constructor(
             emit(emptyList())
         }
 
-    private val connected = observeConnectivity()
-        .distinctUntilChanged()
+    private val connected = connectivityMonitor.isOnline
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val mapContent = combine(
@@ -151,31 +144,6 @@ class MapViewModel @Inject constructor(
             }
             routeData.value = loadedData
         }
-    }
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    private fun observeConnectivity(): Flow<Boolean> = callbackFlow {
-        val connectivityManager = applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE)
-            as ConnectivityManager
-
-        fun publishConnectivity() {
-            val network: Network? = connectivityManager.activeNetwork
-            val capabilities = network?.let(connectivityManager::getNetworkCapabilities)
-            val hasInternet = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
-            val isValidated = capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_VALIDATED) == true
-            trySend(hasInternet && isValidated)
-        }
-
-        val callback = object : ConnectivityManager.NetworkCallback() {
-            override fun onAvailable(network: Network) = publishConnectivity()
-            override fun onLost(network: Network) = publishConnectivity()
-            override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) =
-                publishConnectivity()
-        }
-
-        publishConnectivity()
-        connectivityManager.registerDefaultNetworkCallback(callback)
-        awaitClose { connectivityManager.unregisterNetworkCallback(callback) }
     }
 
     private fun attachCoordinates(nodes: List<SensorNode>, route: RouteData): List<SensorNode> =

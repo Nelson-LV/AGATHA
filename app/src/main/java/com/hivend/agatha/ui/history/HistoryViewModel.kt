@@ -3,7 +3,7 @@ package com.hivend.agatha.ui.history
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.hivend.agatha.core.connectivity.ConnectivityMonitor
+import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
@@ -72,7 +72,7 @@ class HistoryViewModel @Inject constructor(
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    private val connectivity = connectivityMonitor.observeConnected()
+    private val connectivity = connectivityMonitor.isOnline
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
