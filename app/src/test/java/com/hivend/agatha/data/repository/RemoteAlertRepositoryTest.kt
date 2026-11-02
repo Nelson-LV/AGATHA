@@ -1,5 +1,8 @@
 package com.hivend.agatha.data.repository
 
+import com.hivend.agatha.data.local.alert.AlertActionEntity
+import com.hivend.agatha.data.local.alert.AlertOutbox
+import com.hivend.agatha.data.remote.ApiResult
 import com.hivend.agatha.data.remote.alerts.AlertDto
 import com.hivend.agatha.data.remote.alerts.AlertPageDto
 import com.hivend.agatha.data.remote.alerts.AlertPendingDto
@@ -16,9 +19,14 @@ import com.hivend.agatha.domain.model.ClassifyOutcome
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
+import com.hivend.agatha.domain.model.SyncRecordType
 import java.io.IOException
 import java.time.Instant
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -84,6 +92,30 @@ class RemoteAlertRepositoryTest {
         }
     }
 
+    /** La cola de Room en memoria; [drain] hace lo que el SyncWorker hace al tener red. */
+    private class FakeOutbox : AlertOutbox {
+        private val entries = MutableStateFlow<List<Pair<AlertActionEntity, Boolean>>>(emptyList())
+
+        val all: List<AlertActionEntity> get() = entries.value.map { it.first }
+
+        override fun observeUnsynced(): Flow<List<AlertActionEntity>> =
+            entries.map { list -> list.filterNot { it.second }.map { it.first } }
+
+        override suspend fun get(id: String): AlertActionEntity? = all.find { it.id == id }
+
+        override suspend fun enqueue(actions: List<AlertActionEntity>) {
+            entries.update { it + actions.map { action -> action to false } }
+        }
+
+        suspend fun drain(repo: RemoteAlertRepository) {
+            entries.value.filterNot { it.second }.forEach { (action, _) ->
+                if (repo.sendQueued(action.id) is ApiResult.Success) {
+                    entries.update { list -> list.map { if (it.first.id == action.id) it.first to true else it } }
+                }
+            }
+        }
+    }
+
     private val json = Json { ignoreUnknownKeys = true; explicitNulls = false }
     private val phone = Origin.MobileApp("CEL-TEST01")
     private val at = Instant.parse("2026-10-20T15:00:00Z")
@@ -101,7 +133,9 @@ class RemoteAlertRepositoryTest {
         classification = classification,
     )
 
-    private fun repository(api: FakeApi) = RemoteAlertRepository(api, json)
+    private val outbox = FakeOutbox()
+
+    private fun repository(api: FakeApi) = RemoteAlertRepository(api, json, outbox)
 
     @Test
     fun `the list merges unclassified and recent alerts without duplicates, newest first`() = runBlocking {
@@ -178,11 +212,13 @@ class RemoteAlertRepositoryTest {
         assertEquals(AlertResult.Success(ClassifyOutcome.QueuedOffline), result)
         assertTrue(repo.observeClassificationPendingSync("ALR-000001").first())
         assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, repo.observeAlert("ALR-000001").first()!!.managementStatus)
+        // Queda en la cola de Room, que es lo que muestra la pantalla de Sincronización.
+        assertEquals(SyncRecordType.CLASSIFICATION, outbox.all.single().type)
 
         api.offline = false
         api.details["ALR-000001"] = dto(1, classification = "CONFIRMADA")
         api.recent[0] = dto(1, classification = "CONFIRMADA")
-        repo.refreshAlerts()
+        outbox.drain(repo)
 
         assertFalse(repo.observeClassificationPendingSync("ALR-000001").first())
         // Sin red no llegó nada al servidor; al volver la conexión se envía una sola vez.
@@ -201,10 +237,13 @@ class RemoteAlertRepositoryTest {
         api.classifyResponse = { Response.error(503, body()) }
 
         repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at, phone)
+        // Tocar de nuevo "Clasificar" no manda otra: la que está en la cola es la que sale.
+        val again = repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at.plusSeconds(60), phone)
         api.classifyResponse = { Response.success(200, body("""{"outcome":"ALREADY_RECEIVED"}""")) }
-        val retry = repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at.plusSeconds(60), phone)
+        outbox.drain(repo)
 
-        assertEquals(AlertResult.Success(ClassifyOutcome.Saved), retry)
+        assertEquals(AlertResult.Success(ClassifyOutcome.QueuedOffline), again)
+        assertFalse(repo.observeClassificationPendingSync("ALR-000001").first())
         assertEquals(2, api.classifyCalls.size)
         assertEquals(api.classifyCalls[0].clientRecordId, api.classifyCalls[1].clientRecordId)
     }
@@ -260,6 +299,8 @@ class RemoteAlertRepositoryTest {
         repo.refreshAlerts()
 
         repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, "Erosión en el talud"))
+        assertEquals(setOf("report-1"), repo.observePendingInspectionIds().first())
+        outbox.drain(repo)
 
         assertEquals("MOVIMIENTO_TIERRA", api.labelCalls.single().label)
         assertEquals("report-1", api.labelCalls.single().clientRecordId)
@@ -276,17 +317,39 @@ class RemoteAlertRepositoryTest {
         repo.refreshAlerts()
         api.labelResponse = { Response.error(409, body("""{"code":"CONFLICT","message":"La alerta aún no está clasificada"}""")) }
 
-        repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, "Nota"))
+        repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, null))
+        outbox.drain(repo)
 
+        // El rechazo no se descarta: sigue en la cola para mostrarlo en Error y reintentarlo.
         assertEquals(setOf("report-1"), repo.observePendingInspectionIds().first())
-        assertTrue(api.observationCalls.isEmpty())
 
         api.labelResponse = { Response.success(201, body()) }
-        repo.refreshAlerts()
+        outbox.drain(repo)
 
         assertTrue(repo.observePendingInspectionIds().first().isEmpty())
         assertEquals(2, api.labelCalls.size)
-        assertEquals(1, api.observationCalls.size)
+    }
+
+    @Test
+    fun `an offline report keeps its tag and observation queued and shows the tag right away`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA")
+        val repo = repository(api)
+        repo.refreshAlerts()
+        api.offline = true
+
+        repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, "Erosión en el talud"))
+        outbox.drain(repo)
+
+        assertEquals(listOf(SyncRecordType.INSPECTION_REPORT, SyncRecordType.OBSERVATION), outbox.all.map { it.type })
+        assertEquals(ManagementStatus.CLASSIFIED_WITH_TAG, repo.observeAlert("ALR-000001").first()!!.managementStatus)
+        assertTrue(api.observationCalls.isEmpty())
+
+        api.offline = false
+        outbox.drain(repo)
+
+        assertEquals("Erosión en el talud", api.observationCalls.single().text)
+        assertTrue(repo.observePendingInspectionIds().first().isEmpty())
     }
 
     @Test

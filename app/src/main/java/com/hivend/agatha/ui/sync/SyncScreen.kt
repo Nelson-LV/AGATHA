@@ -207,7 +207,9 @@ private fun PendingRecordRow(record: PendingRecord, onRetry: (String) -> Unit) {
             .padding(horizontal = 12.dp, vertical = 10.dp),
     ) {
         Column(modifier = Modifier.weight(1f)) {
-            Text(stringResource(record.type.labelRes()), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
+            val type = stringResource(record.type.labelRes())
+            val title = record.alertId?.let { stringResource(R.string.common_dot_separated, type, it) } ?: type
+            Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
             Text(detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
         }
         StatusChip(

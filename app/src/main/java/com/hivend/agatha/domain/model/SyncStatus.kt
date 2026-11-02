@@ -27,6 +27,8 @@ data class PendingRecord(
     val state: SyncState,
     val createdAt: Instant,
     val attempts: Int,
+    /** Alerta a la que pertenece el registro ("ALR-000007"), si es de una. */
+    val alertId: String? = null,
     /** Motivo del último fallo; null si todavía no ha fallado. */
     val error: SyncError?,
 )

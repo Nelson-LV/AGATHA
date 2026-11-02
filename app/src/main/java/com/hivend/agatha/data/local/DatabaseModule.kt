@@ -2,6 +2,7 @@ package com.hivend.agatha.data.local
 
 import android.content.Context
 import androidx.room.Room
+import com.hivend.agatha.data.local.alert.AlertActionDao
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import dagger.Module
 import dagger.Provides
@@ -19,6 +20,9 @@ object DatabaseModule {
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AgathaDatabase =
         Room.databaseBuilder(context, AgathaDatabase::class.java, AgathaDatabase.NAME).build()
+
+    @Provides
+    fun provideAlertActionDao(database: AgathaDatabase): AlertActionDao = database.alertActionDao()
 
     @Provides
     fun provideSyncQueueDao(database: AgathaDatabase): SyncQueueDao = database.syncQueueDao()

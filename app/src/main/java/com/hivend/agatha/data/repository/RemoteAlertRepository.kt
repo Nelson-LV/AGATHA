@@ -1,5 +1,10 @@
 package com.hivend.agatha.data.repository
 
+import com.hivend.agatha.data.local.alert.AlertActionEntity
+import com.hivend.agatha.data.local.alert.AlertOutbox
+import com.hivend.agatha.data.remote.ApiError
+import com.hivend.agatha.data.remote.ApiErrorBody
+import com.hivend.agatha.data.remote.ApiResult
 import com.hivend.agatha.data.remote.alerts.ActionBodyDto
 import com.hivend.agatha.data.remote.alerts.AlertDto
 import com.hivend.agatha.data.remote.alerts.AlertsApi
@@ -16,6 +21,8 @@ import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.ClassifyOutcome
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.Origin
+import com.hivend.agatha.domain.model.SyncRecordType
+import com.hivend.agatha.domain.model.TagRecord
 import com.hivend.agatha.domain.repository.AlertRepository
 import java.io.IOException
 import java.time.Instant
@@ -27,11 +34,10 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
@@ -40,70 +46,54 @@ import retrofit2.Response
 
 /**
  * Alertas leídas y enviadas a la API de gestión de alertas (la de la web). Mantiene una caché
- * en memoria que las pantallas observan; la lista, el detalle y el historial de dispositivo la
- * van llenando. Es @Singleton para que todas las pantallas vean el mismo estado.
+ * en memoria con lo que respondió el servidor; la lista, el detalle y el historial de dispositivo
+ * la van llenando. Es @Singleton para que todas las pantallas vean el mismo estado.
  *
- * Offline: cada envío lleva un `client_record_id` (el id del reporte, o uno por clasificación) y,
- * si falla por red, queda en una cola **en memoria** que se reenvía con el mismo id en la
- * siguiente actualización, así que reintentar no duplica. La cola no sobrevive a que Android
- * cierre el proceso: la persistencia (Room, WorkManager) es del sprint de sincronización (HE-07).
+ * Offline (HU-7.2, RN-17): lo que no llega al servidor se guarda en la cola de salida de Room
+ * ([AlertOutbox]) con su `client_record_id`, se ve en la pantalla de Sincronización y lo envía
+ * WorkManager al recuperar la red, aunque la app se haya cerrado. Mientras tanto las pantallas
+ * lo ven aplicado sobre la caché. La clasificación se intenta enviar de inmediato porque el
+ * detalle necesita saber si la web ya la había clasificado; la etiqueta y la observación de un
+ * reporte de inspección van siempre por la cola.
  */
 @Singleton
 class RemoteAlertRepository @Inject constructor(
     private val api: AlertsApi,
     private val json: Json,
+    private val outbox: AlertOutbox,
 ) : AlertRepository {
-
-    private class PendingClassification(
-        val classification: AlertClassification,
-        val at: Instant,
-        val origin: Origin,
-        val clientRecordId: String,
-    )
-
-    private class PendingInspection(
-        val inspection: Inspection,
-        val tagDone: Boolean,
-        val observationDone: Boolean,
-    )
 
     private val alerts = MutableStateFlow<List<Alert>>(emptyList())
     private val inspections = MutableStateFlow<List<Inspection>>(emptyList())
-    private val pendingClassifications = MutableStateFlow<Map<String, PendingClassification>>(emptyMap())
-    private val pendingInspections = MutableStateFlow<Map<String, PendingInspection>>(emptyMap())
+    private val unsynced = outbox.observeUnsynced()
 
     /** Ids que trajo la última lista, para retirar de la caché las que ya no aplican. */
     private var lastListIds: Set<String> = emptySet()
 
-    /** Evita que dos envíos pendientes se crucen y que una observación se envíe dos veces. */
-    private val sendLock = Mutex()
-
-    override fun observeAlerts(): StateFlow<List<Alert>> = alerts
+    override fun observeAlerts(): Flow<List<Alert>> =
+        combine(alerts, unsynced) { list, pending -> list.map { overlayPending(it, pending) } }
 
     override fun observeAlert(alertId: String): Flow<Alert?> =
-        alerts.map { list -> list.find { it.id == alertId } }
+        observeAlerts().map { list -> list.find { it.id == alertId } }
 
     // ---- Lectura -------------------------------------------------------------------------
 
-    override suspend fun refreshAlerts(): AlertResult<Unit> {
-        flushPending()
-        return fetch {
-            val (pending, recent) = coroutineScope {
-                val pending = async { api.pending().items }
-                val recent = async { api.alerts(page = 1).items }
-                pending.await() to recent.await()
-            }
-            val rows = (pending + recent).distinctBy { it.id }.mapNotNull { it.toDomain() }
-            val ids = rows.map { it.id }.toSet()
-            alerts.update { current -> current.filterNot { it.id in lastListIds && it.id !in ids } }
-            lastListIds = ids
-            upsertRows(rows)
+    override suspend fun refreshAlerts(): AlertResult<Unit> = fetch {
+        val (pending, recent) = coroutineScope {
+            val pending = async { api.pending().items }
+            val recent = async { api.alerts(page = 1).items }
+            pending.await() to recent.await()
         }
+        val rows = (pending + recent).distinctBy { it.id }.mapNotNull { it.toDomain() }
+        val ids = rows.map { it.id }.toSet()
+        alerts.update { current -> current.filterNot { it.id in lastListIds && it.id !in ids } }
+        lastListIds = ids
+        upsertRows(rows)
     }
 
     override suspend fun loadAlert(alertId: String): AlertResult<Unit> = fetch {
         val alert = api.alert(alertId).toDomain() ?: throw SerializationException("Unsupported alert $alertId")
-        alerts.update { current -> replace(current, overlayPending(alert)) }
+        alerts.update { current -> replace(current, alert) }
     }
 
     override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> = fetch {
@@ -121,7 +111,7 @@ class RemoteAlertRepository @Inject constructor(
     /** Las filas de la lista no traen el detalle: se conserva el que ya se tenía de cada alerta. */
     private fun upsertRows(rows: List<Alert>) = alerts.update { current ->
         val byId = current.associateBy { it.id }
-        rows.fold(current) { acc, row -> replace(acc, overlayPending(mergeRow(byId[row.id], row))) }
+        rows.fold(current) { acc, row -> replace(acc, mergeRow(byId[row.id], row)) }
     }
 
     private fun mergeRow(old: Alert?, row: Alert): Alert {
@@ -152,14 +142,22 @@ class RemoteAlertRepository @Inject constructor(
         (list.filterNot { it.id == alert.id } + alert).sortedByDescending { it.startedAt }
 
     /** Lo que este celular guardó y aún no llegó al servidor se sigue viendo sobre lo descargado. */
-    private fun overlayPending(alert: Alert): Alert {
+    private fun overlayPending(alert: Alert, pending: List<AlertActionEntity>): Alert {
         var result = alert
-        pendingClassifications.value[alert.id]?.let { p ->
-            if (result.classification == null) result = result.classify(p.classification, p.at, p.origin)
+        for (action in pending) {
+            if (action.alertId != alert.id) continue
+            val origin = Origin.MobileApp(action.deviceIdentifier)
+            val classification = action.classification
+            val tag = action.tag
+            result = when {
+                action.type == SyncRecordType.CLASSIFICATION && classification != null && result.classification == null ->
+                    result.classify(classification, action.recordedAt, origin)
+                action.type == SyncRecordType.INSPECTION_REPORT && tag != null ->
+                    runCatching { result.addTag(TagRecord(tag, action.tagOtherDetail, action.recordedAt, origin)) }
+                        .getOrDefault(result)
+                else -> result
+            }
         }
-        pendingInspections.value.values
-            .filter { it.inspection.alertId == alert.id && !it.tagDone }
-            .forEach { p -> result = runCatching { result.applyInspection(p.inspection) }.getOrDefault(result) }
         return result
     }
 
@@ -184,29 +182,24 @@ class RemoteAlertRepository @Inject constructor(
         at: Instant,
         origin: Origin,
     ): AlertResult<ClassifyOutcome> {
-        // Un reintento de la misma clasificación reutiliza su client_record_id.
-        val pending = pendingClassifications.value[alertId]?.takeIf { it.classification == classification }
-            ?: PendingClassification(classification, at, origin, UUID.randomUUID().toString())
-        return sendLock.withLock { sendClassification(alertId, pending) }
-    }
-
-    private suspend fun sendClassification(alertId: String, pending: PendingClassification): AlertResult<ClassifyOutcome> {
-        val body = ClassificationRequestDto(
-            classification = pending.classification.toApi(),
-            observation = null,
-            origin = ORIGIN_MOBILE_APP,
-            deviceIdentifier = pending.origin.deviceIdOrNull().orEmpty(),
-            clientRecordId = pending.clientRecordId,
-            recordedAt = pending.at.toString(),
+        // Ya hay una en la cola: la envía la sincronización, con su mismo client_record_id.
+        if (unsynced.first().any { it.alertId == alertId && it.type == SyncRecordType.CLASSIFICATION }) {
+            return AlertResult.Success(ClassifyOutcome.QueuedOffline)
+        }
+        val action = AlertActionEntity(
+            id = UUID.randomUUID().toString(),
+            alertId = alertId,
+            type = SyncRecordType.CLASSIFICATION,
+            classification = classification,
+            deviceIdentifier = origin.deviceIdOrNull().orEmpty(),
+            recordedAt = at,
         )
-        return when (val posted = post { api.classify(alertId, body) }) {
+        return when (val posted = postAction(action)) {
             is Posted.Ok -> {
-                pendingClassifications.update { it - alertId }
                 loadAlert(alertId)
                 AlertResult.Success(ClassifyOutcome.Saved)
             }
             is Posted.SavedAsConflict -> {
-                pendingClassifications.update { it - alertId }
                 val loaded = loadAlert(alertId)
                 val existing = posted.body.existing?.toDomain()
                     ?: alerts.value.find { it.id == alertId }?.classification
@@ -214,87 +207,54 @@ class RemoteAlertRepository @Inject constructor(
                 else AlertResult.Success(ClassifyOutcome.SavedAsConflict(existing))
             }
             Posted.Transient -> {
-                queueClassification(alertId, pending)
+                // Sin red: la clasificación se muestra ya en el celular y la envía la cola.
+                outbox.enqueue(listOf(action))
                 AlertResult.Success(ClassifyOutcome.QueuedOffline)
             }
-            else -> {
-                pendingClassifications.update { it - alertId }
-                AlertResult.Failure(posted.toFailure())
-            }
+            else -> AlertResult.Failure(posted.toFailure())
         }
     }
 
-    /** Sin red: la clasificación se muestra ya en el celular y se reenviará con el mismo id. */
-    private fun queueClassification(alertId: String, pending: PendingClassification) {
-        pendingClassifications.update { it + (alertId to pending) }
-        alerts.update { list -> list.map { if (it.id == alertId) overlayPending(it) else it } }
-    }
-
     override fun observeClassificationPendingSync(alertId: String): Flow<Boolean> =
-        pendingClassifications.map { alertId in it }
+        unsynced.map { list -> list.any { it.alertId == alertId && it.type == SyncRecordType.CLASSIFICATION } }
 
     // ---- Reportes de inspección ----------------------------------------------------------
 
     override suspend fun registerInspection(inspection: Inspection) {
         inspections.update { it + inspection }
         val alertId = inspection.alertId ?: return
-        val pending = PendingInspection(
-            inspection = inspection,
-            tagDone = inspection.tag == null,
-            observationDone = inspection.observations.isNullOrBlank(),
-        )
-        if (pending.tagDone && pending.observationDone) return
-        pendingInspections.update { it + (inspection.id to pending) }
-        alerts.update { list -> list.map { if (it.id == alertId) overlayPending(it) else it } }
-        sendLock.withLock { sendInspection(inspection.id) }
-    }
-
-    /** Envía lo que falta de un reporte: primero la etiqueta, luego la observación. */
-    private suspend fun sendInspection(inspectionId: String) {
-        var pending = pendingInspections.value[inspectionId] ?: return
-        val inspection = pending.inspection
-        val alertId = inspection.alertId ?: return
-        val deviceId = inspection.origin.deviceIdOrNull()
-
-        if (!pending.tagDone) {
-            val tag = checkNotNull(inspection.tag)
-            val body = LabelRequestDto(
-                label = tag.toApi(),
-                otherText = inspection.tagOtherDetail.takeIf { tag.requiresDetail },
-                observation = null,
-                origin = ORIGIN_MOBILE_APP,
-                deviceIdentifier = deviceId.orEmpty(),
-                clientRecordId = inspection.id,
-                recordedAt = inspection.recordedAt.toString(),
-            )
-            when (val posted = post { api.label(alertId, body) }) {
-                is Posted.Ok, is Posted.SavedAsConflict -> pending = PendingInspection(inspection, true, pending.observationDone)
-                Posted.Transient -> return
-                // 409 CONFLICT: la clasificación de este celular todavía no llegó; se reintenta después.
-                is Posted.Rejected -> if (posted.httpCode == HTTP_CONFLICT) return else pending = PendingInspection(inspection, true, pending.observationDone)
-                Posted.NotFound -> pending = PendingInspection(inspection, true, pending.observationDone)
+        val deviceId = inspection.origin.deviceIdOrNull().orEmpty()
+        val actions = buildList {
+            inspection.tag?.let { tag ->
+                // El id del reporte es el client_record_id de la etiqueta.
+                add(
+                    AlertActionEntity(
+                        id = inspection.id,
+                        alertId = alertId,
+                        type = SyncRecordType.INSPECTION_REPORT,
+                        inspectionId = inspection.id,
+                        tag = tag,
+                        tagOtherDetail = inspection.tagOtherDetail.takeIf { tag.requiresDetail },
+                        deviceIdentifier = deviceId,
+                        recordedAt = inspection.recordedAt,
+                    ),
+                )
             }
-            pendingInspections.update { it + (inspectionId to pending) }
-        }
-        if (!pending.observationDone) {
-            val text = checkNotNull(inspection.observations)
-            when (val posted = post { api.observe(alertId, ObservationRequestDto(text, ORIGIN_MOBILE_APP, deviceId)) }) {
-                is Posted.Ok, is Posted.SavedAsConflict, is Posted.Rejected, Posted.NotFound ->
-                    pending = PendingInspection(inspection, pending.tagDone, true)
-                Posted.Transient -> {
-                    pendingInspections.update { it + (inspectionId to pending) }
-                    return
-                }
+            inspection.observations?.takeIf { it.isNotBlank() }?.let { text ->
+                add(
+                    AlertActionEntity(
+                        id = UUID.randomUUID().toString(),
+                        alertId = alertId,
+                        type = SyncRecordType.OBSERVATION,
+                        inspectionId = inspection.id,
+                        text = text,
+                        deviceIdentifier = deviceId,
+                        recordedAt = inspection.recordedAt,
+                    ),
+                )
             }
         }
-        pendingInspections.update { it - inspectionId }
-        loadAlert(alertId)
-    }
-
-    /** Reenvía lo pendiente: primero las clasificaciones, que las etiquetas necesitan. */
-    private suspend fun flushPending() = sendLock.withLock {
-        pendingClassifications.value.forEach { (alertId, pending) -> sendClassification(alertId, pending) }
-        pendingInspections.value.keys.forEach { sendInspection(it) }
+        outbox.enqueue(actions)
     }
 
     override fun observeInspections(alertId: String): Flow<List<Inspection>> =
@@ -304,7 +264,69 @@ class RemoteAlertRepository @Inject constructor(
         inspections.map { list -> list.filter { it.deviceId == deviceId }.sortedByDescending { it.recordedAt } }
 
     override fun observePendingInspectionIds(): Flow<Set<String>> =
-        pendingInspections.map { it.keys }
+        unsynced.map { list -> list.mapNotNull { it.inspectionId }.toSet() }
+
+    // ---- Cola de salida ------------------------------------------------------------------
+
+    /**
+     * Envía un registro de la cola (lo llaman los emisores de `data/sync`). Un 409 de conflicto
+     * (RN-18) cuenta como recibido: el servidor lo guardó como observación de conflicto. Si llega,
+     * vuelve a pedir el detalle de la alerta para mostrar lo que quedó en el servidor.
+     */
+    suspend fun sendQueued(recordId: String): ApiResult<Unit> {
+        val action = outbox.get(recordId) ?: return ApiResult.Success(Unit)
+        return when (val posted = postAction(action)) {
+            is Posted.Ok, is Posted.SavedAsConflict -> {
+                loadAlert(action.alertId)
+                ApiResult.Success(Unit)
+            }
+            Posted.Transient -> ApiResult.Failure(ApiError.NoConnection)
+            Posted.NotFound -> ApiResult.Failure(ApiError.Http(HTTP_NOT_FOUND, null))
+            is Posted.Rejected -> ApiResult.Failure(
+                ApiError.Http(
+                    posted.httpCode,
+                    posted.body?.let { body -> body.code?.let { ApiErrorBody(it, body.message.orEmpty()) } },
+                ),
+            )
+        }
+    }
+
+    private suspend fun postAction(action: AlertActionEntity): Posted = when (action.type) {
+        SyncRecordType.CLASSIFICATION -> post {
+            api.classify(
+                action.alertId,
+                ClassificationRequestDto(
+                    classification = checkNotNull(action.classification).toApi(),
+                    observation = null,
+                    origin = ORIGIN_MOBILE_APP,
+                    deviceIdentifier = action.deviceIdentifier,
+                    clientRecordId = action.id,
+                    recordedAt = action.recordedAt.toString(),
+                ),
+            )
+        }
+        SyncRecordType.INSPECTION_REPORT -> post {
+            api.label(
+                action.alertId,
+                LabelRequestDto(
+                    label = checkNotNull(action.tag).toApi(),
+                    otherText = action.tagOtherDetail,
+                    observation = null,
+                    origin = ORIGIN_MOBILE_APP,
+                    deviceIdentifier = action.deviceIdentifier,
+                    clientRecordId = action.id,
+                    recordedAt = action.recordedAt.toString(),
+                ),
+            )
+        }
+        SyncRecordType.OBSERVATION -> post {
+            api.observe(
+                action.alertId,
+                ObservationRequestDto(checkNotNull(action.text), ORIGIN_MOBILE_APP, action.deviceIdentifier.ifEmpty { null }),
+            )
+        }
+        SyncRecordType.PHOTO, SyncRecordType.PUSH_TOKEN -> error("${action.type} is not an alert action")
+    }
 
     // ---- HTTP ----------------------------------------------------------------------------
 
