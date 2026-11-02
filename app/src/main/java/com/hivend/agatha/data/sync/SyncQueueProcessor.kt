@@ -6,6 +6,9 @@ import com.hivend.agatha.data.remote.ApiResult
 import com.hivend.agatha.data.remote.isRetryable
 import com.hivend.agatha.domain.model.SyncState
 import javax.inject.Inject
+import javax.inject.Singleton
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 /** Resultado de una pasada por la cola: cuántos registros llegaron y si hay que volver a intentar. */
 data class SyncRun(val sent: Int, val retryLater: Boolean)
@@ -20,14 +23,21 @@ data class SyncRun(val sent: Int, val retryLater: Boolean)
  * - un rechazo del servidor (otro 4xx, respuesta inválida) la deja en Error de una vez. Un 409 es
  *   el conflicto RN-18, que tendrá su propio manejo (HU-7.4);
  * - una entrada en Error solo vuelve a salir con el reintento manual (HU-7.3).
+ *
+ * Es @Singleton y procesa una pasada a la vez: WorkManager puede correr el envío inmediato y el
+ * periódico al mismo tiempo, y una observación (que la API no deduplica) llegaba dos veces.
  */
+@Singleton
 class SyncQueueProcessor @Inject constructor(
     private val queue: SyncQueueDao,
     senders: Set<@JvmSuppressWildcards SyncRecordSender>,
 ) {
     private val senders = senders.associateBy { it.type }
+    private val running = Mutex()
 
-    suspend fun process(): SyncRun {
+    suspend fun process(): SyncRun = running.withLock { processOnce() }
+
+    private suspend fun processOnce(): SyncRun {
         var sent = 0
         var retryLater = false
         val pending = queue.unsynced()

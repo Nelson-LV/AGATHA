@@ -8,9 +8,12 @@ import com.hivend.agatha.data.remote.ApiResult
 import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.domain.model.SyncState
 import java.time.Instant
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.yield
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -185,5 +188,25 @@ class SyncQueueProcessorTest {
         assertEquals(SyncState.SYNCED, entry.state)
         assertEquals(null, entry.lastError)
         assertEquals(5, sender.sent.size)
+    }
+
+    @Test
+    fun `two passes at the same time send each record once`() = runBlocking {
+        enqueue("obs", SyncRecordType.OBSERVATION, 0)
+        val sender = object : SyncRecordSender {
+            override val type = SyncRecordType.OBSERVATION
+            val sent = mutableListOf<String>()
+            override suspend fun send(recordId: String): ApiResult<Unit> {
+                sent += recordId
+                yield() // deja correr la otra pasada mientras "espera" al servidor
+                return ok
+            }
+        }
+        val processor = processor(sender)
+
+        listOf(async { processor.process() }, async { processor.process() }).awaitAll()
+
+        assertEquals(listOf("rec-obs"), sender.sent)
+        assertEquals(SyncState.SYNCED, state("obs"))
     }
 }
