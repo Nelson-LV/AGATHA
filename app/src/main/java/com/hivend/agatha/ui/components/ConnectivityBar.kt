@@ -11,6 +11,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,6 +21,13 @@ import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
+
+/**
+ * true si el celular tiene internet ahora. Lo publica MainActivity desde el
+ * [com.hivend.agatha.domain.repository.ConnectivityMonitor] para que cualquier pantalla lo lea
+ * sin pasar por su ViewModel; en las previews vale true.
+ */
+val LocalOnline = compositionLocalOf { true }
 
 /**
  * Franja de conectividad presente en todas las pantallas raíz (HE-07): comunica en todo
@@ -65,7 +73,7 @@ private fun Dot(color: Color) {
 private fun ConnectivityBarPreview() {
     AgathaTheme {
         Column {
-            ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_connected_recent))
+            ConnectivityBar(connected = true, message = stringResource(R.string.connectivity_online))
             ConnectivityBar(connected = false, message = pluralStringResource(R.plurals.connectivity_offline_pending, 3, 3))
         }
     }

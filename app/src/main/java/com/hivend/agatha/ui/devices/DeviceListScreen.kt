@@ -46,6 +46,7 @@ import com.hivend.agatha.domain.model.TelemetryDevice
 import com.hivend.agatha.domain.model.TelemetryError
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SensorSections
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
@@ -71,7 +72,8 @@ fun DeviceListScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
 
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.onResume() }
-    val offline = state.error == TelemetryError.NO_CONNECTION
+    // Sin red del celular o la API no respondió por falta de conexión.
+    val offline = !LocalOnline.current || state.error == TelemetryError.NO_CONNECTION
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         AgathaHeader()

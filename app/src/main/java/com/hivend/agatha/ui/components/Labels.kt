@@ -14,6 +14,8 @@ import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.Notice
 import com.hivend.agatha.domain.model.SensorSection
+import com.hivend.agatha.domain.model.SyncRecordType
+import com.hivend.agatha.domain.model.SyncState
 import com.hivend.agatha.domain.model.TelemetryError
 
 /*
@@ -64,6 +66,25 @@ fun ManagementStatus.labelRes(): Int = when (this) {
     ManagementStatus.UNCLASSIFIED -> R.string.management_status_unclassified
     ManagementStatus.CLASSIFIED_WITHOUT_TAG -> R.string.management_status_classified_without_tag
     ManagementStatus.CLASSIFIED_WITH_TAG -> R.string.management_status_classified_with_tag
+}
+
+/** Estado de sincronización de un registro (RN-17). */
+@StringRes
+fun SyncState.labelRes(): Int = when (this) {
+    SyncState.PENDING -> R.string.sync_state_pending
+    SyncState.SYNCING -> R.string.sync_state_syncing
+    SyncState.SYNCED -> R.string.sync_state_synced
+    SyncState.ERROR -> R.string.sync_state_error
+}
+
+/** Tipo de registro que espera en la cola de sincronización (HU-7.2). */
+@StringRes
+fun SyncRecordType.labelRes(): Int = when (this) {
+    SyncRecordType.CLASSIFICATION -> R.string.sync_record_type_classification
+    SyncRecordType.INSPECTION_REPORT -> R.string.sync_record_type_inspection_report
+    SyncRecordType.OBSERVATION -> R.string.sync_record_type_observation
+    SyncRecordType.PHOTO -> R.string.sync_record_type_photo
+    SyncRecordType.PUSH_TOKEN -> R.string.sync_record_type_push_token
 }
 
 /** Etiquetas RN-07. Las dos variantes "Otro" comparten texto; su detalle lo escribe una persona. */

@@ -68,6 +68,7 @@ import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.ClassificationChip
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.LevelChip
@@ -135,11 +136,12 @@ fun AlertDetailScreen(
     Box(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
     Column(modifier = Modifier.fillMaxSize()) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
+        val online = LocalOnline.current
         ConnectivityBar(
-            connected = uiState.loadFailure == null,
+            connected = online && uiState.loadFailure == null,
             message = stringResource(
                 when {
-                    uiState.loadFailure != null -> R.string.connectivity_offline_local_data
+                    !online || uiState.loadFailure != null -> R.string.connectivity_offline_local_data
                     uiState.loading -> R.string.connectivity_syncing
                     else -> R.string.connectivity_connected_live
                 },

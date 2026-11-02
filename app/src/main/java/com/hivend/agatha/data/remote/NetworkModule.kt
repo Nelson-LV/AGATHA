@@ -18,10 +18,15 @@ import retrofit2.converter.kotlinx.serialization.asConverterFactory
 import retrofit2.create
 
 /**
- * Cliente HTTP hacia el backend de AGATHA: la API de tablero (gráficas de HU-4.2 y de "Ver
- * sensores") y la de gestión de alertas (lista, detalle, clasificación, etiqueta y
- * observaciones). Base: [BuildConfig.AGATHA_API_BASE_URL] (HTTPS). El cliente Retrofit
- * base del equipo puede reemplazar este módulo; [DashboardApi] no depende de cómo se arme.
+ * Cliente HTTP compartido hacia el backend de AGATHA. Base: [BuildConfig.AGATHA_API_BASE_URL]
+ * (solo HTTPS: Android bloquea el tráfico en claro desde la API 28 y la app no lo habilita).
+ *
+ * Cada API vive en su subpaquete (`data/remote/dashboard`, `data/remote/alerts`…) con su
+ * interfaz Retrofit, sus DTOs y sus mappers, y se registra aquí con un `@Provides`: hoy la API
+ * de tablero ([DashboardApi], gráficas de HU-4.2 y de "Ver sensores") y la de gestión de
+ * alertas ([AlertsApi]: lista, detalle, clasificación, etiqueta y observaciones). Los
+ * repositorios llaman a la API dentro de [apiCall] para recibir un [ApiResult] en lugar de
+ * excepciones.
  */
 @Module
 @InstallIn(SingletonComponent::class)

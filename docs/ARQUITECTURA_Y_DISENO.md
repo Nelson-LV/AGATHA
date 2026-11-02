@@ -48,9 +48,11 @@ app/src/main/java/com/hivend/agatha/
 │
 ├── data/                       # Implementaciones concretas de los puertos de dominio
 │   ├── repository/             # Hoy: InMemory*Repository con datos de muestra (§7)
-│   ├── local/                  # Futuro: Room (AppDatabase, entidades, DAOs) — ver README interno
-│   ├── remote/                 # Futuro: Retrofit (AgathaApiService, DTOs)
-│   └── sync/                   # Futuro: WorkManager (SyncWorker)
+│   ├── local/                  # Room: AgathaDatabase, Converters, DatabaseModule
+│   │   └── sync/               #   un subpaquete por feature (entidades + DAO); hoy la cola de salida
+│   ├── remote/                 # Retrofit: NetworkModule (cliente compartido)
+│   │   └── dashboard/          #   un subpaquete por API (interfaz Retrofit + DTOs + mappers)
+│   └── sync/                   # WorkManager: SyncWorker, SyncScheduler, SyncQueueProcessor
 │
 └── ui/                         # Presentación: un paquete por pantalla + uno compartido
     ├── theme/                  # Color.kt, Type.kt, Shape.kt, Theme.kt — Material 3
@@ -75,6 +77,32 @@ Cada paquete de `ui/<pantalla>/` sigue el mismo patrón de 2 archivos:
 `<Pantalla>Screen.kt` (composable, sin lógica de negocio) + `<Pantalla>ViewModel.kt`
 (estado + llamadas a repositorios). Un paquete nuevo (por ejemplo, para una futura pantalla
 de login) debe replicar esta misma forma.
+
+**Persistencia y red por feature (desde el 29/10/2026).** Cada feature guarda sus entidades y
+su DAO en `data/local/<feature>/` y los registra en `AgathaDatabase` (entidad en `entities`,
+`version` + migración, getter del DAO) y en `DatabaseModule` (`@Provides` del DAO). El
+esquema de cada versión se exporta a `app/schemas/` y se commitea. Un registro creado en el
+celular se guarda en su tabla con un UUID generado en el celular y se encola en `sync_queue`
+(`SyncQueueDao.enqueue`, una vez por registro). Del lado remoto, cada API tiene su subpaquete
+`data/remote/<api>/` (interfaz Retrofit, DTOs, mappers) sobre el `Retrofit` compartido de
+`NetworkModule`.
+
+**Envío de la cola (desde el 29/10/2026).** `SyncWorker` (WorkManager, inyectado por Hilt) solo
+corre con red: `SyncScheduler.schedule()` lo pide al abrir la app y cada 15 minutos, y
+`syncNow()` se llama después de encolar un registro. El worker delega en `SyncQueueProcessor`,
+que envía en orden de registro respetando `dependsOn`, reintenta 3 veces los fallos
+reintentables y deja en Error los rechazos. Para que un tipo de registro salga, su feature
+implementa `SyncRecordSender` (llama a su API con `apiCall`) y lo registra con
+`@Binds @IntoSet`; mientras no exista su emisor, sus entradas esperan Pendientes.
+
+**Pantalla de sincronización con datos reales (desde el 29/10/2026).** `SyncScreen` lee la
+cola real a través de `RoomSyncRepository`, que reemplazó a `InMemorySyncRepository`. Cada
+registro muestra su tipo, la fecha en que se registró, su estado RN-17 y, si falló, el motivo.
+"Reintentar" (en un registro en Error) y "Reintentar todo" lo devuelven a Pendiente con sus
+reintentos automáticos de nuevo, y piden el envío de inmediato (`SyncScheduler.retryNow()`).
+Sin red, la pantalla avisa "Sin conexión. Se sincronizará automáticamente al recuperarla."
+(HU-7.3). La última sincronización correcta la guarda `LastSyncStore`. El conflicto RN-18 de
+esa pantalla vuelve con HU-7.4.
 
 ---
 
@@ -157,7 +185,12 @@ de login) debe replicar esta misma forma.
 - Cualquier pantalla que escriba datos de campo (inspección, evidencia) debe poder
   guardar sin conexión y mostrarlo de inmediato en la UI local — nunca esperar una
   respuesta de red para dar feedback. `InMemoryAlertRepository` ya modela esto: escribe
-  primero en el estado local, la sincronización es un paso aparte (`data/sync`, futuro).
+  primero en el estado local, la sincronización es un paso aparte (`data/sync`).
+- El estado de la red es real (desde el 29/10/2026): `ConnectivityMonitor`
+  (`data/connectivity/AndroidConnectivityMonitor`, internet *validado*, así un wifi sin salida
+  cuenta como sin conexión) lo publica `MainActivity` como `LocalOnline`. Una pantalla lo lee
+  con `LocalOnline.current` para su `ConnectivityBar`, sin pasar por su ViewModel. Nunca se
+  escribe `connected = true` fijo.
 
 **Seguridad**
 - Ninguna clave (Maps API key, credenciales de Firebase) se escribe en el repositorio: se
@@ -385,6 +418,14 @@ guardan en el celular. El nodo de la app se relaciona con el dispositivo de la A
 código en su nombre ("Sensor MP-11556 PK34-470"); un nodo sin dispositivo muestra "todavía no
 tiene datos en la plataforma". Los huecos de datos no se rellenan y el umbral del indicador no
 se dibuja hasta que el endpoint lo traiga.
+
+**Cliente compartido para las APIs nuevas (29/10/2026).** Todas usan el `Retrofit` de
+`data/remote/NetworkModule`: cada API va en su subpaquete `data/remote/<api>/` (interfaz,
+DTOs, mappers) con su `@Provides` en ese módulo. Los repositorios envuelven cada llamada en
+`apiCall(json) { … }` (`data/remote/ApiResult.kt`), que devuelve `ApiResult.Success` o
+`ApiResult.Failure(ApiError)`: `NoConnection`, `Http(code, body)` con el `{code, message}` del
+backend, o `InvalidResponse`. `isRetryable` (sin conexión, 408, 429, 5xx) dice si la cola de
+sincronización debe reintentar (RN-17) e `isConflict` (409) señala el conflicto RN-18.
 
 Los datos de ejemplo **también se traducen**: sus textos son claves `sample_*` en
 `values/` y `values-en/strings.xml`, envueltas en `LocalizedText.Resource`, y lo

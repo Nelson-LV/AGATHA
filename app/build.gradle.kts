@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
     // Reads app/google-services.json (not committed), which must list both
     // com.hivend.agatha and com.hivend.agatha.debug.
     alias(libs.plugins.google.services)
@@ -89,6 +90,11 @@ kotlin {
     jvmToolchain(17)
 }
 
+// Room exports each schema version as JSON (committed) so migrations can be written and tested.
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
 dependencies {
     // Compose BOM aligns every androidx.compose.* artifact to one tested version set.
     implementation(platform(libs.compose.bom))
@@ -115,14 +121,19 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // Persistence for the offline-first flow (HE-07). Wired incrementally: see
-    // data/local/README describing the entities planned for Sprint 3.
+    // Persistence for the offline-first flow (HE-07): AgathaDatabase in data/local, one
+    // subpackage per feature (see docs/ARQUITECTURA_Y_DISENO.md § 1).
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // Networking against the AGATHA central API (HE-04, HE-07). Wired incrementally: see
-    // data/remote/README.
+    // Background sync of the outbound queue (HE-07): WorkManager with Hilt-injected workers.
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Networking against the AGATHA central API (HE-04, HE-07): NetworkModule in data/remote,
+    // one subpackage per API (see docs/ARQUITECTURA_Y_DISENO.md § 1).
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.kotlinx.serialization.converter)
     implementation(libs.okhttp.core)
@@ -153,9 +164,11 @@ dependencies {
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
 
     //Map osmdroid
     implementation(libs.osmdroid.android)

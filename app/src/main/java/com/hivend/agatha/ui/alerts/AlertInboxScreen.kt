@@ -48,6 +48,7 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.NotificationPermissionNotice
 import com.hivend.agatha.ui.components.relativeTimeAgo
@@ -83,15 +84,18 @@ fun AlertInboxScreen(
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refresh() }
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+        val online = LocalOnline.current
         AgathaHeader {
-            if (failure == null) {
+            if (!online) {
+                StatusChip(text = stringResource(R.string.inbox_offline_chip), containerColor = AgathaTheme.colors.offlineContainer, contentColor = AgathaTheme.colors.offline)
+            } else if (failure == null) {
                 StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
             }
         }
         ConnectivityBar(
-            connected = failure == null,
+            connected = online && failure == null,
             message = when {
-                failure != null -> stringResource(R.string.connectivity_offline_local_data)
+                !online || failure != null -> stringResource(R.string.connectivity_offline_local_data)
                 lastSyncedAt == null -> stringResource(R.string.connectivity_syncing)
                 else -> stringResource(
                     R.string.connectivity_connected_synced,
