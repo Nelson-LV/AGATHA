@@ -3,6 +3,7 @@ package com.hivend.agatha.data.local.alert
 import androidx.room.withTransaction
 import com.hivend.agatha.data.local.AgathaDatabase
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
+import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.data.sync.SyncScheduler
 import java.time.Instant
@@ -10,13 +11,20 @@ import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 
 /**
- * Envíos de alertas guardados en el celular hasta que llegan a la API (HU-7.2, RN-17). Separa a
- * [com.hivend.agatha.data.repository.RemoteAlertRepository] de Room y WorkManager para probarlo
- * en la JVM.
+ * Lo que el celular guarda de las alertas (HU-7.2, RN-17): los envíos hasta que llegan a la API
+ * y los reportes de inspección completos, con el mantenimiento y las fotos que la API todavía no
+ * recibe. Separa a [com.hivend.agatha.data.repository.RemoteAlertRepository] de Room y
+ * WorkManager para probarlo en la JVM.
  */
 interface AlertOutbox {
+    /** Reportes de inspección guardados en el celular, el más reciente primero. */
+    fun observeReports(): Flow<List<Inspection>>
+
+    suspend fun saveReport(report: Inspection)
+
     fun observeUnsynced(): Flow<List<AlertActionEntity>>
 
     suspend fun get(id: String): AlertActionEntity?
@@ -36,6 +44,18 @@ class RoomAlertOutbox @Inject constructor(
 
     private val actions get() = database.alertActionDao()
     private val queue get() = database.syncQueueDao()
+    private val reports get() = database.inspectionReportDao()
+
+    override fun observeReports(): Flow<List<Inspection>> =
+        combine(reports.observeReports(), reports.observePhotos()) { rows, photos ->
+            val photosByReport = photos.groupBy { it.reportId }
+            rows.map { it.toDomain(photosByReport[it.id].orEmpty()) }
+        }
+
+    override suspend fun saveReport(report: Inspection) = database.withTransaction {
+        reports.insertReport(report.toEntity())
+        reports.insertPhotos(report.photoEntities())
+    }
 
     override fun observeUnsynced(): Flow<List<AlertActionEntity>> = actions.observeUnsynced()
 

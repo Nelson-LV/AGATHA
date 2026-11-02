@@ -17,6 +17,8 @@ import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ClassifyOutcome
 import com.hivend.agatha.domain.model.Inspection
+import com.hivend.agatha.domain.model.MaintenanceRecord
+import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SyncRecordType
@@ -97,6 +99,11 @@ class RemoteAlertRepositoryTest {
         private val entries = MutableStateFlow<List<Pair<AlertActionEntity, Boolean>>>(emptyList())
 
         val all: List<AlertActionEntity> get() = entries.value.map { it.first }
+        private val reports = MutableStateFlow<List<Inspection>>(emptyList())
+
+        override fun observeReports(): Flow<List<Inspection>> = reports.map { list -> list.sortedByDescending { it.recordedAt } }
+
+        override suspend fun saveReport(report: Inspection) = reports.update { it + report }
 
         override fun observeUnsynced(): Flow<List<AlertActionEntity>> =
             entries.map { list -> list.filterNot { it.second }.map { it.first } }
@@ -350,6 +357,23 @@ class RemoteAlertRepositoryTest {
 
         assertEquals("Erosión en el talud", api.observationCalls.single().text)
         assertTrue(repo.observePendingInspectionIds().first().isEmpty())
+    }
+
+    @Test
+    fun `maintenance stays on the phone because the API has no endpoint for it`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA")
+        val repo = repository(api)
+        repo.refreshAlerts()
+
+        repo.registerInspection(
+            report(null, null).copy(maintenance = MaintenanceRecord(setOf(MaintenanceType.CLEANING), description = "Limpieza")),
+        )
+        outbox.drain(repo)
+
+        assertTrue(outbox.all.isEmpty())
+        assertTrue(api.labelCalls.isEmpty() && api.observationCalls.isEmpty())
+        assertEquals("Limpieza", repo.observeInspections("ALR-000001").first().single().maintenance!!.description)
     }
 
     @Test

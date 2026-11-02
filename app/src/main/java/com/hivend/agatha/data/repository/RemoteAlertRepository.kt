@@ -64,7 +64,7 @@ class RemoteAlertRepository @Inject constructor(
 ) : AlertRepository {
 
     private val alerts = MutableStateFlow<List<Alert>>(emptyList())
-    private val inspections = MutableStateFlow<List<Inspection>>(emptyList())
+    private val inspections = outbox.observeReports()
     private val unsynced = outbox.observeUnsynced()
 
     /** Ids que trajo la última lista, para retirar de la caché las que ya no aplican. */
@@ -221,7 +221,7 @@ class RemoteAlertRepository @Inject constructor(
     // ---- Reportes de inspección ----------------------------------------------------------
 
     override suspend fun registerInspection(inspection: Inspection) {
-        inspections.update { it + inspection }
+        outbox.saveReport(inspection)
         val alertId = inspection.alertId ?: return
         val deviceId = inspection.origin.deviceIdOrNull().orEmpty()
         val actions = buildList {
