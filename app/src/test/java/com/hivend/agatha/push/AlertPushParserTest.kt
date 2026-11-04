@@ -10,6 +10,7 @@ import org.junit.Test
 class AlertPushParserTest {
 
     private val fullPayload = mapOf(
+        "messageId" to "msg-1",
         "alertId" to "ALR-0012",
         "level" to "RED",
         "kind" to "LEVEL_UP",
@@ -33,6 +34,7 @@ class AlertPushParserTest {
                 pk = "12+300",
                 event = AlertEvent.LEAK,
                 startedAt = Instant.parse("2026-10-18T19:30:00Z"),
+                messageId = "msg-1",
             ),
             push,
         )

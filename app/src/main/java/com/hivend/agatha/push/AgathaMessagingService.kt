@@ -8,7 +8,7 @@ import javax.inject.Inject
 /**
  * Recibe los mensajes de Firebase Cloud Messaging (HU-4.1). El backend manda mensajes de
  * solo datos, así que este servicio corre también con la app en segundo plano o cerrada y
- * decide si avisar ([AlertPushParser]) y con qué texto ([AlertNotifier]).
+ * decide si avisar ([AlertPushParser], [PushMessageDeduplicator]) y con qué texto ([AlertNotifier]).
  */
 @AndroidEntryPoint
 class AgathaMessagingService : FirebaseMessagingService() {
@@ -17,9 +17,13 @@ class AgathaMessagingService : FirebaseMessagingService() {
 
     @Inject lateinit var tokenStore: PushTokenStore
 
+    @Inject lateinit var tokenRegistrar: PushTokenRegistrar
+
+    @Inject lateinit var deduplicator: PushMessageDeduplicator
+
     /** Token nuevo del celular (firebase-messaging 26+). */
     override fun onRegistered(token: String) {
-        tokenStore.save(token)
+        tokenRegistrar.onNewToken(token)
     }
 
     override fun onUnregistered(token: String) {
@@ -29,10 +33,12 @@ class AgathaMessagingService : FirebaseMessagingService() {
     /** Ruta anterior a [onRegistered]; se atiende mientras el SDK siga enviando NEW_TOKEN. */
     @Deprecated("Replaced by onRegistered in firebase-messaging 26")
     override fun onNewToken(token: String) {
-        tokenStore.save(token)
+        tokenRegistrar.onNewToken(token)
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
-        AlertPushParser.parse(message.data)?.let(notifier::show)
+        val push = AlertPushParser.parse(message.data) ?: return
+        // Sin messageId no hay con qué comparar: se muestra.
+        if (push.messageId == null || deduplicator.isFirstDelivery(push.messageId)) notifier.show(push)
     }
 }

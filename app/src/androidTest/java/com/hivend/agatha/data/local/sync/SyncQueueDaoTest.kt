@@ -68,6 +68,19 @@ class SyncQueueDaoTest {
     }
 
     @Test
+    fun enqueueAgainResetsAnEntryInError() = runTest {
+        val entry = entry("token", SyncRecordType.PUSH_TOKEN, t0)
+        dao.enqueue(entry)
+        dao.updateState("token", SyncState.ERROR, attempts = 1, lastError = "HTTP 400")
+
+        dao.enqueueAgain(entry)
+
+        assertEquals(SyncState.PENDING, dao.get("token")?.state)
+        assertEquals(0, dao.get("token")?.attempts)
+        assertEquals(listOf("token"), dao.observeUnsynced().first().map { it.id })
+    }
+
+    @Test
     fun failedAttemptKeepsCountAndReason() = runTest {
         dao.enqueue(entry("a", SyncRecordType.PHOTO, t0))
 

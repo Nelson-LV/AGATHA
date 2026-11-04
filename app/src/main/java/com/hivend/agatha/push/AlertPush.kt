@@ -25,12 +25,14 @@ data class AlertPush(
     val pk: String? = null,
     val event: AlertEvent? = null,
     val startedAt: Instant? = null,
+    /** Id de este envío: FCM puede entregarlo dos veces y solo se muestra una ([PushMessageDeduplicator]). */
+    val messageId: String? = null,
 )
 
 /**
  * Convierte el `data` de un mensaje FCM en un [AlertPush], o null si no se debe avisar.
  *
- * Contrato propuesto al equipo web (los nombres pueden cambiar; los campos extra se ignoran):
+ * Contrato con el backend (docs/CONTRATO_PUSH_FCM.md; los campos extra se ignoran): `messageId`,
  * `alertId`, `level` (YELLOW/ORANGE/RED), `kind` (NEW/LEVEL_UP), `sensorId`, `pk`, `event`
  * (LEAK/MOVEMENT/LEAK_AND_MOVEMENT), `startedAt` (RFC 3339) y `classification`.
  *
@@ -51,6 +53,7 @@ object AlertPushParser {
             pk = data[KEY_PK].nonBlank(),
             event = data[KEY_EVENT].toEnumOrNull<AlertEvent>(),
             startedAt = parseRfc3339(data[KEY_STARTED_AT].nonBlank()),
+            messageId = data[KEY_MESSAGE_ID].nonBlank(),
         )
     }
 
@@ -59,6 +62,7 @@ object AlertPushParser {
 
     private fun String?.nonBlank(): String? = this?.trim()?.takeIf { it.isNotEmpty() }
 
+    private const val KEY_MESSAGE_ID = "messageId"
     private const val KEY_ALERT_ID = "alertId"
     private const val KEY_LEVEL = "level"
     private const val KEY_KIND = "kind"

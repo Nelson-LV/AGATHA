@@ -14,6 +14,10 @@ interface SyncQueueDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun enqueue(entry: SyncQueueEntity): Long
 
+    /** Encola [entry] desde cero aunque ya estuviera, para un registro que se reenvía a propósito. */
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun enqueueAgain(entry: SyncQueueEntity)
+
     @Query("SELECT * FROM sync_queue WHERE id = :id")
     suspend fun get(id: String): SyncQueueEntity?
 

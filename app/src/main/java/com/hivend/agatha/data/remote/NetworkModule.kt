@@ -3,6 +3,7 @@ package com.hivend.agatha.data.remote
 import com.hivend.agatha.BuildConfig
 import com.hivend.agatha.data.remote.alerts.AlertsApi
 import com.hivend.agatha.data.remote.dashboard.DashboardApi
+import com.hivend.agatha.data.remote.devices.DevicesApi
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -66,4 +67,8 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideAlertsApi(retrofit: Retrofit): AlertsApi = retrofit.create()
+
+    @Provides
+    @Singleton
+    fun provideDevicesApi(retrofit: Retrofit): DevicesApi = retrofit.create()
 }

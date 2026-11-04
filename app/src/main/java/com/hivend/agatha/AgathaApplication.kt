@@ -5,6 +5,7 @@ import androidx.hilt.work.HiltWorkerFactory
 import androidx.work.Configuration
 import com.hivend.agatha.data.sync.SyncScheduler
 import com.hivend.agatha.push.AlertNotifier
+import com.hivend.agatha.push.PushTokenRegistrar
 import dagger.hilt.android.HiltAndroidApp
 import javax.inject.Inject
 
@@ -15,6 +16,7 @@ class AgathaApplication : Application(), Configuration.Provider {
     @Inject lateinit var alertNotifier: AlertNotifier
     @Inject lateinit var workerFactory: HiltWorkerFactory
     @Inject lateinit var syncScheduler: SyncScheduler
+    @Inject lateinit var pushTokenRegistrar: PushTokenRegistrar
 
     // WorkManager crea los workers con la fábrica de Hilt para que reciban sus dependencias.
     override val workManagerConfiguration: Configuration
@@ -26,5 +28,7 @@ class AgathaApplication : Application(), Configuration.Provider {
         alertNotifier.createChannel()
         // Lo que quedó pendiente de una sesión anterior sale en cuanto haya red (HU-7.3).
         syncScheduler.schedule()
+        // El backend pide el token en cada arranque, aunque no haya cambiado.
+        pushTokenRegistrar.registerOnStartup()
     }
 }
