@@ -4,12 +4,13 @@ HU-4.1 (Jira AGT-25). La app Android ya recibe y muestra push de alertas con Fir
 Messaging (probado en un celular real con un mensaje de prueba de la consola de Firebase).
 Falta lo del lado del backend: guardar el token de cada celular y enviar los mensajes.
 Código de referencia en la app: `push/AlertPush.kt`, `push/AgathaMessagingService.kt`,
-`push/PushTokenStore.kt`, `core/device/DeviceOriginProvider.kt`.
+`push/PushTokenRegistrar.kt`, `push/PushMessageDeduplicator.kt`, `data/sync/PushTokenSender.kt`,
+`core/device/DeviceOriginProvider.kt`. Cómo confirmar las pruebas: `GUIA_PRUEBAS_PUSH.md`.
 
-## 1. Registro del token (propuesta, por acordar)
+## 1. Registro del token
 
 La app no tiene login: cada celular se identifica con un `deviceId` propio (`CEL-XXXXXX`,
-el mismo que firma el origen "App móvil" de sus registros, RN-10). Proponemos:
+el mismo que firma el origen "App móvil" de sus registros, RN-10):
 
 ```
 PUT /api/devices/push-token
@@ -18,10 +19,11 @@ PUT /api/devices/push-token
 ```
 
 - **Upsert por `deviceId`**: un celular tiene un solo token vigente; un token nuevo
-  reemplaza al anterior. Debe ser idempotente (la app reintenta desde su cola de
-  sincronización hasta recibir 2xx).
-- La app lo llama al obtener o renovar el token. Ruta, verbo y nombres se pueden cambiar;
-  avísennos cómo queda.
+  reemplaza al anterior. Debe ser idempotente.
+- La app lo llama **en cada arranque** y cada vez que FCM renueva el token.
+- **Reintentos:** sin conexión, 408, 429 o 5xx se reintenta (hasta 3 veces por arranque). **Otro
+  4xx no se reintenta**: queda en Error en la pantalla Sync hasta el siguiente arranque o hasta
+  que el técnico toque Reintentar.
 
 ## 2. Envío
 
@@ -42,6 +44,7 @@ PUT /api/devices/push-token
 
 | Clave | Obligatoria | Valores |
 |---|---|---|
+| `messageId` | sí en todo envío nuevo | id único de este envío; se repite solo si FCM reentrega el mismo push |
 | `alertId` | sí | id de la alerta (abre `alert_detail/{alertId}` al tocar) |
 | `level` | sí | `YELLOW` / `ORANGE` / `RED` (nivel actual) |
 | `kind` | no (por defecto `NEW`) | `NEW` (alerta generada) / `LEVEL_UP` (subió de nivel) |
@@ -52,6 +55,14 @@ PUT /api/devices/push-token
 | `classification` | no | `CONFIRMED` / `FALSE_ALARM`; omitir si está Sin clasificar |
 
 Un mensaje sin `alertId` o sin `level` válido se descarta en la app.
+
+- **Una notificación por `messageId`:** la app recuerda los últimos 200 (también entre reinicios)
+  e ignora los repetidos. Un mensaje sin `messageId` no se puede comparar y siempre se muestra.
+- **Una notificación visible por `alertId`:** con otro `messageId`, un push de la misma alerta
+  reemplaza al anterior y vuelve a sonar (así se ve la subida de nivel).
+- **`alertId` inexistente:** al tocar la notificación, el detalle muestra "Alerta no encontrada" y
+  la app sigue abierta. Vale para `404` y para `400 INVALID_INPUT` de `GET /api/alerts/{id}`, que
+  es lo que responde hoy con `ALR-PRUEBA-000001`.
 
 ## 4. Cuándo enviar (HU-4.1)
 
@@ -74,6 +85,7 @@ desinstaló o el token caducó. Cuando la app obtenga uno nuevo lo volverá a re
     "token": "<token FCM del celular>",
     "android": { "priority": "HIGH" },
     "data": {
+      "messageId": "b7e1c2a4-5f0d-4c1e-9a33-2d6f8e01c7aa",
       "alertId": "ALR-0142",
       "level": "ORANGE",
       "kind": "LEVEL_UP",
