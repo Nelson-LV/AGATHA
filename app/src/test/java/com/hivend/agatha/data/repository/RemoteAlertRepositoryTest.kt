@@ -38,6 +38,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import retrofit2.HttpException
 import retrofit2.Response
 
 class RemoteAlertRepositoryTest {
@@ -49,6 +50,7 @@ class RemoteAlertRepositoryTest {
         val recent = mutableListOf<AlertDto>()
         val details = mutableMapOf<String, AlertDto>()
         var offline = false
+        var alertError: HttpException? = null
         var classifyResponse: () -> Response<ResponseBody> = { Response.success(201, "{}".toResponseBody()) }
         var labelResponse: () -> Response<ResponseBody> = { Response.success(201, "{}".toResponseBody()) }
         val classifyCalls = mutableListOf<ClassificationRequestDto>()
@@ -72,6 +74,7 @@ class RemoteAlertRepositoryTest {
 
         override suspend fun alert(id: String): AlertDto {
             checkNetwork()
+            alertError?.let { throw it }
             return details[id] ?: (pending + recent).first { it.code == id }
         }
 
@@ -184,6 +187,18 @@ class RemoteAlertRepositoryTest {
         repo.refreshAlerts()
 
         assertEquals(1, repo.observeAlert("ALR-000001").first()!!.levelTimeline.size)
+    }
+
+    @Test
+    fun `an alert id the api considers invalid counts as not found`() = runBlocking {
+        val api = FakeApi()
+        api.alertError = HttpException(
+            Response.error<AlertDto>(400, body("""{"code":"INVALID_INPUT","message":"el id no es válido"}""")),
+        )
+
+        val result = repository(api).loadAlert("ALR-PRUEBA-000001")
+
+        assertEquals(AlertResult.Failure(AlertFailure.NotFound), result)
     }
 
     @Test

@@ -1,5 +1,7 @@
 package com.hivend.agatha.core.navigation
 
+import android.net.Uri
+
 /**
  * Rutas de navegación de AGATHA como una jerarquía sellada (en vez de strings sueltos
  * repetidos por toda la UI). [BottomTab] son los 5 destinos con barra inferior visible
@@ -25,7 +27,9 @@ sealed class AgathaDestination(val route: String) {
 
     data object AlertDetail : AgathaDestination("alert_detail/{alertId}") {
         const val ARG_ALERT_ID = "alertId"
-        fun buildRoute(alertId: String) = "alert_detail/$alertId"
+
+        /** El id puede venir de un push: sin codificar, un "/" o "?" haría fallar la navegación. */
+        fun buildRoute(alertId: String) = "alert_detail/${Uri.encode(alertId)}"
     }
 
     data object InspectionForm : AgathaDestination("inspection_form/{alertId}") {

@@ -91,9 +91,16 @@ class RemoteAlertRepository @Inject constructor(
         upsertRows(rows)
     }
 
-    override suspend fun loadAlert(alertId: String): AlertResult<Unit> = fetch {
-        val alert = api.alert(alertId).toDomain() ?: throw SerializationException("Unsupported alert $alertId")
-        alerts.update { current -> replace(current, alert) }
+    override suspend fun loadAlert(alertId: String): AlertResult<Unit> {
+        val result = fetch {
+            val alert = api.alert(alertId).toDomain() ?: throw SerializationException("Unsupported alert $alertId")
+            alerts.update { current -> replace(current, alert) }
+        }
+        // Un id con formato que la API no acepta (400 INVALID_INPUT, p. ej. el ALR-PRUEBA-000001 de
+        // los push de prueba) es, para quien abre el detalle, una alerta que no existe.
+        val invalidId = result is AlertResult.Failure &&
+            (result.failure as? AlertFailure.Rejected)?.code == API_CODE_INVALID_INPUT
+        return if (invalidId) AlertResult.Failure(AlertFailure.NotFound) else result
     }
 
     override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> = fetch {
@@ -399,5 +406,6 @@ class RemoteAlertRepository @Inject constructor(
         const val HTTP_TIMEOUT = 408
         const val HTTP_TOO_MANY = 429
         const val OUTCOME_SAVED_AS_CONFLICT = "SAVED_AS_CONFLICT_OBSERVATION"
+        const val API_CODE_INVALID_INPUT = "INVALID_INPUT"
     }
 }

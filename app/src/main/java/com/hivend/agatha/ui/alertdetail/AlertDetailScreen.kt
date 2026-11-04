@@ -65,6 +65,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
@@ -137,11 +138,13 @@ fun AlertDetailScreen(
     Column(modifier = Modifier.fillMaxSize()) {
         BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
         val online = LocalOnline.current
+        // Una alerta que no existe es una respuesta del servidor, no un problema de conexión.
+        val unreachable = uiState.loadFailure != null && uiState.loadFailure != AlertFailure.NotFound
         ConnectivityBar(
-            connected = online && uiState.loadFailure == null,
+            connected = online && !unreachable,
             message = stringResource(
                 when {
-                    !online || uiState.loadFailure != null -> R.string.connectivity_offline_local_data
+                    !online || unreachable -> R.string.connectivity_offline_local_data
                     uiState.loading -> R.string.connectivity_syncing
                     else -> R.string.connectivity_connected_live
                 },
@@ -162,7 +165,7 @@ fun AlertDetailScreen(
                         color = AgathaTheme.colors.textSecondary,
                         textAlign = TextAlign.Center,
                     )
-                    if (failure != null) TextButton(onClick = viewModel::load) { Text(stringResource(R.string.common_retry)) }
+                    if (unreachable) TextButton(onClick = viewModel::load) { Text(stringResource(R.string.common_retry)) }
                 }
             }
             return@Column
