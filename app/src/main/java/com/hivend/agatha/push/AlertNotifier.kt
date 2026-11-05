@@ -71,10 +71,10 @@ class AlertNotifier @Inject constructor(
             context.getString(R.string.push_title_level_up, push.alertId, context.getString(push.level.shortLabelRes()))
     }
 
-    /** "Dispositivo MP-11556 · PK 12+300 · Fuga · Inicio 18/10/2026 14:30", omitiendo lo que no llegó. */
+    /** "Sensor PK34-470 · PK 34+470 · Fuga · Inicio 18/10/2026 14:30", omitiendo lo que no llegó. */
     private fun body(push: AlertPush): String {
         val parts = listOfNotNull(
-            push.sensorId?.let { context.getString(R.string.push_body_device, it) },
+            push.sensorId,
             push.pk?.let { context.getString(R.string.push_body_pk, it) },
             push.event?.let { context.getString(it.labelRes()) },
             push.startedAt?.let { context.getString(R.string.push_body_started, dateFormatter().format(it)) },

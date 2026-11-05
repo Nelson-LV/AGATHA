@@ -298,7 +298,6 @@
     <string name="push_channel_alerts_description">New alerts and alerts that rise in level</string>
     <string name="push_title_new">New alert %1$s: %2$s</string>
     <string name="push_title_level_up">Alert %1$s rose to %2$s</string>
-    <string name="push_body_device">Device %1$s</string>
     <string name="push_body_pk">PK %1$s</string>
     <string name="push_body_started">Started %1$s</string>
 
