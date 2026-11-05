@@ -260,7 +260,6 @@
     <string name="sync_record_type_inspection_report">Reporte de inspección</string>
     <string name="sync_record_type_observation">Observación</string>
     <string name="sync_record_type_photo">Foto</string>
-    <string name="sync_record_type_push_token">Registro para notificaciones</string>
 
     <!-- Tiempos relativos (el dominio entrega minutos; ver ui/components/Texts.kt) -->
     <string name="time_just_now">justo ahora</string>

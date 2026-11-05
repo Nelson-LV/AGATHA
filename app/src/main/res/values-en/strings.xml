@@ -246,7 +246,6 @@
     <string name="sync_record_type_inspection_report">Inspection report</string>
     <string name="sync_record_type_observation">Observation</string>
     <string name="sync_record_type_photo">Photo</string>
-    <string name="sync_record_type_push_token">Notification sign-up</string>
 
     <!-- Relative times -->
     <string name="time_just_now">just now</string>

@@ -8,7 +8,6 @@ enum class SyncRecordType {
     INSPECTION_REPORT,
     OBSERVATION,
     PHOTO,
-    PUSH_TOKEN,
 }
 
 /** Por qué falló el último envío de un registro (HU-7.2), para mostrar el motivo del Error. */

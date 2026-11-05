@@ -1,6 +1,8 @@
 package com.hivend.agatha.data.remote
 
 import java.io.IOException
+import java.time.Duration
+import java.time.Instant
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
@@ -21,8 +23,11 @@ sealed interface ApiError {
     /** Sin internet, tiempo agotado o el servidor no aceptó la conexión. */
     data object NoConnection : ApiError
 
-    /** El servidor respondió [code]; [body] es su `{code, message}` si lo mandó en ese formato. */
-    data class Http(val code: Int, val body: ApiErrorBody?) : ApiError
+    /**
+     * El servidor respondió [code]; [body] es su `{code, message}` si lo mandó en ese formato y
+     * [retryAfter] lo que pidió esperar con el header `Retry-After`, si lo mandó.
+     */
+    data class Http(val code: Int, val body: ApiErrorBody?, val retryAfter: Duration? = null) : ApiError
 
     /** La respuesta llegó pero no corresponde al DTO esperado. */
     data object InvalidResponse : ApiError
@@ -59,10 +64,24 @@ suspend fun <T> apiCall(json: Json, block: suspend () -> T): ApiResult<T> =
     } catch (_: IOException) {
         ApiResult.Failure(ApiError.NoConnection)
     } catch (e: HttpException) {
-        ApiResult.Failure(ApiError.Http(e.code(), e.errorBody(json)))
+        ApiResult.Failure(ApiError.Http(e.code(), e.errorBody(json), e.retryAfter()))
     } catch (_: SerializationException) {
         ApiResult.Failure(ApiError.InvalidResponse)
     }
+
+/** `Retry-After` en sus dos formas: segundos o fecha HTTP. Una fecha ya pasada no pide esperar. */
+private fun HttpException.retryAfter(): Duration? {
+    val headers = response()?.headers() ?: return null
+    val seconds = headers[RETRY_AFTER]?.trim()?.toLongOrNull()
+    val wait = if (seconds != null) {
+        Duration.ofSeconds(seconds)
+    } else {
+        headers.getInstant(RETRY_AFTER)?.let { Duration.between(Instant.now(), it) }
+    }
+    return wait?.takeUnless { it.isNegative }
+}
+
+private const val RETRY_AFTER = "Retry-After"
 
 private fun HttpException.errorBody(json: Json): ApiErrorBody? =
     try {

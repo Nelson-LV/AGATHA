@@ -1,5 +1,9 @@
 package com.hivend.agatha.data.remote
 
+import java.time.Duration
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import mockwebserver3.MockResponse
@@ -9,6 +13,7 @@ import okhttp3.MediaType.Companion.toMediaType
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -84,6 +89,29 @@ class ApiCallTest {
     fun `an error body that is not the backend format is dropped, the code is kept`() {
         respond(502, "<html>Bad Gateway</html>")
         assertEquals(ApiResult.Failure(ApiError.Http(502, null)), call())
+    }
+
+    private fun retryAfterOf(header: String): Duration? {
+        server.enqueue(MockResponse.Builder().code(429).addHeader("Retry-After", header).build())
+        return ((call() as ApiResult.Failure).error as ApiError.Http).retryAfter
+    }
+
+    @Test
+    fun `a Retry-After in seconds is kept`() {
+        assertEquals(Duration.ofSeconds(120), retryAfterOf("120"))
+    }
+
+    @Test
+    fun `a Retry-After with a date becomes the time left until then`() {
+        val date = DateTimeFormatter.RFC_1123_DATE_TIME.format(ZonedDateTime.now(ZoneOffset.UTC).plusMinutes(10))
+        val wait = checkNotNull(retryAfterOf(date))
+        assertTrue(wait > Duration.ofMinutes(9) && wait <= Duration.ofMinutes(10))
+    }
+
+    @Test
+    fun `a Retry-After with a past date or unreadable text is ignored`() {
+        assertNull(retryAfterOf("Wed, 21 Oct 2015 07:28:00 GMT"))
+        assertNull(retryAfterOf("soon"))
     }
 
     @Test

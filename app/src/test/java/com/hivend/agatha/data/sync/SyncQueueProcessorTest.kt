@@ -31,10 +31,6 @@ class SyncQueueProcessorTest {
             return entries.size.toLong()
         }
 
-        override suspend fun enqueueAgain(entry: SyncQueueEntity) {
-            entries[entry.id] = entry
-        }
-
         override suspend fun get(id: String) = entries[id]
 
         override fun observeUnsynced(): Flow<List<SyncQueueEntity>> = flowOf(unsyncedNow())
@@ -156,40 +152,14 @@ class SyncQueueProcessorTest {
 
     @Test
     fun `a type without a sender waits pending and does not block the others`() = runBlocking {
-        enqueue("token", SyncRecordType.PUSH_TOKEN, 0)
+        enqueue("photo", SyncRecordType.PHOTO, 0)
         enqueue("note", SyncRecordType.OBSERVATION, 60)
 
         val run = processor(FakeSender(SyncRecordType.OBSERVATION, ok)).process()
 
         assertEquals(1, run.sent)
-        assertEquals(SyncState.PENDING, state("token"))
+        assertEquals(SyncState.PENDING, state("photo"))
         assertEquals(SyncState.SYNCED, state("note"))
-    }
-
-    @Test
-    fun `a rejected push token is not retried until the next app start enqueues it again`() = runBlocking {
-        val entry = SyncQueueEntity(
-            id = "push-token",
-            recordType = SyncRecordType.PUSH_TOKEN,
-            recordId = "push-token",
-            createdAt = t0,
-        )
-        queue.enqueueAgain(entry)
-        val sender = FakeSender(SyncRecordType.PUSH_TOKEN, ApiResult.Failure(ApiError.Http(400, null)), ok)
-        val processor = processor(sender)
-
-        val run = processor.process()
-        processor.process()
-
-        assertFalse(run.retryLater)
-        assertEquals(1, sender.sent.size)
-        assertEquals(SyncState.ERROR, state("push-token"))
-
-        queue.enqueueAgain(entry)
-        processor.process()
-
-        assertEquals(2, sender.sent.size)
-        assertEquals(SyncState.SYNCED, state("push-token"))
     }
 
     @Test

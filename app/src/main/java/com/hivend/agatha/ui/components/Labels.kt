@@ -84,7 +84,6 @@ fun SyncRecordType.labelRes(): Int = when (this) {
     SyncRecordType.INSPECTION_REPORT -> R.string.sync_record_type_inspection_report
     SyncRecordType.OBSERVATION -> R.string.sync_record_type_observation
     SyncRecordType.PHOTO -> R.string.sync_record_type_photo
-    SyncRecordType.PUSH_TOKEN -> R.string.sync_record_type_push_token
 }
 
 /** Etiquetas RN-07. Las dos variantes "Otro" comparten texto; su detalle lo escribe una persona. */

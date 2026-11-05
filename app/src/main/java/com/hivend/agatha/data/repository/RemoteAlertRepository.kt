@@ -332,7 +332,7 @@ class RemoteAlertRepository @Inject constructor(
                 ObservationRequestDto(checkNotNull(action.text), ORIGIN_MOBILE_APP, action.deviceIdentifier.ifEmpty { null }),
             )
         }
-        SyncRecordType.PHOTO, SyncRecordType.PUSH_TOKEN -> error("${action.type} is not an alert action")
+        SyncRecordType.PHOTO -> error("${action.type} is not an alert action")
     }
 
     // ---- HTTP ----------------------------------------------------------------------------

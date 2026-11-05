@@ -28,7 +28,7 @@ import com.hivend.agatha.data.local.sync.SyncQueueEntity
         InspectionReportEntity::class,
         InspectionPhotoEntity::class,
     ],
-    version = 2,
+    version = 3,
     autoMigrations = [AutoMigration(from = 1, to = 2)],
 )
 @TypeConverters(Converters::class)

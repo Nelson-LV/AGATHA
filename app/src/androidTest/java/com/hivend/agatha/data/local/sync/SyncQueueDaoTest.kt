@@ -60,24 +60,11 @@ class SyncQueueDaoTest {
 
     @Test
     fun aRecordIsEnqueuedOnlyOnce() = runTest {
-        dao.enqueue(entry("first", SyncRecordType.PUSH_TOKEN, t0))
-        val again = entry("second", SyncRecordType.PUSH_TOKEN, t0.plusSeconds(5)).copy(recordId = "rec-first")
+        dao.enqueue(entry("first", SyncRecordType.OBSERVATION, t0))
+        val again = entry("second", SyncRecordType.OBSERVATION, t0.plusSeconds(5)).copy(recordId = "rec-first")
 
         assertEquals(-1L, dao.enqueue(again))
         assertNull(dao.get("second"))
-    }
-
-    @Test
-    fun enqueueAgainResetsAnEntryInError() = runTest {
-        val entry = entry("token", SyncRecordType.PUSH_TOKEN, t0)
-        dao.enqueue(entry)
-        dao.updateState("token", SyncState.ERROR, attempts = 1, lastError = "HTTP 400")
-
-        dao.enqueueAgain(entry)
-
-        assertEquals(SyncState.PENDING, dao.get("token")?.state)
-        assertEquals(0, dao.get("token")?.attempts)
-        assertEquals(listOf("token"), dao.observeUnsynced().first().map { it.id })
     }
 
     @Test
