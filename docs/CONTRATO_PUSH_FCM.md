@@ -5,7 +5,7 @@ Messaging (probado en un celular real con un mensaje de prueba de la consola de 
 Falta lo del lado del backend: guardar el token de cada celular y enviar los mensajes.
 Código de referencia en la app: `push/AlertPush.kt`, `push/AgathaMessagingService.kt`,
 `push/PushTokenRegistrar.kt`, `push/PushMessageDeduplicator.kt`, `data/sync/PushTokenSender.kt`,
-`core/device/DeviceOriginProvider.kt`. Cómo confirmar las pruebas: `GUIA_PRUEBAS_PUSH.md`.
+`data/sync/PushTokenWorker.kt`, `core/device/DeviceOriginProvider.kt`. Cómo confirmar las pruebas: `GUIA_PRUEBAS_PUSH.md`.
 
 ## 1. Registro del token
 
@@ -21,9 +21,9 @@ PUT /api/devices/push-token
 - **Upsert por `deviceId`**: un celular tiene un solo token vigente; un token nuevo
   reemplaza al anterior. Debe ser idempotente.
 - La app lo llama **en cada arranque** y cada vez que FCM renueva el token.
-- **Reintentos:** sin conexión, 408, 429 o 5xx se reintenta (hasta 3 veces por arranque). **Otro
-  4xx no se reintenta**: queda en Error en la pantalla Sync hasta el siguiente arranque o hasta
-  que el técnico toque Reintentar.
+- **Reintentos:** sin conexión, 408, 429 o 5xx se reintenta con esperas que se duplican desde 30 s
+  hasta 1 h, sin bajar del `Retry-After` si viene. **Otro 4xx no se reintenta**: se descarta y queda
+  en el log hasta el siguiente arranque. El registro no aparece en la pantalla Sync.
 
 ## 2. Envío
 
@@ -48,7 +48,7 @@ PUT /api/devices/push-token
 | `alertId` | sí | id de la alerta (abre `alert_detail/{alertId}` al tocar) |
 | `level` | sí | `YELLOW` / `ORANGE` / `RED` (nivel actual) |
 | `kind` | no (por defecto `NEW`) | `NEW` (alerta generada) / `LEVEL_UP` (subió de nivel) |
-| `sensorId` | no | dispositivo |
+| `sensorId` | no | nombre del dispositivo (p. ej. `Sensor PK34-470`); la app lo muestra tal cual |
 | `pk` | no | abscisa sin el prefijo "PK" (p. ej. `12+350`) |
 | `event` | no | `LEAK` / `MOVEMENT` / `LEAK_AND_MOVEMENT` |
 | `startedAt` | no | inicio de la alerta, RFC 3339 (`2026-10-18T14:32:00-05:00`) |
