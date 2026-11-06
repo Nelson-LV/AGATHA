@@ -55,6 +55,8 @@ class HistoryViewModel @Inject constructor(
         val site: HistorySite?,
         val sensors: List<HistorySensorOption>,
         val selectedSensor: HistorySensorOption?,
+        val listScrollIndex: Int,
+        val listScrollOffset: Int,
     )
 
     private data class HistorySnapshot(
@@ -78,12 +80,18 @@ class HistoryViewModel @Inject constructor(
 
     private val sync = MutableStateFlow(SyncState())
     private val historyLoaded = MutableStateFlow(false)
-    private val selectedEventType = MutableStateFlow<EventType?>(null)
-    private val dateFrom = MutableStateFlow<LocalDate?>(null)
-    private val dateThrough = MutableStateFlow<LocalDate?>(null)
-    private val eventFilters = combine(selectedEventType, dateFrom, dateThrough) { type, from, through ->
-        HistoryEventFilters(type, from, through)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryEventFilters())
+    private val eventFilters = selectionStore.selection
+        .map { stored -> HistoryEventFilters(stored.eventType, stored.dateFrom, stored.dateThrough) }
+        .distinctUntilChanged()
+        .stateIn(
+            viewModelScope,
+            SharingStarted.WhileSubscribed(5_000),
+            HistoryEventFilters(
+                selectionStore.selection.value.eventType,
+                selectionStore.selection.value.dateFrom,
+                selectionStore.selection.value.dateThrough,
+            ),
+        )
 
     private val selection = combine(nodes, selectionStore.selection) { allNodes, stored ->
         resolveSelection(stored, allNodes)
@@ -142,6 +150,8 @@ class HistoryViewModel @Inject constructor(
             isConnected = connected,
             lastSyncedAt = syncState.lastSyncedAt,
             failure = syncState.failure,
+            listScrollIndex = selected.listScrollIndex,
+            listScrollOffset = selected.listScrollOffset,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HistoryState())
 
@@ -186,7 +196,8 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun setEventTypeFilter(eventType: EventType?) {
-        selectedEventType.value = eventType
+        val stored = selectionStore.selection.value
+        selectionStore.updateFilters(eventType, stored.dateFrom, stored.dateThrough)
     }
 
     fun setDateRange(from: LocalDate?, through: LocalDate?) {
@@ -199,15 +210,16 @@ class HistoryViewModel @Inject constructor(
             end = start
             start = earlier
         }
-        dateFrom.value = start
-        dateThrough.value = end
+        selectionStore.updateFilters(selectionStore.selection.value.eventType, start, end)
     }
 
     /** Clears the added event/date filters while preserving the current site and sensor. */
     fun clearFilters() {
-        selectedEventType.value = null
-        dateFrom.value = null
-        dateThrough.value = null
+        selectionStore.updateFilters(eventType = null, dateFrom = null, dateThrough = null)
+    }
+
+    fun updateListScrollPosition(index: Int, offset: Int) {
+        selectionStore.updateListScrollPosition(index, offset)
     }
 
     fun refresh() {
@@ -250,7 +262,13 @@ class HistoryViewModel @Inject constructor(
         }
         val selectedSensor = options.firstOrNull { it.id == stored.sensorId }
             ?: if (site == null) options.firstOrNull() else options.firstOrNull()
-        return SelectionSnapshot(site, options, selectedSensor)
+        return SelectionSnapshot(
+            site = site,
+            sensors = options,
+            selectedSensor = selectedSensor,
+            listScrollIndex = stored.listScrollIndex,
+            listScrollOffset = stored.listScrollOffset,
+        )
     }
 
     private fun refreshSensor(sensorId: String, force: Boolean = false) {

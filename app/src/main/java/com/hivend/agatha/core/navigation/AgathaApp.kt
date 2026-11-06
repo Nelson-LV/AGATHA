@@ -106,7 +106,13 @@ fun AgathaApp(
                 route = BottomTab.History.route,
                 arguments = listOf(navArgument(BottomTab.History.ARG_DEVICE_ID) { type = NavType.StringType }),
             ) {
-                DeviceHistoryScreen()
+                DeviceHistoryScreen(
+                    onAlertClick = { alertId ->
+                        navController.navigate(AlertDetail.buildRoute(alertId)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
 
             composable(BottomTab.Sync.route) {

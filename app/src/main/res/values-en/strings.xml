@@ -409,5 +409,7 @@
     <string name="history_classification_event_tag_other_detail">%1$s · %2$s · %3$s</string>
     <string name="history_alert_tag_detail">Tag: %1$s</string>
     <string name="history_alert_tag_other_detail">Tag: %1$s · %2$s</string>
+    <string name="history_open_alert_detail_action">Open alert details</string>
+    <string name="history_open_alert_detail_description">Open details for alert %1$s</string>
     <string name="history_no_filter_results">No events match the selected filters.</string>
 </resources>

@@ -244,6 +244,60 @@ class HistoryViewModelTest {
         collection.cancel()
     }
 
+    @Test
+    fun historyFiltersAndListPositionSurviveHistoryViewModelRecreation() =
+        runTest(mainDispatcherRule.dispatcher) {
+            val repository = FakeHistoryRepository().apply {
+                setHistory("MP-11556", alert("ALR-000007", 11556))
+            }
+            val selectionStore = HistorySelectionStore()
+            val firstViewModel = HistoryViewModel(
+                savedStateHandle = SavedStateHandle(
+                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+                ),
+                historyRepository = repository,
+                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
+                connectivityMonitor = FakeConnectivityMonitor(connected = false),
+                selectionStore = selectionStore,
+            )
+            val firstCollection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                firstViewModel.uiState.collect()
+            }
+            advanceUntilIdle()
+
+            val from = LocalDate.now().minusDays(4)
+            val through = LocalDate.now().minusDays(1)
+            firstViewModel.setEventTypeFilter(EventType.CLASSIFICATION)
+            firstViewModel.setDateRange(from, through)
+            firstViewModel.updateListScrollPosition(index = 3, offset = 27)
+            advanceUntilIdle()
+            firstCollection.cancel()
+
+            val reopenedViewModel = HistoryViewModel(
+                savedStateHandle = SavedStateHandle(
+                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+                ),
+                historyRepository = repository,
+                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
+                connectivityMonitor = FakeConnectivityMonitor(connected = false),
+                selectionStore = selectionStore,
+            )
+            val reopenedCollection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+                reopenedViewModel.uiState.collect()
+            }
+            advanceUntilIdle()
+
+            val state = reopenedViewModel.uiState.value
+            assertEquals(HistorySiteCatalog.GUEPSA.id, state.selectedSite?.id)
+            assertEquals("MP-11556", state.selectedSensor?.id)
+            assertEquals(EventType.CLASSIFICATION, state.selectedEventType)
+            assertEquals(from, state.dateFrom)
+            assertEquals(through, state.dateThrough)
+            assertEquals(3, state.listScrollIndex)
+            assertEquals(27, state.listScrollOffset)
+            reopenedCollection.cancel()
+        }
+
     private fun alert(id: String, deviceId: Int) = Alert(
         id = id,
         deviceId = deviceId,

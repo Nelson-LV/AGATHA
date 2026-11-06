@@ -163,7 +163,7 @@ class HistoryEventsTest {
         val report = Inspection(
             id = "report-2",
             deviceId = "MP-11556",
-            alertId = null,
+            alertId = "ALR-000009",
             observations = "Se detecta erosión leve",
             maintenance = MaintenanceRecord(
                 types = setOf(MaintenanceType.CLEANING),
@@ -194,6 +194,7 @@ class HistoryEventsTest {
             LocalizedText.Resource(R.string.history_maintenance_completed),
             byType.getValue(EventType.MAINTENANCE).statusLabel,
         )
+        assertTrue(events.all { it.alertId == "ALR-000009" })
         assertEquals(
             listOf(
                 LocalizedText.Resource(R.string.history_evidence_detail, listOf(2)),

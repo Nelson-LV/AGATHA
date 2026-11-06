@@ -21,4 +21,6 @@ data class HistoryState(
     val isConnected: Boolean = false,
     val lastSyncedAt: Instant? = null,
     val failure: AlertFailure? = null,
+    val listScrollIndex: Int = 0,
+    val listScrollOffset: Int = 0,
 )

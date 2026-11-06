@@ -55,6 +55,7 @@ private fun Inspection.toEvents(): List<HistoryEvent> = buildList {
             description = observations.orEmpty(),
             title = res(R.string.history_inspection_title),
             detail = historyDetail(),
+            alertId = alertId,
         ),
     )
 
@@ -68,6 +69,7 @@ private fun Inspection.toEvents(): List<HistoryEvent> = buildList {
                 description = text,
                 title = res(R.string.history_observation_title),
                 detail = LocalizedText.Plain(text),
+                alertId = alertId,
             ),
         )
     }
@@ -99,6 +101,7 @@ private fun Inspection.toEvents(): List<HistoryEvent> = buildList {
                 detail = detail,
                 detailParts = detailParts,
                 statusLabel = res(R.string.history_maintenance_completed),
+                alertId = alertId,
             ),
         )
     }
@@ -119,6 +122,7 @@ private fun Inspection.toEvents(): List<HistoryEvent> = buildList {
                 title = res(R.string.history_evidence_title),
                 detail = detail,
                 detailParts = detailParts,
+                alertId = alertId,
             ),
         )
     }
@@ -132,6 +136,7 @@ private fun Inspection.toHistoryEvent(): HistoryEvent = HistoryEvent(
     description = observations.orEmpty(),
     title = res(R.string.history_inspection_title),
     detail = historyDetail(),
+    alertId = alertId,
 )
 
 private fun Inspection.historyDetail(): LocalizedText {

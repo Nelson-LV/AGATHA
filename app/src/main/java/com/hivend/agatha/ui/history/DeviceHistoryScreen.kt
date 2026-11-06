@@ -2,6 +2,7 @@ package com.hivend.agatha.ui.history
 
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -33,14 +35,19 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,13 +70,40 @@ import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.levelColor
 import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.theme.AgathaTheme
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 
 @Composable
 fun DeviceHistoryScreen(
+    onAlertClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = state.listScrollIndex,
+        initialFirstVisibleItemScrollOffset = state.listScrollOffset,
+    )
+    var restoredListPosition by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading, state.events.size, state.listScrollIndex, state.listScrollOffset) {
+        if (!restoredListPosition && !state.isLoading) {
+            if (state.events.isNotEmpty()) {
+                listState.scrollToItem(
+                    index = state.listScrollIndex.coerceAtMost(state.events.lastIndex),
+                    scrollOffset = state.listScrollOffset,
+                )
+            }
+            restoredListPosition = true
+        }
+    }
+    LaunchedEffect(listState, state.isLoading, restoredListPosition) {
+        if (state.isLoading || !restoredListPosition) return@LaunchedEffect
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .drop(1)
+            .collect { (index, offset) -> viewModel.updateListScrollPosition(index, offset) }
+    }
     val connectivityMessage = when {
         !state.isConnected -> state.lastSyncedAt?.let { lastSync ->
             stringResource(R.string.history_offline_data_as_of, formatDateTime(lastSync))
@@ -117,17 +151,18 @@ fun DeviceHistoryScreen(
             state.events.isEmpty() -> HistoryEmptyState(modifier = Modifier.weight(1f))
             else -> LazyColumn(
                 modifier = Modifier.weight(1f),
+                state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
                 items(state.events, key = HistoryEvent::id) { event ->
                     when (event.type) {
-                        EventType.ALERT -> HistoryAlertEventRow(event)
+                        EventType.ALERT -> HistoryAlertEventRow(event, onAlertClick)
                         EventType.INSPECTION,
                         EventType.EVIDENCE,
                         EventType.MAINTENANCE,
                         EventType.OBSERVATION,
-                        EventType.CLASSIFICATION -> HistoryTypedEventRow(event)
+                        EventType.CLASSIFICATION -> HistoryTypedEventRow(event, onAlertClick)
                     }
                 }
             }
@@ -210,12 +245,16 @@ private fun SelectorDropdown(
 }
 
 @Composable
-fun HistoryAlertEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
+fun HistoryAlertEventRow(
+    event: HistoryEvent,
+    onAlertClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val level = event.alertLevel ?: AlertLevel.GREEN
     val levelColor = level.levelColor()
 
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
         shape = RoundedCornerShape(14.dp),
         color = AgathaTheme.colors.surface,
         tonalElevation = 1.dp,
@@ -284,10 +323,14 @@ fun HistoryAlertEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
 }
 
 @Composable
-private fun HistoryTypedEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
+private fun HistoryTypedEventRow(
+    event: HistoryEvent,
+    onAlertClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
     val eventColor = event.type.color()
     Surface(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
         shape = RoundedCornerShape(14.dp),
         color = AgathaTheme.colors.surface,
         tonalElevation = 1.dp,
@@ -343,6 +386,16 @@ private fun HistoryTypedEventRow(event: HistoryEvent, modifier: Modifier = Modif
             }
         }
     }
+}
+
+@Composable
+private fun HistoryEvent.alertClickModifier(onAlertClick: (String) -> Unit): Modifier {
+    val alertId = alertIdForNavigation() ?: return Modifier
+    val actionLabel = stringResource(R.string.history_open_alert_detail_action)
+    val description = stringResource(R.string.history_open_alert_detail_description, alertId)
+    return Modifier
+        .semantics(mergeDescendants = true) { contentDescription = description }
+        .clickable(role = Role.Button, onClickLabel = actionLabel) { onAlertClick(alertId) }
 }
 
 @Composable
