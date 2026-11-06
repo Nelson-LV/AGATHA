@@ -55,12 +55,10 @@ import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.ui.components.AgathaHeader
-import com.hivend.agatha.ui.components.ClassificationChip
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
-import com.hivend.agatha.ui.components.formatTime
 import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.levelColor
 import com.hivend.agatha.ui.components.resolve
@@ -259,15 +257,24 @@ fun HistoryAlertEventRow(event: HistoryEvent, modifier: Modifier = Modifier) {
                     modifier = Modifier.padding(top = 2.dp),
                 )
                 if (event.alertPhase == AlertHistoryPhase.GENERATED) {
-                    if (event.alertClassification == null) {
-                        ManagementStatusChip(
-                            status = ManagementStatus.UNCLASSIFIED,
-                            modifier = Modifier.padding(top = 8.dp),
+                    ManagementStatusChip(
+                        status = event.alertManagementStatus ?: ManagementStatus.UNCLASSIFIED,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    event.alertClassification?.let { classification ->
+                        Text(
+                            text = stringResource(classification.labelRes()),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 4.dp),
                         )
-                    } else {
-                        ClassificationChip(
-                            classification = event.alertClassification,
-                            modifier = Modifier.padding(top = 8.dp),
+                    }
+                    event.alertTagLabel?.let { tag ->
+                        Text(
+                            text = tag.resolve(),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(top = 2.dp),
                         )
                     }
                 }
@@ -305,7 +312,7 @@ private fun HistoryTypedEventRow(event: HistoryEvent, modifier: Modifier = Modif
                 Text(
                     text = stringResource(
                         R.string.history_event_timestamp,
-                        formatTime(event.timestamp),
+                        formatDateTime(event.timestamp),
                         stringResource(event.type.labelRes()),
                     ),
                     color = eventColor,

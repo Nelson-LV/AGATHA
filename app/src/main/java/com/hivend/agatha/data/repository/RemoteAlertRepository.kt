@@ -18,6 +18,7 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.ClassifyOutcome
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.Origin
@@ -94,7 +95,10 @@ class RemoteAlertRepository @Inject constructor(
     override suspend fun loadAlert(alertId: String): AlertResult<Unit> {
         val result = fetch {
             val alert = api.alert(alertId).toDomain() ?: throw SerializationException("Unsupported alert $alertId")
-            alerts.update { current -> replace(current, alert) }
+            alerts.update { current ->
+                val cached = current.firstOrNull { it.id == alert.id }
+                replace(current, alert.copy(classification = mergeClassification(cached?.classification, alert.classification)))
+            }
         }
         // Un id con formato que la API no acepta (400 INVALID_INPUT, p. ej. el ALR-PRUEBA-000001 de
         // los push de prueba) es, para quien abre el detalle, una alerta que no existe.
@@ -123,26 +127,51 @@ class RemoteAlertRepository @Inject constructor(
 
     private fun mergeRow(old: Alert?, row: Alert): Alert {
         if (old == null) return row
-        val record = row.classification
-        val oldRecord = old.classification
-        val mergedRecord = if (record != null && oldRecord != null && record.classification == oldRecord.classification) {
-            record.copy(
-                classifiedAt = oldRecord.classifiedAt,
-                origin = oldRecord.origin,
-                tag = record.tag?.let { tag ->
-                    val oldTag = oldRecord.tag?.takeIf { it.tag == tag.tag }
-                    if (oldTag == null) tag else tag.copy(taggedAt = oldTag.taggedAt, origin = oldTag.origin)
-                },
-            )
-        } else {
-            record
-        }
         return row.copy(
             levelTimeline = old.levelTimeline,
             observations = old.observations,
             indicatorValue = old.indicatorValue,
-            classification = mergedRecord,
+            classification = mergeClassification(old.classification, row.classification),
         )
+    }
+
+    /** List and detail responses can omit classification metadata already present in the cache. */
+    private fun mergeClassification(cached: ClassificationRecord?, incoming: ClassificationRecord?): ClassificationRecord? =
+        when {
+            incoming == null -> cached
+            cached == null || cached.classification != incoming.classification -> incoming
+            else -> incoming.copy(
+                classifiedAt = incoming.classifiedAt ?: cached.classifiedAt,
+                origin = incoming.origin ?: cached.origin,
+                tag = mergeTag(cached.tag, incoming.tag),
+            )
+        }
+
+    private fun mergeTag(
+        cached: TagRecord?,
+        incoming: TagRecord?,
+    ): TagRecord? = when {
+        incoming == null -> cached
+        cached == null || cached.tag != incoming.tag -> incoming
+        else -> incoming.copy(
+            taggedAt = incoming.taggedAt ?: cached.taggedAt,
+            origin = incoming.origin ?: cached.origin,
+        )
+    }
+
+    /** An accepted online action is visible immediately, even if the following GET is stale. */
+    private fun applyClassificationLocally(action: AlertActionEntity) {
+        val classification = action.classification ?: return
+        alerts.update { current ->
+            val cached = current.firstOrNull { it.id == action.alertId } ?: return@update current
+            if (cached.classification != null) return@update current
+            val updated = cached.classify(
+                classification = classification,
+                at = action.recordedAt,
+                origin = Origin.MobileApp(action.deviceIdentifier),
+            )
+            replace(current, updated)
+        }
     }
 
     private fun replace(list: List<Alert>, alert: Alert): List<Alert> =
@@ -203,6 +232,7 @@ class RemoteAlertRepository @Inject constructor(
         )
         return when (val posted = postAction(action)) {
             is Posted.Ok -> {
+                applyClassificationLocally(action)
                 loadAlert(alertId)
                 AlertResult.Success(ClassifyOutcome.Saved)
             }

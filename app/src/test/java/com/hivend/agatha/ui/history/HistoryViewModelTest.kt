@@ -5,11 +5,16 @@ import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
+import com.hivend.agatha.domain.model.AlertHistoryPhase
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.domain.model.ManagementStatus
+import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.repository.DeviceHistory
 import com.hivend.agatha.domain.repository.HistoryRepository
@@ -199,6 +204,45 @@ class HistoryViewModelTest {
             assertEquals(refreshCount, repository.refreshCalls.size)
             collection.cancel()
         }
+
+    @Test
+    fun observeHistoryUpdatesTheGeneratedRowAndAddsClassificationEvent() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakeHistoryRepository().apply {
+            setHistory("MP-11556", alert("ALR-000007", 11556))
+        }
+        val viewModel = HistoryViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+            ),
+            historyRepository = repository,
+            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
+            connectivityMonitor = FakeConnectivityMonitor(connected = false),
+            selectionStore = HistorySelectionStore(),
+        )
+        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
+        advanceUntilIdle()
+
+        repository.setHistory(
+            "MP-11556",
+            alert("ALR-000007", 11556).copy(
+                classification = ClassificationRecord(
+                    classification = AlertClassification.FALSE_ALARM,
+                    classifiedAt = Instant.parse("2026-10-30T15:10:00Z"),
+                    origin = Origin.MobileApp("CEL-TEST01"),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        val generated = viewModel.uiState.value.events.single { it.alertPhase == AlertHistoryPhase.GENERATED }
+        val classification = viewModel.uiState.value.events.single { it.type == EventType.CLASSIFICATION }
+        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, generated.alertManagementStatus)
+        assertEquals(AlertClassification.FALSE_ALARM, generated.alertClassification)
+        assertEquals(Instant.parse("2026-10-30T15:10:00Z"), classification.timestamp)
+        collection.cancel()
+    }
 
     private fun alert(id: String, deviceId: Int) = Alert(
         id = id,

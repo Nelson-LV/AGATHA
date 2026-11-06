@@ -16,6 +16,7 @@ import com.hivend.agatha.domain.model.LevelChange
 import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.model.MaintenanceRecord
 import com.hivend.agatha.domain.model.MaintenanceType
+import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.ObservationKind
 import com.hivend.agatha.domain.model.PhotoEvidence
@@ -80,36 +81,59 @@ class HistoryEventsTest {
     }
 
     @Test
-    fun generatedRowUsesClassificationInsteadOfManagementStatus() {
-        val classified = alert(
+    fun generatedRowSeparatesManagementStatusClassificationAndTag() {
+        val classifiedWithTag = alert(
             id = "ALR-000009",
             startedAt = Instant.parse("2026-09-27T06:00:00Z"),
             classification = ClassificationRecord(
-                classification = AlertClassification.FALSE_ALARM,
+                classification = AlertClassification.CONFIRMED,
                 classifiedAt = Instant.parse("2026-09-27T07:00:00Z"),
+                origin = origin,
+                tag = TagRecord(
+                    tag = AlertTag.LEAK_CONFIRMED_IN_FIELD,
+                    otherDetail = null,
+                    taggedAt = Instant.parse("2026-09-27T07:30:00Z"),
+                    origin = origin,
+                ),
+            ),
+        )
+        val classifiedWithoutTag = alert(
+            id = "ALR-000010",
+            startedAt = Instant.parse("2026-09-27T08:00:00Z"),
+            classification = ClassificationRecord(
+                classification = AlertClassification.FALSE_ALARM,
+                classifiedAt = Instant.parse("2026-09-27T08:30:00Z"),
                 origin = origin,
             ),
         )
-        val unclassified = alert(
-            id = "ALR-000010",
-            startedAt = Instant.parse("2026-09-27T08:00:00Z"),
-        )
+        val unclassified = alert("ALR-000011", Instant.parse("2026-09-27T09:00:00Z"))
 
-        val generated = DeviceHistory(alerts = listOf(classified, unclassified)).toEvents()
+        val generated = DeviceHistory(alerts = listOf(classifiedWithTag, classifiedWithoutTag, unclassified)).toEvents()
             .filter { it.alertPhase == AlertHistoryPhase.GENERATED }
             .associateBy(HistoryEvent::alertId)
 
-        assertEquals(AlertClassification.FALSE_ALARM, generated.getValue("ALR-000009").alertClassification)
+        assertEquals(ManagementStatus.CLASSIFIED_WITH_TAG, generated.getValue("ALR-000009").alertManagementStatus)
+        assertEquals(AlertClassification.CONFIRMED, generated.getValue("ALR-000009").alertClassification)
         assertEquals(
-            LocalizedText.Resource(R.string.classification_false_alarm),
+            LocalizedText.Resource(R.string.management_status_classified_with_tag),
             generated.getValue("ALR-000009").statusLabel,
         )
-        assertNull(generated.getValue("ALR-000010").alertClassification)
+        assertEquals(
+            LocalizedText.Resource(
+                R.string.history_alert_tag_detail,
+                listOf(LocalizedText.Resource(R.string.alert_tag_leak_confirmed_in_field)),
+            ),
+            generated.getValue("ALR-000009").alertTagLabel,
+        )
+        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, generated.getValue("ALR-000010").alertManagementStatus)
+        assertEquals(AlertClassification.FALSE_ALARM, generated.getValue("ALR-000010").alertClassification)
+        assertEquals(ManagementStatus.UNCLASSIFIED, generated.getValue("ALR-000011").alertManagementStatus)
+        assertNull(generated.getValue("ALR-000011").alertClassification)
         assertEquals(
             LocalizedText.Resource(R.string.management_status_unclassified),
-            generated.getValue("ALR-000010").statusLabel,
+            generated.getValue("ALR-000011").statusLabel,
         )
-        assertEquals(2, generated.size)
+        assertEquals(3, generated.size)
     }
 
     @Test
@@ -211,6 +235,10 @@ class HistoryEventsTest {
                 ),
             ),
             event.detail,
+        )
+        assertEquals(
+            listOf(event.detail, LocalizedText.Resource(R.string.origin_web)),
+            event.detailParts,
         )
     }
 

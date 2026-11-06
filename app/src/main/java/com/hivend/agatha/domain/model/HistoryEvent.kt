@@ -41,6 +41,8 @@ data class HistoryEvent(
     val alertId: String? = null,
     val alertLevel: AlertLevel? = null,
     val alertClassification: AlertClassification? = null,
+    val alertManagementStatus: ManagementStatus? = null,
+    val alertTagLabel: LocalizedText? = null,
     val alertPhase: AlertHistoryPhase? = null,
 ) {
     /** Compatibility timestamp used by the alert detail's recent-history card. */

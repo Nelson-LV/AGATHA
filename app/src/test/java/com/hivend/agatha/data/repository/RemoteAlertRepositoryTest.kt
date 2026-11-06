@@ -13,15 +13,18 @@ import com.hivend.agatha.data.remote.alerts.LabelRequestDto
 import com.hivend.agatha.data.remote.alerts.ObservationRequestDto
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertFailure
+import com.hivend.agatha.domain.model.AlertHistoryPhase
 import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ClassifyOutcome
+import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.MaintenanceRecord
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SyncRecordType
+import com.hivend.agatha.ui.history.toHistoryEvents
 import java.io.IOException
 import java.time.Instant
 import kotlinx.coroutines.flow.Flow
@@ -219,6 +222,35 @@ class RemoteAlertRepositoryTest {
         assertEquals(at.toString(), sent.recordedAt)
         assertEquals(AlertClassification.CONFIRMED, repo.observeAlert("ALR-000001").first()!!.classification!!.classification)
         assertFalse(repo.observeClassificationPendingSync("ALR-000001").first())
+    }
+
+    @Test
+    fun `classification immediately appears in the reactive history and survives stale list rows`() = runBlocking {
+        val api = FakeApi().apply {
+            recent += dto(1)
+            // The POST succeeds, but the following detail GET and device list still omit the result.
+            details["ALR-000001"] = dto(1)
+        }
+        val repo = repository(api)
+        repo.refreshAlerts()
+        val historyRepository = AlertHistoryRepository(repo)
+
+        val result = repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at, phone)
+
+        assertEquals(AlertResult.Success(ClassifyOutcome.Saved), result)
+        val reflectedEvents = historyRepository.observeHistory("MP-11556").first().toHistoryEvents()
+        val generated = reflectedEvents.single { it.alertPhase == AlertHistoryPhase.GENERATED }
+        val classificationEvent = reflectedEvents.single { it.type == EventType.CLASSIFICATION }
+        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, generated.alertManagementStatus)
+        assertEquals(AlertClassification.CONFIRMED, generated.alertClassification)
+        assertEquals(at, classificationEvent.timestamp)
+        assertEquals("ALR-000001", classificationEvent.alertId)
+
+        assertTrue(repo.refreshDevice(11556) is AlertResult.Success)
+        val afterStaleRefresh = historyRepository.observeHistory("MP-11556").first().alerts.single()
+        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, afterStaleRefresh.managementStatus)
+        assertEquals(at, afterStaleRefresh.classification?.classifiedAt)
+        assertEquals(phone, afterStaleRefresh.classification?.origin)
     }
 
     @Test

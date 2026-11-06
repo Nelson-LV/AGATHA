@@ -11,6 +11,7 @@ import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.LocalizedText
 import com.hivend.agatha.domain.model.MaintenanceType
+import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.repository.DeviceHistory
 import com.hivend.agatha.ui.components.labelRes as alertTagLabelRes
 import com.hivend.agatha.ui.components.labelRes as maintenanceLabelRes
@@ -150,8 +151,16 @@ private fun Inspection.historyDetail(): LocalizedText {
 private fun Alert.toEvents(includeAdditionalTypes: Boolean): List<HistoryEvent> = buildList {
     val firstLevel = levelTimeline.firstOrNull()?.level ?: maxLevel
     val classificationValue = classification?.classification
-    val classificationLabel = classificationValue?.let(::resClassification)
-        ?: res(R.string.management_status_unclassified)
+    val managementStatus = this@toEvents.managementStatus
+    val tag = classification?.tag
+    val tagLabel = tag?.let { record ->
+        val label = res(record.tag.alertTagLabelRes())
+        if (record.tag.requiresDetail) {
+            res(R.string.history_alert_tag_other_detail, label, record.otherDetail.orEmpty())
+        } else {
+            res(R.string.history_alert_tag_detail, label)
+        }
+    }
 
     add(
         HistoryEvent(
@@ -162,10 +171,12 @@ private fun Alert.toEvents(includeAdditionalTypes: Boolean): List<HistoryEvent> 
             description = "",
             title = res(R.string.history_alert_started, res(firstLevel.shortLabelRes())),
             detail = res(R.string.history_alert_detail, id, res(event.labelRes())),
-            statusLabel = classificationLabel,
+            statusLabel = res(managementStatus.labelRes()),
             alertId = id,
             alertLevel = firstLevel,
             alertClassification = classificationValue,
+            alertManagementStatus = managementStatus,
+            alertTagLabel = tagLabel,
             alertPhase = AlertHistoryPhase.GENERATED,
         ),
     )
@@ -219,8 +230,14 @@ private fun ClassificationRecord.toHistoryEvent(alert: Alert): HistoryEvent? {
         description = "",
         title = res(R.string.history_classification_title),
         detail = detail,
+        detailParts = origin?.toLocalizedText()?.let { originText -> listOf(detail, originText) },
         alertId = alert.id,
     )
+}
+
+private fun Origin.toLocalizedText(): LocalizedText = when (this) {
+    Origin.Web -> res(R.string.origin_web)
+    is Origin.MobileApp -> res(R.string.origin_mobile_app, deviceId)
 }
 
 private fun AlertObservation.toHistoryEvent(alert: Alert): HistoryEvent? {
