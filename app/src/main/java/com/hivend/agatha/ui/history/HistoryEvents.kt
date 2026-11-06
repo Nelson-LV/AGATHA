@@ -210,7 +210,7 @@ private fun Alert.toEvents(includeAdditionalTypes: Boolean): List<HistoryEvent> 
 }
 
 private fun ClassificationRecord.toHistoryEvent(alert: Alert): HistoryEvent? {
-    val eventTime = classifiedAt ?: tag?.taggedAt ?: return null
+    val eventTime = classifiedAt ?: return null
     val classificationText = res(classification.labelRes())
     val tagRecord = tag
     val detail = when {

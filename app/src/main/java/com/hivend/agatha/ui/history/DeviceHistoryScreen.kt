@@ -296,6 +296,7 @@ fun HistoryAlertEventRow(
                     modifier = Modifier.padding(top = 2.dp),
                 )
                 if (event.alertPhase == AlertHistoryPhase.GENERATED) {
+                    // Confirm with the team: the web reference uses management status as the chip.
                     ManagementStatusChip(
                         status = event.alertManagementStatus ?: ManagementStatus.UNCLASSIFIED,
                         modifier = Modifier.padding(top = 8.dp),

@@ -252,6 +252,12 @@ class HistoryEventsTest {
                 classification = AlertClassification.CONFIRMED,
                 classifiedAt = null,
                 origin = origin,
+                tag = TagRecord(
+                    tag = AlertTag.GROUND_MOVEMENT,
+                    otherDetail = null,
+                    taggedAt = Instant.parse("2026-10-10T13:30:00Z"),
+                    origin = origin,
+                ),
             ),
         )
 
