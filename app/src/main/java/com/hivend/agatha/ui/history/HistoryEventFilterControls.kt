@@ -1,30 +1,44 @@
 package com.hivend.agatha.ui.history
 
-import androidx.compose.foundation.horizontalScroll
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material3.DatePicker
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DateRangePickerDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.SelectableDates
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberDateRangePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.EventType
@@ -33,9 +47,12 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 
+/**
+ * Filtros en una sola línea: tipo (menú) y fechas (selector de rango). Son chips de ancho
+ * natural que bajan de línea si no caben, así que nunca hay scroll horizontal ni texto cortado.
+ */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryEventFilterControls(
     selectedEventType: EventType?,
@@ -47,127 +64,143 @@ fun HistoryEventFilterControls(
     onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var datePickerTarget by remember { mutableStateOf<DatePickerTarget?>(null) }
-    val locale = LocalConfiguration.current.locales[0] ?: Locale.ROOT
+    var showDatePicker by remember { mutableStateOf(false) }
 
-    Column(
+    FlowRow(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
+        EventTypeFilter(
+            selectedEventType = selectedEventType,
+            onSelectEventType = onSelectEventType,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        // La X va pegada al chip de fechas para que nunca baje sola a otra línea.
         Row(
-            modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.align(Alignment.CenterVertically),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             FilterChip(
-                selected = selectedEventType == null,
-                onClick = { onSelectEventType(null) },
-                label = { Text(stringResource(R.string.history_filter_all_types)) },
+                selected = dateFrom != null || dateThrough != null,
+                onClick = { showDatePicker = true },
+                label = { Text(dateRangeLabel(dateFrom, dateThrough), maxLines = 1) },
+                trailingIcon = { DropdownArrow() },
             )
-            FilterChip(
-                selected = selectedEventType == EventType.ALERT,
-                onClick = { onSelectEventType(EventType.ALERT) },
-                label = { Text(stringResource(R.string.history_filter_alerts)) },
-            )
-            listOf(
-                EventType.INSPECTION,
-                EventType.EVIDENCE,
-                EventType.MAINTENANCE,
-                EventType.OBSERVATION,
-                EventType.CLASSIFICATION,
-            ).forEach { eventType ->
-                FilterChip(
-                    selected = selectedEventType == eventType,
-                    onClick = { onSelectEventType(eventType) },
-                    label = {
-                        Text(
-                            stringResource(
-                                if (eventType == EventType.OBSERVATION) {
-                                    R.string.history_filter_observations
-                                } else {
-                                    eventType.labelRes()
-                                },
-                            ),
-                        )
+            if (hasAdditionalFilters) {
+                IconButton(onClick = onClearFilters) {
+                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.history_clear_filters))
+                }
+            }
+        }
+    }
+
+    if (showDatePicker) {
+        HistoryDateRangeDialog(
+            initialFrom = dateFrom,
+            initialThrough = dateThrough,
+            onRangeSelected = onDateRangeSelected,
+            onDismiss = { showDatePicker = false },
+        )
+    }
+}
+
+@Composable
+private fun EventTypeFilter(
+    selectedEventType: EventType?,
+    onSelectEventType: (EventType?) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = modifier) {
+        FilterChip(
+            selected = selectedEventType != null,
+            onClick = { expanded = true },
+            label = { Text(stringResource(eventTypeFilterLabelRes(selectedEventType)), maxLines = 1) },
+            trailingIcon = { DropdownArrow() },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            EVENT_TYPE_FILTER_OPTIONS.forEach { eventType ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(eventTypeFilterLabelRes(eventType))) },
+                    onClick = {
+                        onSelectEventType(eventType)
+                        expanded = false
+                    },
+                    trailingIcon = if (eventType == selectedEventType) {
+                        { Icon(Icons.Filled.Check, contentDescription = null) }
+                    } else {
+                        null
                     },
                 )
             }
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-        ) {
-            OutlinedButton(
-                onClick = { datePickerTarget = DatePickerTarget.FROM },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = dateFrom?.let { stringResource(R.string.history_filter_from, formatDate(it, locale)) }
-                        ?: stringResource(R.string.history_filter_choose_from),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            OutlinedButton(
-                onClick = { datePickerTarget = DatePickerTarget.THROUGH },
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = dateThrough?.let { stringResource(R.string.history_filter_through, formatDate(it, locale)) }
-                        ?: stringResource(R.string.history_filter_choose_through),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-        }
-
-        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            TextButton(onClick = onClearFilters, enabled = hasAdditionalFilters) {
-                Text(stringResource(R.string.history_clear_filters), maxLines = 1)
-            }
-        }
     }
+}
 
-    when (datePickerTarget) {
-        DatePickerTarget.FROM -> HistoryDatePickerDialog(
-            initialDate = dateFrom,
-            onDateSelected = { onDateRangeSelected(it, dateThrough) },
-            onDismiss = { datePickerTarget = null },
-        )
-        DatePickerTarget.THROUGH -> HistoryDatePickerDialog(
-            initialDate = dateThrough,
-            onDateSelected = { onDateRangeSelected(dateFrom, it) },
-            onDismiss = { datePickerTarget = null },
-        )
-        null -> Unit
+@Composable
+private fun DropdownArrow() {
+    Icon(
+        Icons.Filled.ArrowDropDown,
+        contentDescription = null,
+        modifier = Modifier.size(FilterChipDefaults.IconSize),
+    )
+}
+
+@Composable
+private fun dateRangeLabel(from: LocalDate?, through: LocalDate?): String {
+    val formatter = DateTimeFormatter.ofPattern(
+        stringResource(R.string.history_filter_short_date_pattern),
+        LocalConfiguration.current.locales[0],
+    )
+    return when {
+        from != null && through != null && from == through -> formatter.format(from)
+        from != null && through != null ->
+            stringResource(R.string.history_filter_date_range, formatter.format(from), formatter.format(through))
+        from != null -> stringResource(R.string.history_filter_from, formatter.format(from))
+        through != null -> stringResource(R.string.history_filter_through, formatter.format(through))
+        else -> stringResource(R.string.history_filter_dates)
     }
+}
+
+@StringRes
+private fun eventTypeFilterLabelRes(eventType: EventType?): Int = when (eventType) {
+    null -> R.string.history_filter_all_types
+    EventType.ALERT -> R.string.history_filter_alerts
+    EventType.OBSERVATION -> R.string.history_filter_observations
+    else -> eventType.labelRes()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun HistoryDatePickerDialog(
-    initialDate: LocalDate?,
-    onDateSelected: (LocalDate) -> Unit,
+private fun HistoryDateRangeDialog(
+    initialFrom: LocalDate?,
+    initialThrough: LocalDate?,
+    onRangeSelected: (LocalDate?, LocalDate?) -> Unit,
     onDismiss: () -> Unit,
 ) {
     val today = LocalDate.now()
     val earliestDate = today.minusDays(HISTORY_DATE_WINDOW_DAYS)
-    val selectedDate = initialDate?.coerceIn(earliestDate, today)
-    val pickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneOffset.UTC)?.toInstant()?.toEpochMilli(),
+    val pickerState = rememberDateRangePickerState(
+        initialSelectedStartDateMillis = initialFrom?.coerceIn(earliestDate, today)?.toUtcMillis(),
+        // El selector no admite una fecha final sin inicial.
+        initialSelectedEndDateMillis = initialThrough?.takeIf { initialFrom != null }
+            ?.coerceIn(earliestDate, today)?.toUtcMillis(),
         yearRange = earliestDate.year..today.year,
         selectableDates = HistorySelectableDates(earliestDate, today),
     )
+    val dateFormatter = remember { DatePickerDefaults.dateFormatter() }
 
     DatePickerDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
             TextButton(
-                enabled = pickerState.selectedDateMillis != null,
+                enabled = pickerState.selectedStartDateMillis != null,
                 onClick = {
-                    pickerState.selectedDateMillis?.let { millis ->
-                        onDateSelected(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
-                    }
+                    onRangeSelected(
+                        pickerState.selectedStartDateMillis?.toUtcLocalDate(),
+                        pickerState.selectedEndDateMillis?.toUtcLocalDate(),
+                    )
                     onDismiss()
                 },
             ) {
@@ -178,7 +211,29 @@ private fun HistoryDatePickerDialog(
             TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
         },
     ) {
-        DatePicker(state = pickerState, showModeToggle = false)
+        DateRangePicker(
+            state = pickerState,
+            showModeToggle = false,
+            // Los márgenes por defecto están pensados para pantalla completa, no para un diálogo.
+            title = {
+                DateRangePickerDefaults.DateRangePickerTitle(
+                    displayMode = pickerState.displayMode,
+                    modifier = Modifier.padding(start = 24.dp, end = 12.dp, top = 16.dp),
+                )
+            },
+            headline = {
+                // Con el tamaño por defecto el rango no cabe en una línea en pantallas angostas.
+                ProvideTextStyle(MaterialTheme.typography.titleMedium) {
+                    DateRangePickerDefaults.DateRangePickerHeadline(
+                        selectedStartDateMillis = pickerState.selectedStartDateMillis,
+                        selectedEndDateMillis = pickerState.selectedEndDateMillis,
+                        displayMode = pickerState.displayMode,
+                        dateFormatter = dateFormatter,
+                        modifier = Modifier.padding(start = 24.dp, end = 12.dp, bottom = 12.dp),
+                    )
+                }
+            },
+        )
     }
 }
 
@@ -187,18 +242,22 @@ private class HistorySelectableDates(
     private val earliestDate: LocalDate,
     private val latestDate: LocalDate,
 ) : SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-        val date = Instant.ofEpochMilli(utcTimeMillis).atZone(ZoneOffset.UTC).toLocalDate()
-        return date in earliestDate..latestDate
-    }
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean =
+        utcTimeMillis.toUtcLocalDate() in earliestDate..latestDate
 
     override fun isSelectableYear(year: Int): Boolean = year in earliestDate.year..latestDate.year
 }
 
-private fun formatDate(date: LocalDate, locale: Locale): String =
-    DateTimeFormatter.ofLocalizedDate(FormatStyle.SHORT).withLocale(locale).format(date)
+private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
-private enum class DatePickerTarget {
-    FROM,
-    THROUGH,
-}
+private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
+
+private val EVENT_TYPE_FILTER_OPTIONS = listOf(
+    null,
+    EventType.ALERT,
+    EventType.INSPECTION,
+    EventType.EVIDENCE,
+    EventType.MAINTENANCE,
+    EventType.OBSERVATION,
+    EventType.CLASSIFICATION,
+)

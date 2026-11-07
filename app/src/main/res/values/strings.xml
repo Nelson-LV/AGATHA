@@ -373,8 +373,9 @@
     <string name="history_filter_all_nodes">Todos los nodos</string>
     <string name="history_filter_all_types">Todos los tipos</string>
     <string name="history_clear_filters">Limpiar filtros</string>
-    <string name="history_filter_choose_from">Elegir fecha inicial</string>
-    <string name="history_filter_choose_through">Elegir fecha final</string>
+    <string name="history_filter_dates">Fechas</string>
+    <string name="history_filter_date_range">%1$s – %2$s</string>
+    <string name="history_filter_short_date_pattern">dd/MM</string>
     <string name="history_filter_from">Desde: %1$s</string>
     <string name="history_filter_through">Hasta: %1$s</string>
     <string name="history_date_confirm">Aplicar</string>
