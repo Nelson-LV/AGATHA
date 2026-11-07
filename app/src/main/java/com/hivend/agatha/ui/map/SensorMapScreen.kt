@@ -6,7 +6,6 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.clipToBounds
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -19,6 +18,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -26,7 +26,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilterChip
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
@@ -46,18 +47,21 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.ui.components.AgathaHeader
+import com.hivend.agatha.ui.components.agathaCard
 import java.time.format.FormatStyle
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -161,21 +165,60 @@ private fun StatusFilterRow(
     selectedStatus: SensorNodeStatus?,
     onSelectStatus: (SensorNodeStatus?) -> Unit,
 ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        FilterChip(
-            selected = selectedStatus == null,
-            onClick = { onSelectStatus(null) },
-            label = { Text(stringResource(R.string.map_filter_all)) },
-        )
-        SensorNodeStatus.entries.forEach { status ->
-            FilterChip(
-                selected = selectedStatus == status,
-                onClick = { onSelectStatus(status) },
-            label = { Text(stringResource(status.filterLabelResource())) },
+    var expanded by remember { mutableStateOf(false) }
+    val options = listOf<SensorNodeStatus?>(null) + SensorNodeStatus.entries
+
+    BoxWithConstraints(modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp)) {
+        val menuWidth = maxWidth
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .agathaCard()
+                .clickable(role = Role.DropdownList) { expanded = true }
+                .padding(horizontal = 14.dp, vertical = 10.dp),
+        ) {
+            Text(
+                stringResource(R.string.map_legend_status_heading),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f),
             )
+            selectedStatus?.let { StatusLegendDot(it.legendColor()) }
+            Text(
+                stringResource(selectedStatus.filterLabelResource()),
+                style = MaterialTheme.typography.labelLarge,
+            )
+            Icon(
+                imageVector = if (expanded) Icons.Filled.KeyboardArrowUp else Icons.Filled.KeyboardArrowDown,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.width(menuWidth),
+        ) {
+            options.forEach { status ->
+                DropdownMenuItem(
+                    text = { Text(stringResource(status.filterLabelResource())) },
+                    onClick = {
+                        onSelectStatus(status)
+                        expanded = false
+                    },
+                    leadingIcon = {
+                        // "Todos" no tiene color: reserva el hueco para que los textos queden alineados.
+                        Box(Modifier.size(10.dp)) { status?.let { StatusLegendDot(it.legendColor()) } }
+                    },
+                    trailingIcon = {
+                        if (status == selectedStatus) {
+                            Icon(Icons.Filled.Check, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
+                        }
+                    },
+                )
+            }
         }
     }
 }
@@ -427,7 +470,8 @@ private fun PipelineLegendLine(color: Color, dashed: Boolean = false) {
     }
 }
 
-private fun SensorNodeStatus.filterLabelResource(): Int = when (this) {
+private fun SensorNodeStatus?.filterLabelResource(): Int = when (this) {
+    null -> R.string.map_filter_all
     SensorNodeStatus.NORMAL -> R.string.level_normal
     SensorNodeStatus.YELLOW -> R.string.level_yellow
     SensorNodeStatus.ORANGE -> R.string.level_orange
