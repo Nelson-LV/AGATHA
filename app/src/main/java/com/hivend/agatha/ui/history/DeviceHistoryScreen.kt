@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.history
 
+import com.hivend.agatha.ui.components.agathaCard
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +33,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -253,11 +253,11 @@ fun HistoryAlertEventRow(
     val level = event.alertLevel ?: AlertLevel.GREEN
     val levelColor = level.levelColor()
 
-    Surface(
-        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
-        shape = RoundedCornerShape(14.dp),
-        color = AgathaTheme.colors.surface,
-        tonalElevation = 1.dp,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .agathaCard(stripeColor = levelColor)
+            .then(event.alertClickModifier(onAlertClick)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),
@@ -330,11 +330,11 @@ private fun HistoryTypedEventRow(
     modifier: Modifier = Modifier,
 ) {
     val eventColor = event.type.color()
-    Surface(
-        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
-        shape = RoundedCornerShape(14.dp),
-        color = AgathaTheme.colors.surface,
-        tonalElevation = 1.dp,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .then(event.alertClickModifier(onAlertClick)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),

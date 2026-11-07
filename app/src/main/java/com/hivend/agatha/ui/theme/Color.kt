@@ -37,6 +37,13 @@ data class AgathaColors(
     val textTertiary: Color,
     val textOnMuted: Color,
 
+    // ---- Encabezado oscuro de la web (igual en claro y oscuro) y tarjetas ----
+    val headerBackground: Color,
+    val onHeader: Color,
+    val onHeaderMuted: Color,
+    val cardBorder: Color,
+    val cardShadow: Color,
+
     // ---- Severidad (Nivel de alerta) ----
     val critical: Color,
     val onCritical: Color,
@@ -121,6 +128,12 @@ val LightAgathaColors = AgathaColors(
     textTertiary = Color(0xFF7D8696),
     textOnMuted = Color(0xFF3F4957),
 
+    headerBackground = Color(0xFF0F1B2E),
+    onHeader = Color(0xFFFFFFFF),
+    onHeaderMuted = Color(0xFFA8B8D0),
+    cardBorder = Color(0xFFE6EAF0),
+    cardShadow = Color(0x590F172A),
+
     critical = Color(0xFFC62828),
     onCritical = Color(0xFFFFFFFF),
     criticalBorder = Color(0xFFF19A9A),
@@ -193,6 +206,12 @@ val DarkAgathaColors = AgathaColors(
     textSecondary = Color(0xFFA8B1BD),
     textTertiary = Color(0xFF7F8997),
     textOnMuted = Color(0xFFC3CAD3),
+
+    headerBackground = Color(0xFF131F35),
+    onHeader = Color(0xFFFFFFFF),
+    onHeaderMuted = Color(0xFFA8B8D0),
+    cardBorder = Color(0xFF2D3540),
+    cardShadow = Color(0x99000000),
 
     critical = Color(0xFFFF8A80),
     onCritical = Color(0xFF3B0A0A),

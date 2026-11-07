@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.sync
 
+import com.hivend.agatha.ui.components.agathaCard
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.Warning
@@ -168,7 +169,7 @@ private fun PendingSyncCard(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(16.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {

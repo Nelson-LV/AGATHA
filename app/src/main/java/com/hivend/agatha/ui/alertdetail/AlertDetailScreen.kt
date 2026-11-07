@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.alertdetail
 
+import com.hivend.agatha.ui.components.agathaCard
 import com.hivend.agatha.ui.theme.AgathaDataTextStyle
 import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
@@ -220,8 +221,7 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
-            .border(1.5.dp, alert.level.levelColor().copy(alpha = 0.6f), RoundedCornerShape(14.dp))
+            .agathaCard(stripeColor = alert.level.levelColor())
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -461,7 +461,7 @@ private fun SectionCard(title: String, content: @Composable () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(14.dp),
     ) {
         Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
@@ -487,7 +487,7 @@ private fun ObservationsCard(
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -558,7 +558,7 @@ private fun IndicatorChartCard(sensorId: String) {
         verticalArrangement = Arrangement.spacedBy(8.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(14.dp),
     ) {
         Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
@@ -595,7 +595,7 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
         verticalArrangement = Arrangement.spacedBy(2.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(14.dp),
     ) {
         Text(stringResource(R.string.alert_detail_device_history), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)

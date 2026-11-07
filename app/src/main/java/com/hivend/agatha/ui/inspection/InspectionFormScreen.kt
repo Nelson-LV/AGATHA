@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.inspection
 
+import com.hivend.agatha.ui.components.agathaCard
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -603,7 +604,7 @@ private fun FormCard(content: @Composable () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(16.dp),
     ) { content() }
 }

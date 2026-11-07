@@ -1,9 +1,11 @@
 package com.hivend.agatha
 
+import android.graphics.Color
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -33,7 +35,8 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        // Íconos claros en la barra de estado: el encabezado de la app es oscuro en ambos temas.
+        enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         // Al recrearse (rotación) el intent original ya se atendió: no volver a abrir el detalle.
         if (savedInstanceState == null) alertToOpen = intent.alertIdExtra()
         setContent {
