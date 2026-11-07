@@ -178,7 +178,7 @@ fun AlertInboxScreen(
 }
 
 @Composable
-private fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
+internal fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
     Column {
         Row(
             verticalAlignment = Alignment.Top,

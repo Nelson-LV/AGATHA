@@ -39,10 +39,11 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -56,18 +57,15 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.AlertFailure
-import com.hivend.agatha.domain.model.AlertHistoryPhase
-import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
-import com.hivend.agatha.domain.model.ManagementStatus
+import com.hivend.agatha.ui.alerts.AlertRow
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.labelRes
-import com.hivend.agatha.ui.components.levelColor
 import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.theme.AgathaTheme
 import kotlinx.coroutines.flow.collect
@@ -86,11 +84,11 @@ fun DeviceHistoryScreen(
         initialFirstVisibleItemScrollOffset = state.listScrollOffset,
     )
     var restoredListPosition by remember { mutableStateOf(false) }
-    LaunchedEffect(state.isLoading, state.events.size, state.listScrollIndex, state.listScrollOffset) {
+    LaunchedEffect(state.isLoading, state.shownCount, state.listScrollIndex, state.listScrollOffset) {
         if (!restoredListPosition && !state.isLoading) {
-            if (state.events.isNotEmpty()) {
+            if (state.shownCount > 0) {
                 listState.scrollToItem(
-                    index = state.listScrollIndex.coerceAtMost(state.events.lastIndex),
+                    index = state.listScrollIndex.coerceAtMost(state.shownCount - 1),
                     scrollOffset = state.listScrollOffset,
                 )
             }
@@ -103,6 +101,16 @@ fun DeviceHistoryScreen(
             .distinctUntilChanged()
             .drop(1)
             .collect { (index, offset) -> viewModel.updateListScrollPosition(index, offset) }
+    }
+    // Al cambiar un filtro la lista vuelve al inicio; sin esto seguiría a la fila que estaba arriba
+    // y dejaría ocultos los registros más recientes.
+    val filterKey = listOf(state.selectedEventType, state.dateFrom, state.dateThrough, state.selectedSensor?.id)
+    var appliedFilterKey by remember { mutableStateOf<List<Any?>?>(null) }
+    LaunchedEffect(filterKey, state.isLoading) {
+        if (state.isLoading) return@LaunchedEffect
+        val previous = appliedFilterKey
+        appliedFilterKey = filterKey
+        if (previous != null && previous != filterKey) listState.scrollToItem(0)
     }
     val connectivityMessage = when {
         !state.isConnected -> state.lastSyncedAt?.let { lastSync ->
@@ -138,31 +146,30 @@ fun DeviceHistoryScreen(
         )
 
         when {
-            state.isLoading && state.events.isEmpty() -> HistoryLoadingState(Modifier.weight(1f))
-            state.events.isEmpty() && state.hasAdditionalFilters -> HistoryEmptyState(
+            state.isLoading && state.shownCount == 0 -> HistoryLoadingState(Modifier.weight(1f))
+            state.shownCount == 0 && state.hasAdditionalFilters -> HistoryEmptyState(
                 messageRes = R.string.history_no_filter_results,
                 modifier = Modifier.weight(1f),
             )
-            state.events.isEmpty() && state.failure != null -> HistoryFailureState(
+            state.shownCount == 0 && state.failure != null -> HistoryFailureState(
                 failure = state.failure,
                 onRetry = viewModel::refresh,
                 modifier = Modifier.weight(1f),
             )
-            state.events.isEmpty() -> HistoryEmptyState(modifier = Modifier.weight(1f))
+            state.shownCount == 0 -> HistoryEmptyState(modifier = Modifier.weight(1f))
             else -> LazyColumn(
                 modifier = Modifier.weight(1f),
                 state = listState,
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                items(state.events, key = HistoryEvent::id) { event ->
-                    when (event.type) {
-                        EventType.ALERT -> HistoryAlertEventRow(event, onAlertClick)
-                        EventType.INSPECTION,
-                        EventType.EVIDENCE,
-                        EventType.MAINTENANCE,
-                        EventType.OBSERVATION,
-                        EventType.CLASSIFICATION -> HistoryTypedEventRow(event, onAlertClick)
+                if (state.selectedEventType == null) {
+                    items(state.alerts, key = Alert::id) { alert ->
+                        HistoryAlertRow(alert, onClick = { onAlertClick(alert.id) })
+                    }
+                } else {
+                    items(state.events, key = HistoryEvent::id) { event ->
+                        HistoryTypedEventRow(event, onAlertClick)
                     }
                 }
             }
@@ -245,81 +252,15 @@ private fun SelectorDropdown(
 }
 
 @Composable
-fun HistoryAlertEventRow(
-    event: HistoryEvent,
-    onAlertClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val level = event.alertLevel ?: AlertLevel.GREEN
-    val levelColor = level.levelColor()
-
-    Surface(
-        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
-        shape = RoundedCornerShape(14.dp),
-        color = AgathaTheme.colors.surface,
-        tonalElevation = 1.dp,
+private fun HistoryAlertRow(alert: Alert, onClick: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.surface)
+            .padding(horizontal = 16.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier.size(38.dp).background(levelColor.copy(alpha = 0.14f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Warning,
-                    contentDescription = null,
-                    tint = levelColor,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(R.string.history_alert_timestamp, formatDateTime(event.timestamp)),
-                    color = AgathaTheme.colors.critical,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = event.title.resolve(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                Text(
-                    text = event.detail.resolve(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-                if (event.alertPhase == AlertHistoryPhase.GENERATED) {
-                    // Confirm with the team: the web reference uses management status as the chip.
-                    ManagementStatusChip(
-                        status = event.alertManagementStatus ?: ManagementStatus.UNCLASSIFIED,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                    event.alertClassification?.let { classification ->
-                        Text(
-                            text = stringResource(classification.labelRes()),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 4.dp),
-                        )
-                    }
-                    event.alertTagLabel?.let { tag ->
-                        Text(
-                            text = tag.resolve(),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(top = 2.dp),
-                        )
-                    }
-                }
-            }
-        }
+        AlertRow(alert = alert, showDivider = false, onClick = onClick)
     }
 }
 

@@ -32,6 +32,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.cancellation.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -39,6 +40,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import retrofit2.HttpException
@@ -107,16 +110,29 @@ class RemoteAlertRepository @Inject constructor(
         return if (invalidId) AlertResult.Failure(AlertFailure.NotFound) else result
     }
 
-    override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> = fetch {
+    /**
+     * El listado no trae observaciones ni el detalle de clasificación y etiqueta: solo vienen en
+     * `GET /api/alerts/{id}`. Primero se publican las filas y luego se completa cada alerta, así el
+     * historial tiene esos datos sin que haga falta abrir cada alerta.
+     */
+    override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> {
         val rows = mutableListOf<Alert>()
-        var seen = 0
-        for (page in 1..DEVICE_PAGES) {
-            val result = api.alerts(device = deviceId.toString(), page = page)
-            rows += result.items.mapNotNull(AlertDto::toDomain)
-            seen += result.items.size
-            if (result.items.size < result.pageSize || seen >= result.total) break
+        val listed = fetch {
+            var seen = 0
+            for (page in 1..DEVICE_PAGES) {
+                val result = api.alerts(device = deviceId.toString(), page = page)
+                rows += result.items.mapNotNull(AlertDto::toDomain)
+                seen += result.items.size
+                if (result.items.size < result.pageSize || seen >= result.total) break
+            }
+            upsertRows(rows)
         }
-        upsertRows(rows)
+        if (listed is AlertResult.Failure) return listed
+        val permits = Semaphore(DETAIL_CONCURRENCY)
+        val details = coroutineScope {
+            rows.map { row -> async { permits.withPermit { loadAlert(row.id) } } }.awaitAll()
+        }
+        return details.firstOrNull { it is AlertResult.Failure } ?: AlertResult.Success(Unit)
     }
 
     /** Las filas de la lista no traen el detalle: se conserva el que ya se tenía de cada alerta. */
@@ -430,7 +446,8 @@ class RemoteAlertRepository @Inject constructor(
     private fun Origin.deviceIdOrNull(): String? = (this as? Origin.MobileApp)?.deviceId
 
     private companion object {
-        const val DEVICE_PAGES = 5
+        const val DEVICE_PAGES = 20
+        const val DETAIL_CONCURRENCY = 4
         const val HTTP_NOT_FOUND = 404
         const val HTTP_CONFLICT = 409
         const val HTTP_TIMEOUT = 408

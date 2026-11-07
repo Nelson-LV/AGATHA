@@ -7,6 +7,7 @@ import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
+import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.EventType
@@ -59,7 +60,13 @@ class HistoryViewModel @Inject constructor(
         val listScrollOffset: Int,
     )
 
+    private data class SourceHistory(
+        val alerts: List<Alert> = emptyList(),
+        val events: List<HistoryEvent> = emptyList(),
+    )
+
     private data class HistorySnapshot(
+        val alerts: List<Alert>,
         val events: List<HistoryEvent>,
         val loaded: Boolean,
     )
@@ -105,22 +112,26 @@ class HistoryViewModel @Inject constructor(
         .map { snapshot -> snapshot.selectedSensor?.id }
         .distinctUntilChanged()
 
-    private val sourceEvents = selectedSensorId.flatMapLatest { sensorId ->
+    private val sourceHistory = selectedSensorId.flatMapLatest { sensorId ->
         if (sensorId == null) {
-            flowOf(emptyList())
+            flowOf(SourceHistory())
         } else {
-            historyRepository.observeHistory(sensorId)
-                .map { history -> history.toHistoryEvents().forSensor(sensorId) }
+            historyRepository.observeHistory(sensorId).map { history ->
+                SourceHistory(
+                    alerts = history.alerts.filter { alert -> alert.sensorId == sensorId },
+                    events = history.toHistoryEvents().forSensor(sensorId),
+                )
+            }
         }
     }.onEach { historyLoaded.value = true }
         .catch { exception ->
             if (exception is CancellationException) throw exception
             historyLoaded.value = true
-            emit(emptyList())
+            emit(SourceHistory())
         }
 
-    private val historySnapshot = combine(sourceEvents, historyLoaded) { events, loaded ->
-        HistorySnapshot(events.sortedByDescending(HistoryEvent::timestamp), loaded)
+    private val historySnapshot = combine(sourceHistory, historyLoaded) { source, loaded ->
+        HistorySnapshot(source.alerts, source.events.sortedByDescending(HistoryEvent::timestamp), loaded)
     }
 
     val uiState: StateFlow<HistoryState> = combine(
@@ -131,12 +142,17 @@ class HistoryViewModel @Inject constructor(
         connectivity,
     ) { selected, history, filters, syncState, connected ->
         HistoryState(
-            events = filterHistoryEvents(
-                events = history.events,
-                site = selected.site,
-                sensorId = selected.selectedSensor?.id,
-                filters = filters,
-            ),
+            alerts = filterHistoryAlerts(history.alerts, filters),
+            events = if (filters.eventType == null) {
+                emptyList()
+            } else {
+                filterHistoryEvents(
+                    events = history.events,
+                    site = selected.site,
+                    sensorId = selected.selectedSensor?.id,
+                    filters = filters,
+                )
+            },
             sites = HistorySiteCatalog.sites,
             selectedSite = selected.site,
             sensors = selected.sensors,
@@ -145,7 +161,7 @@ class HistoryViewModel @Inject constructor(
             dateFrom = filters.dateFrom,
             dateThrough = filters.dateThrough,
             hasAdditionalFilters = filters.isActive,
-            isLoading = !history.loaded || (syncState.refreshing && history.events.isEmpty()),
+            isLoading = !history.loaded || (syncState.refreshing && history.alerts.isEmpty() && history.events.isEmpty()),
             isRefreshing = syncState.refreshing,
             isConnected = connected,
             lastSyncedAt = syncState.lastSyncedAt,
@@ -202,9 +218,8 @@ class HistoryViewModel @Inject constructor(
 
     fun setDateRange(from: LocalDate?, through: LocalDate?) {
         val today = LocalDate.now()
-        val earliestAllowed = today.minusDays(HISTORY_DATE_WINDOW_DAYS)
-        var start = from?.coerceIn(earliestAllowed, today)
-        var end = through?.coerceIn(earliestAllowed, today)
+        var start = from?.coerceAtMost(today)
+        var end = through?.coerceAtMost(today)
         if (start != null && end != null && start.isAfter(end)) {
             val earlier = end
             end = start

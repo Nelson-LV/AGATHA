@@ -346,7 +346,9 @@
     <string name="history_empty_30_days">No events in the last 30 days</string>
     <string name="history_event_node_pk">%1$s · PK %2$s</string>
     <string name="history_filter_all_nodes">All nodes</string>
-    <string name="history_filter_all_types">All types</string>
+    <string name="history_filter_type">Type</string>
+    <string name="history_filter_classifications">Classifications</string>
+    <string name="history_filter_maintenance">Maintenance</string>
     <string name="history_clear_filters">Clear filters</string>
     <string name="history_filter_dates">Dates</string>
     <string name="history_filter_date_range">%1$s – %2$s</string>
@@ -401,8 +403,7 @@
     <string name="history_no_sensor_selected">Select a sensor</string>
     <string name="history_alert_timestamp">%1$s · ALERT</string>
     <string name="history_empty_alerts">No alert history for this sensor.</string>
-    <string name="history_filter_alerts">Alerts</string>
-    <string name="history_filter_observations">OBSERVATIONS</string>
+    <string name="history_filter_observations">Observations</string>
     <string name="history_event_timestamp">%1$s · %2$s</string>
     <string name="history_observation_title">Field observation</string>
     <string name="history_maintenance_completed">Completed</string>
