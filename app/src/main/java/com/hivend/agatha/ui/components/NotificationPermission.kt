@@ -7,12 +7,10 @@ import android.content.pm.PackageManager
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.NotificationsOff
 import androidx.compose.material3.AlertDialog
@@ -84,7 +82,7 @@ fun NotificationPermissionNotice(modifier: Modifier = Modifier) {
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             modifier = modifier
                 .fillMaxWidth()
-                .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+                .agathaCard()
                 .padding(start = 16.dp, top = 8.dp, bottom = 8.dp, end = 8.dp),
         ) {
             Icon(Icons.Outlined.NotificationsOff, contentDescription = null, tint = AgathaTheme.colors.warning)

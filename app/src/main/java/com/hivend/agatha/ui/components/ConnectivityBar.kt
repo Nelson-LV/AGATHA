@@ -39,8 +39,10 @@ fun ConnectivityBar(
     message: String,
     modifier: Modifier = Modifier,
 ) {
-    val containerColor = if (connected) AgathaTheme.colors.connectedContainer else AgathaTheme.colors.offlineContainer
-    val contentColor = if (connected) AgathaTheme.colors.connected else AgathaTheme.colors.offline
+    // En línea se funde con el encabezado oscuro; sin conexión resalta en ámbar para que se note.
+    val containerColor = if (connected) AgathaTheme.colors.headerBackground else AgathaTheme.colors.offlineContainer
+    val dotColor = if (connected) AgathaTheme.colors.nodeNormal else AgathaTheme.colors.offline
+    val textColor = if (connected) AgathaTheme.colors.onHeaderMuted else AgathaTheme.colors.offline
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -49,10 +51,10 @@ fun ConnectivityBar(
             .background(containerColor)
             .padding(horizontal = 16.dp, vertical = 7.dp),
     ) {
-        Dot(color = contentColor)
+        Dot(color = dotColor)
         Text(
             text = message,
-            color = contentColor,
+            color = textColor,
             style = MaterialTheme.typography.labelMedium,
             modifier = Modifier.padding(start = 6.dp),
         )

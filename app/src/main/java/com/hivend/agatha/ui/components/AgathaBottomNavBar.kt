@@ -14,7 +14,10 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import androidx.compose.ui.res.stringResource
@@ -33,7 +36,14 @@ fun AgathaBottomNavBar(
     currentTab: BottomTab,
     onTabSelected: (BottomTab) -> Unit,
 ) {
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+    NavigationBar(
+        containerColor = MaterialTheme.colorScheme.surface,
+        modifier = Modifier.shadow(
+            elevation = 8.dp,
+            ambientColor = AgathaTheme.colors.cardShadow,
+            spotColor = AgathaTheme.colors.cardShadow,
+        ),
+    ) {
         BottomTab.all.forEach { tab ->
             NavigationBarItem(
                 selected = tab == currentTab,
@@ -41,11 +51,11 @@ fun AgathaBottomNavBar(
                 icon = { Icon(tab.icon(), contentDescription = stringResource(tab.labelRes())) },
                 label = { Text(stringResource(tab.labelRes())) },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = AgathaTheme.colors.brand,
+                    selectedIconColor = AgathaTheme.colors.onBrandContainer,
                     selectedTextColor = AgathaTheme.colors.brand,
                     unselectedIconColor = AgathaTheme.colors.textTertiary,
                     unselectedTextColor = AgathaTheme.colors.textTertiary,
-                    indicatorColor = MaterialTheme.colorScheme.surface,
+                    indicatorColor = AgathaTheme.colors.brandContainer,
                 ),
             )
         }

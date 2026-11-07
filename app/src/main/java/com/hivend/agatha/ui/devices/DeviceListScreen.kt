@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.devices
 
+import com.hivend.agatha.ui.components.agathaCard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -14,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Button
@@ -172,7 +172,7 @@ private fun RealDeviceCard(device: TelemetryDevice, onViewHistory: () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(16.dp),
     ) {
         Row(

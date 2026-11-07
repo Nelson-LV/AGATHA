@@ -12,7 +12,7 @@
     <string name="common_sensor">Sensor %1$s</string>
 
     <!-- Brand header -->
-    <string name="header_tagline">EARLY WARNINGS · OTERO-SANTANA PIPELINE</string>
+    <string name="header_tagline">Early warnings · Otero-Santana pipeline</string>
 
     <!-- Bottom tabs -->
     <string name="tab_alerts">Alerts</string>
@@ -81,8 +81,6 @@
     <string name="legend_critical">Critical</string>
 
     <!-- Alert inbox -->
-    <string name="inbox_connected_chip">ONLINE</string>
-    <string name="inbox_offline_chip">OFFLINE</string>
     <string name="inbox_my_alerts">My alerts</string>
     <plurals name="inbox_active_count">
         <item quantity="one">%d active</item>

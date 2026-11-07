@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
@@ -37,7 +36,7 @@ fun DeviceInfoCard(node: SensorNode, onViewHistory: () -> Unit, modifier: Modifi
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = modifier
             .fillMaxWidth()
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(16.dp),
     ) {
         Row(

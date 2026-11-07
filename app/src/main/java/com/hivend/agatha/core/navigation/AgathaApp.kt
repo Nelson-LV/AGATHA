@@ -1,5 +1,9 @@
 package com.hivend.agatha.core.navigation
 
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
@@ -66,6 +70,8 @@ fun AgathaApp(
     }
 
     Scaffold(
+        // La barra de estado la cubre cada encabezado para que su color oscuro llegue hasta arriba.
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         bottomBar = {
             if (currentTab != null) {
                 AgathaBottomNavBar(currentTab = currentTab) { tab -> navController.navigateToTab(tab) }

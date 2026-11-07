@@ -22,7 +22,7 @@
     <string name="common_default_site" translatable="false">Güepsa – San José de Pare</string>
 
     <!-- Encabezado de marca -->
-    <string name="header_tagline">ALERTAS TEMPRANAS · GASODUCTO OTERO-SANTANA</string>
+    <string name="header_tagline">Alertas tempranas · Gasoducto Otero-Santana</string>
 
     <!-- Pestañas inferiores -->
     <string name="tab_alerts">Alertas</string>
@@ -91,8 +91,6 @@
     <string name="legend_critical">Crítico</string>
 
     <!-- Bandeja de alertas -->
-    <string name="inbox_connected_chip">CONECTADO</string>
-    <string name="inbox_offline_chip">SIN CONEXIÓN</string>
     <string name="inbox_my_alerts">Mis alertas</string>
     <plurals name="inbox_active_count">
         <item quantity="one">%d activa</item>

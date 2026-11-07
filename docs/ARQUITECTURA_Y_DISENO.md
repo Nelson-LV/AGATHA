@@ -286,8 +286,14 @@ el día que alguien actualice uno y olvide los otros cuatro.
 
 **Identidad.** Un azul "acero" profundo como color de marca (instrumentación industrial,
 sobrio) sobre neutros fríos. Rojo, ámbar y verde quedan **reservados** a severidad y estado,
-nunca a decoración, para que una alerta roja sea lo primero que ve el técnico. El logotipo
-(tres barras) va en blanco sobre un cuadro azul de marca, igual que el ícono del launcher.
+nunca a decoración, para que una alerta roja sea lo primero que ve el técnico. El logotipo es
+una A cuya barra es el gasoducto que la atraviesa, con el nodo sensor en su extremo; las capas
+del ícono del launcher (`ic_launcher_*`) son también las de `AgathaLogoMark`.
+
+**Profundidad.** Como en la web, los encabezados son oscuros (`headerBackground`, igual en claro
+y oscuro) y llegan hasta la barra de estado; toda tarjeta usa `Modifier.agathaCard()`, con sombra
+suave y borde fino. Las tarjetas de alerta añaden la franja izquierda del color de su nivel.
+
 No se usan emojis en la interfaz: todo pictograma es un ícono Material
 (`material-icons-extended`), que respeta el tinte del tema y no cambia según el fabricante.
 
@@ -304,7 +310,8 @@ mismo fondo para que no haya destello al abrir.
 |---|---|---|---|
 | `brand` | `#2563EB` | `#60A5FA` | Logo, enlaces, acciones principales, pestaña activa |
 | `background` | `#F3F5F8` | `#0D1117` | Fondo general |
-| `surface` | `#FFFFFF` | `#161B22` | Tarjetas, encabezados, barra inferior |
+| `surface` | `#FFFFFF` | `#161B22` | Tarjetas, barra inferior |
+| `headerBackground` | `#0F1B2E` | `#131F35` | Encabezados y franja de conexión en línea |
 | `textPrimary` / `textSecondary` | `#0F172A` / `#5A6474` | `#E7EBF0` / `#A8B1BD` | Texto |
 | `critical` | `#C62828` | `#FF8A80` | Alerta roja, "Cerrar alerta" |
 | `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta naranja, "En inspección", "Pendiente" |

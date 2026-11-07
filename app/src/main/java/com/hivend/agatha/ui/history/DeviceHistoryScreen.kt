@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.history
 
+import com.hivend.agatha.ui.components.agathaCard
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -32,7 +33,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,7 +43,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
@@ -60,7 +59,7 @@ import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
-import com.hivend.agatha.ui.alerts.AlertRow
+import com.hivend.agatha.ui.alerts.AlertCard
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.StatusChip
@@ -253,15 +252,7 @@ private fun SelectorDropdown(
 
 @Composable
 private fun HistoryAlertRow(alert: Alert, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(14.dp))
-            .background(AgathaTheme.colors.surface)
-            .padding(horizontal = 16.dp),
-    ) {
-        AlertRow(alert = alert, showDivider = false, onClick = onClick)
-    }
+    AlertCard(alert = alert, onClick = onClick)
 }
 
 @Composable
@@ -271,11 +262,11 @@ private fun HistoryTypedEventRow(
     modifier: Modifier = Modifier,
 ) {
     val eventColor = event.type.color()
-    Surface(
-        modifier = modifier.fillMaxWidth().then(event.alertClickModifier(onAlertClick)),
-        shape = RoundedCornerShape(14.dp),
-        color = AgathaTheme.colors.surface,
-        tonalElevation = 1.dp,
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .then(event.alertClickModifier(onAlertClick)),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(14.dp),

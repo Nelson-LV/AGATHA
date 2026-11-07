@@ -1,9 +1,11 @@
 package com.hivend.agatha.ui.alerts
 
+import com.hivend.agatha.domain.model.ManagementStatus
+import com.hivend.agatha.ui.components.levelColor
+import com.hivend.agatha.ui.components.agathaCard
 import androidx.compose.runtime.ReadOnlyComposable
 import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,13 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Sync
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
@@ -85,13 +85,7 @@ fun AlertInboxScreen(
 
     Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
         val online = LocalOnline.current
-        AgathaHeader {
-            if (!online) {
-                StatusChip(text = stringResource(R.string.inbox_offline_chip), containerColor = AgathaTheme.colors.offlineContainer, contentColor = AgathaTheme.colors.offline)
-            } else if (failure == null) {
-                StatusChip(text = stringResource(R.string.inbox_connected_chip), containerColor = AgathaTheme.colors.stateClosedContainer, contentColor = AgathaTheme.colors.stateClosed)
-            }
-        }
+        AgathaHeader()
         ConnectivityBar(
             connected = online && failure == null,
             message = when {
@@ -113,23 +107,18 @@ fun AlertInboxScreen(
             item { NotificationPermissionNotice() }
 
             item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(AgathaTheme.colors.surface, RoundedCornerShape(14.dp))
-                        .padding(16.dp),
-                ) {
+                Column(modifier = Modifier.fillMaxWidth()) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
-                        Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleMedium, color = AgathaTheme.colors.textPrimary)
+                        Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleLarge, color = AgathaTheme.colors.textPrimary)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                             StatusChip(
                                 text = alerts.count { it.isOngoing }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
-                                containerColor = AgathaTheme.colors.surfaceVariant,
-                                contentColor = AgathaTheme.colors.textSecondary,
+                                containerColor = AgathaTheme.colors.noticeContainer,
+                                contentColor = AgathaTheme.colors.textOnMuted,
                             )
                             IconButton(onClick = viewModel::refresh, enabled = !state.refreshing) {
                                 Icon(
@@ -156,14 +145,11 @@ fun AlertInboxScreen(
                             modifier = Modifier.padding(top = 12.dp),
                         )
                     }
-                    alerts.forEachIndexed { index, alert ->
-                        AlertRow(
-                            alert = alert,
-                            showDivider = index != alerts.lastIndex,
-                            onClick = { onAlertClick(alert.id) },
-                        )
-                    }
                 }
+            }
+
+            items(alerts, key = { it.id }) { alert ->
+                AlertCard(alert = alert, onClick = { onAlertClick(alert.id) })
             }
 
             item {
@@ -178,48 +164,45 @@ fun AlertInboxScreen(
 }
 
 @Composable
-internal fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
-    Column {
-        Row(
-            verticalAlignment = Alignment.Top,
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable(onClick = onClick)
-                .padding(vertical = 12.dp),
-        ) {
-            // Como la tarjeta de alerta de la web: nivel actual, evento, inicio y "Disp. · PK · Municipio".
-            Column(
-                verticalArrangement = Arrangement.spacedBy(4.dp),
+internal fun AlertCard(alert: Alert, onClick: () -> Unit) {
+    // Una alerta roja sin clasificar se tiñe, como la tarjeta "Nueva" de la web: es lo primero que debe verse.
+    val highlighted = alert.level == AlertLevel.RED && alert.managementStatus == ManagementStatus.UNCLASSIFIED
+    // Como la tarjeta de alerta de la web: franja de nivel, evento, inicio y "Disp. · PK · Municipio".
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .agathaCard(
+                stripeColor = alert.level.levelColor(),
+                containerColor = if (highlighted) AgathaTheme.colors.criticalSurface else AgathaTheme.colors.surface,
+                borderColor = if (highlighted) AgathaTheme.colors.criticalBorder else AgathaTheme.colors.cardBorder,
+            )
+            .clickable(onClick = onClick)
+            .padding(start = 16.dp, end = 12.dp, top = 12.dp, bottom = 12.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            LevelChip(alert.level)
+            Text(
+                stringResource(alert.event.labelRes()),
+                style = MaterialTheme.typography.titleSmall,
+                color = AgathaTheme.colors.textPrimary,
                 modifier = Modifier.weight(1f),
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    LevelChip(alert.level)
-                    Text(
-                        stringResource(alert.event.labelRes()),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = AgathaTheme.colors.textPrimary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    Text(alert.id, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textSecondary)
-                }
-                Text(
-                    stringResource(R.string.alert_list_location, alert.sensorId, alert.pk),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = AgathaTheme.colors.textSecondary,
-                )
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        formatDateTime(alert.startedAt),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = AgathaTheme.colors.textTertiary,
-                        modifier = Modifier.weight(1f),
-                    )
-                    ManagementStatusChip(status = alert.managementStatus)
-                }
-            }
+            )
+            Text(alert.id, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textSecondary)
         }
-        if (showDivider) {
-            HorizontalDivider(color = AgathaTheme.colors.border)
+        Text(
+            stringResource(R.string.alert_list_location, alert.sensorId, alert.pk),
+            style = MaterialTheme.typography.bodyMedium,
+            color = AgathaTheme.colors.textSecondary,
+        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                formatDateTime(alert.startedAt),
+                style = MaterialTheme.typography.bodySmall,
+                color = AgathaTheme.colors.textTertiary,
+                modifier = Modifier.weight(1f),
+            )
+            ManagementStatusChip(status = alert.managementStatus)
         }
     }
 }
@@ -228,13 +211,18 @@ internal fun AlertRow(alert: Alert, showDivider: Boolean, onClick: () -> Unit) {
 private fun QuickNavButton(label: String, icon: ImageVector, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
         modifier = modifier
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(12.dp))
-            .border(1.dp, AgathaTheme.colors.border, RoundedCornerShape(12.dp))
+            .agathaCard()
             .clickable(onClick = onClick)
-            .padding(vertical = 14.dp),
+            .padding(vertical = 12.dp),
     ) {
-        Icon(icon, contentDescription = null, tint = AgathaTheme.colors.textSecondary, modifier = Modifier.size(18.dp))
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier.size(36.dp).background(AgathaTheme.colors.brandContainer, CircleShape),
+        ) {
+            Icon(icon, contentDescription = null, tint = AgathaTheme.colors.onBrandContainer, modifier = Modifier.size(18.dp))
+        }
         Text(label, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textPrimary, textAlign = TextAlign.Center)
     }
 }
