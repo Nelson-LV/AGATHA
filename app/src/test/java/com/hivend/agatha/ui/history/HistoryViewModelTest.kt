@@ -7,7 +7,6 @@ import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
-import com.hivend.agatha.domain.model.AlertHistoryPhase
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.AlertResult
@@ -79,14 +78,14 @@ class HistoryViewModelTest {
 
             advanceUntilIdle()
             assertEquals("MP-11556", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000007:started"), viewModel.uiState.value.events.map(HistoryEvent::id))
+            assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
             assertTrue(repository.refreshCalls.contains("MP-11556"))
 
             viewModel.selectSensor("MP-1189")
             advanceUntilIdle()
 
             assertEquals("MP-1189", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000008:started"), viewModel.uiState.value.events.map(HistoryEvent::id))
+            assertEquals(listOf("ALR-000008"), viewModel.uiState.value.alerts.map { it.id })
             assertTrue(repository.refreshCalls.contains("MP-1189"))
             assertEquals("MP-1189", selectionStore.selection.value.sensorId)
             collection.cancel()
@@ -160,7 +159,7 @@ class HistoryViewModelTest {
 
         assertTrue(!viewModel.uiState.value.isConnected)
         assertEquals(lastSync, viewModel.uiState.value.lastSyncedAt)
-        assertEquals(listOf("ALR-000007:started"), viewModel.uiState.value.events.map(HistoryEvent::id))
+        assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
         assertEquals(com.hivend.agatha.domain.model.AlertFailure.NoConnection, viewModel.uiState.value.failure)
         collection.cancel()
     }
@@ -199,14 +198,14 @@ class HistoryViewModelTest {
             advanceUntilIdle()
 
             assertEquals("MP-11556", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000007:started"), viewModel.uiState.value.events.map(HistoryEvent::id))
+            assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
             assertTrue(!viewModel.uiState.value.hasAdditionalFilters)
             assertEquals(refreshCount, repository.refreshCalls.size)
             collection.cancel()
         }
 
     @Test
-    fun observeHistoryUpdatesTheGeneratedRowAndAddsClassificationEvent() = runTest(mainDispatcherRule.dispatcher) {
+    fun observeHistoryUpdatesTheAlertRowAndAddsClassificationEvent() = runTest(mainDispatcherRule.dispatcher) {
         val repository = FakeHistoryRepository().apply {
             setHistory("MP-11556", alert("ALR-000007", 11556))
         }
@@ -236,11 +235,51 @@ class HistoryViewModelTest {
         )
         advanceUntilIdle()
 
-        val generated = viewModel.uiState.value.events.single { it.alertPhase == AlertHistoryPhase.GENERATED }
-        val classification = viewModel.uiState.value.events.single { it.type == EventType.CLASSIFICATION }
-        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, generated.alertManagementStatus)
-        assertEquals(AlertClassification.FALSE_ALARM, generated.alertClassification)
+        val alertRow = viewModel.uiState.value.alerts.single()
+        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, alertRow.managementStatus)
+        assertEquals(AlertClassification.FALSE_ALARM, alertRow.classification?.classification)
+        assertTrue(viewModel.uiState.value.events.isEmpty())
+
+        viewModel.setEventTypeFilter(EventType.CLASSIFICATION)
+        advanceUntilIdle()
+
+        val classification = viewModel.uiState.value.events.single()
+        assertEquals(EventType.CLASSIFICATION, classification.type)
         assertEquals(Instant.parse("2026-10-30T15:10:00Z"), classification.timestamp)
+        collection.cancel()
+    }
+
+    @Test
+    fun dateFilterKeepsAlertsOlderThanOneMonth() = runTest(mainDispatcherRule.dispatcher) {
+        val started = alert("ALR-000007", 11556).startedAt.atZone(com.hivend.agatha.ui.components.COLOMBIA).toLocalDate()
+        val repository = FakeHistoryRepository().apply {
+            setHistory("MP-11556", alert("ALR-000007", 11556))
+        }
+        val viewModel = HistoryViewModel(
+            savedStateHandle = SavedStateHandle(
+                mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+            ),
+            historyRepository = repository,
+            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
+            connectivityMonitor = FakeConnectivityMonitor(connected = false),
+            selectionStore = HistorySelectionStore(),
+        )
+        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+            viewModel.uiState.collect()
+        }
+        advanceUntilIdle()
+
+        val from = LocalDate.now().minusYears(2)
+        viewModel.setDateRange(from, started)
+        advanceUntilIdle()
+
+        assertEquals(from, viewModel.uiState.value.dateFrom)
+        assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
+
+        viewModel.setDateRange(from, started.minusDays(1))
+        advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.alerts.isEmpty())
         collection.cancel()
     }
 

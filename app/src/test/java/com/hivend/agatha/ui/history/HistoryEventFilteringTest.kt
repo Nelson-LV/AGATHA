@@ -1,5 +1,8 @@
 package com.hivend.agatha.ui.history
 
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertEvent
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import java.time.Instant
@@ -9,6 +12,32 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class HistoryEventFilteringTest {
+
+    @Test
+    fun alertsFilterByStartDateLikeTheWebSearch() {
+        val alert = Alert(
+            id = "ALR-000006",
+            deviceId = 11556,
+            pk = "PK34-470",
+            event = AlertEvent.LEAK,
+            level = AlertLevel.ORANGE,
+            maxLevel = AlertLevel.ORANGE,
+            startedAt = Instant.parse("2026-09-18T19:00:00Z"),
+            endedAt = Instant.parse("2026-09-19T20:00:00Z"),
+        )
+        val startDay = LocalDate.parse("2026-09-18")
+        val nextDay = LocalDate.parse("2026-09-19")
+
+        assertEquals(
+            listOf(alert),
+            filterHistoryAlerts(listOf(alert), HistoryEventFilters(dateFrom = startDay, dateThrough = startDay), ZoneOffset.UTC),
+        )
+        // Seguía activa ese día, pero la búsqueda de la web cuenta solo el inicio de la alerta.
+        assertEquals(
+            emptyList<Alert>(),
+            filterHistoryAlerts(listOf(alert), HistoryEventFilters(dateFrom = nextDay, dateThrough = nextDay), ZoneOffset.UTC),
+        )
+    }
 
     @Test
     fun combinesSiteSensorTypeAndDateFilters() {

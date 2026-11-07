@@ -7,9 +7,11 @@ import com.hivend.agatha.data.remote.alerts.AlertDto
 import com.hivend.agatha.data.remote.alerts.AlertPageDto
 import com.hivend.agatha.data.remote.alerts.AlertPendingDto
 import com.hivend.agatha.data.remote.alerts.AlertsApi
+import com.hivend.agatha.data.remote.alerts.ClassificationDetailDto
 import com.hivend.agatha.data.remote.alerts.ClassificationRequestDto
 import com.hivend.agatha.data.remote.alerts.DeviceRefDto
 import com.hivend.agatha.data.remote.alerts.LabelRequestDto
+import com.hivend.agatha.data.remote.alerts.ObservationDto
 import com.hivend.agatha.data.remote.alerts.ObservationRequestDto
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertFailure
@@ -251,6 +253,40 @@ class RemoteAlertRepositoryTest {
         assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, afterStaleRefresh.managementStatus)
         assertEquals(at, afterStaleRefresh.classification?.classifiedAt)
         assertEquals(phone, afterStaleRefresh.classification?.origin)
+    }
+
+    @Test
+    fun `refreshing a device brings the observations and classification details without opening the alert`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA", inProgress = false)
+        api.details["ALR-000001"] = dto(1, classification = "CONFIRMADA", inProgress = false).copy(
+            classificationDetail = ClassificationDetailDto(
+                value = "CONFIRMADA",
+                at = "2026-10-20T13:00:00-05:00",
+                origin = "WEB",
+            ),
+            observations = listOf(
+                ObservationDto(id = 9, text = "Revisado", recordedAt = "2026-10-20T13:05:00-05:00"),
+            ),
+        )
+        val repo = repository(api)
+
+        assertTrue(repo.refreshDevice(11556) is AlertResult.Success)
+
+        val events = AlertHistoryRepository(repo).observeHistory("MP-11556").first().toHistoryEvents()
+        assertEquals(1, events.count { it.type == EventType.CLASSIFICATION })
+        assertEquals("Revisado", events.single { it.type == EventType.OBSERVATION }.description)
+    }
+
+    @Test
+    fun `a failed detail is reported but the alert stays listed`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        api.alertError = HttpException(Response.error<Any>(500, "{}".toResponseBody()))
+        val repo = repository(api)
+
+        assertEquals(AlertResult.Failure(AlertFailure.Server), repo.refreshDevice(11556))
+        assertEquals(listOf("ALR-000001"), repo.observeAlerts().first().map { it.id })
     }
 
     @Test

@@ -164,7 +164,7 @@ fun AlertInboxScreen(
 }
 
 @Composable
-private fun AlertCard(alert: Alert, onClick: () -> Unit) {
+internal fun AlertCard(alert: Alert, onClick: () -> Unit) {
     // Una alerta roja sin clasificar se tiñe, como la tarjeta "Nueva" de la web: es lo primero que debe verse.
     val highlighted = alert.level == AlertLevel.RED && alert.managementStatus == ManagementStatus.UNCLASSIFIED
     // Como la tarjeta de alerta de la web: franja de nivel, evento, inicio y "Disp. · PK · Municipio".

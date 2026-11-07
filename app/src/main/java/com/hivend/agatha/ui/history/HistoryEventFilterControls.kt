@@ -51,6 +51,7 @@ import java.time.format.DateTimeFormatter
 /**
  * Filtros en una sola línea: tipo (menú) y fechas (selector de rango). Son chips de ancho
  * natural que bajan de línea si no caben, así que nunca hay scroll horizontal ni texto cortado.
+ * Sin tipo elegido la pantalla lista las alertas; por eso "Alertas" no es una opción del menú.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -124,7 +125,8 @@ private fun EventTypeFilter(
                 DropdownMenuItem(
                     text = { Text(stringResource(eventTypeFilterLabelRes(eventType))) },
                     onClick = {
-                        onSelectEventType(eventType)
+                        // Tocar el tipo elegido lo quita y vuelve a la lista de alertas.
+                        onSelectEventType(eventType.takeUnless { it == selectedEventType })
                         expanded = false
                     },
                     trailingIcon = if (eventType == selectedEventType) {
@@ -165,9 +167,10 @@ private fun dateRangeLabel(from: LocalDate?, through: LocalDate?): String {
 
 @StringRes
 private fun eventTypeFilterLabelRes(eventType: EventType?): Int = when (eventType) {
-    null -> R.string.history_filter_all_types
-    EventType.ALERT -> R.string.history_filter_alerts
+    null -> R.string.history_filter_type
+    EventType.CLASSIFICATION -> R.string.history_filter_classifications
     EventType.OBSERVATION -> R.string.history_filter_observations
+    EventType.MAINTENANCE -> R.string.history_filter_maintenance
     else -> eventType.labelRes()
 }
 
@@ -180,14 +183,12 @@ private fun HistoryDateRangeDialog(
     onDismiss: () -> Unit,
 ) {
     val today = LocalDate.now()
-    val earliestDate = today.minusDays(HISTORY_DATE_WINDOW_DAYS)
     val pickerState = rememberDateRangePickerState(
-        initialSelectedStartDateMillis = initialFrom?.coerceIn(earliestDate, today)?.toUtcMillis(),
+        initialSelectedStartDateMillis = initialFrom?.toUtcMillis(),
         // El selector no admite una fecha final sin inicial.
-        initialSelectedEndDateMillis = initialThrough?.takeIf { initialFrom != null }
-            ?.coerceIn(earliestDate, today)?.toUtcMillis(),
-        yearRange = earliestDate.year..today.year,
-        selectableDates = HistorySelectableDates(earliestDate, today),
+        initialSelectedEndDateMillis = initialThrough?.takeIf { initialFrom != null }?.toUtcMillis(),
+        yearRange = DatePickerDefaults.YearRange.first..today.year,
+        selectableDates = HistorySelectableDates(today),
     )
     val dateFormatter = remember { DatePickerDefaults.dateFormatter() }
 
@@ -238,14 +239,10 @@ private fun HistoryDateRangeDialog(
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
-private class HistorySelectableDates(
-    private val earliestDate: LocalDate,
-    private val latestDate: LocalDate,
-) : SelectableDates {
-    override fun isSelectableDate(utcTimeMillis: Long): Boolean =
-        utcTimeMillis.toUtcLocalDate() in earliestDate..latestDate
+private class HistorySelectableDates(private val latestDate: LocalDate) : SelectableDates {
+    override fun isSelectableDate(utcTimeMillis: Long): Boolean = utcTimeMillis.toUtcLocalDate() <= latestDate
 
-    override fun isSelectableYear(year: Int): Boolean = year in earliestDate.year..latestDate.year
+    override fun isSelectableYear(year: Int): Boolean = year <= latestDate.year
 }
 
 private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
@@ -253,11 +250,7 @@ private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInsta
 private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
 
 private val EVENT_TYPE_FILTER_OPTIONS = listOf(
-    null,
-    EventType.ALERT,
-    EventType.INSPECTION,
-    EventType.EVIDENCE,
-    EventType.MAINTENANCE,
-    EventType.OBSERVATION,
     EventType.CLASSIFICATION,
+    EventType.OBSERVATION,
+    EventType.MAINTENANCE,
 )
