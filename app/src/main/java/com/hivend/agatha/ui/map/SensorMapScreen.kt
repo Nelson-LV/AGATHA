@@ -52,6 +52,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
@@ -77,6 +79,9 @@ fun SensorMapScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // Al abrir el mapa o volver a él, la comunicación y la batería de cada punto se piden de nuevo.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshTelemetry() }
 
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AgathaHeader()
@@ -153,6 +158,7 @@ fun SensorMapScreen(
         ) {
             NodeDetailsSheet(
                 node = node,
+                telemetryLoaded = state.telemetryLoaded,
                 onViewHistory = { onViewHistory(node.id) },
                 onStartInspection = { onStartInspection(node.id) },
             )
@@ -226,6 +232,7 @@ private fun StatusFilterRow(
 @Composable
 private fun NodeDetailsSheet(
     node: SensorNode,
+    telemetryLoaded: Boolean,
     onViewHistory: () -> Unit,
     onStartInspection: () -> Unit,
 ) {
@@ -254,7 +261,10 @@ private fun NodeDetailsSheet(
         NodeDetailRow(
             stringResource(R.string.map_node_communication),
             stringResource(
-                if (!deviceInstalled) {
+                // Sin respuesta de la plataforma todavía no se sabe si hay dispositivo.
+                if (!telemetryLoaded) {
+                    R.string.map_value_not_available
+                } else if (!deviceInstalled) {
                     R.string.map_device_not_installed
                 } else if (node.nodeStatus == SensorNodeStatus.NO_COMMUNICATION) {
                     R.string.notice_no_communication

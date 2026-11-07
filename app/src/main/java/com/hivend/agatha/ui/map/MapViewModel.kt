@@ -6,10 +6,15 @@ import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
+import com.hivend.agatha.domain.model.TelemetryDevice
+import com.hivend.agatha.domain.model.TelemetryResult
 import com.hivend.agatha.domain.repository.SensorNodeRepository
+import com.hivend.agatha.domain.repository.TelemetryRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import java.time.Instant
 import javax.inject.Inject
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -37,7 +42,30 @@ data class MapState(
     val selectedNode: SensorNode? = null,
     val statusFilter: SensorNodeStatus? = null,
     val routeError: Boolean = false,
+    /** true cuando ya llegó la lista de dispositivos de la plataforma. */
+    val telemetryLoaded: Boolean = false,
 )
+
+/**
+ * El nodo con la comunicación, la batería y la última lectura de su dispositivo en la
+ * plataforma. Sin dispositivo, o con su último dato fuera de la ventana de conexión, el nodo
+ * queda como aviso gris "Sin comunicación" (RN-02). El nivel de alerta no lo entrega esta API.
+ */
+internal fun SensorNode.withTelemetry(device: TelemetryDevice?, now: Instant): SensorNode {
+    if (device == null) {
+        return copy(nodeStatus = SensorNodeStatus.NO_COMMUNICATION, batteryLevel = null, lastReportTimestamp = null)
+    }
+    val status = when {
+        !device.isConnected(now) -> SensorNodeStatus.NO_COMMUNICATION
+        nodeStatus == SensorNodeStatus.NO_COMMUNICATION -> SensorNodeStatus.NORMAL
+        else -> nodeStatus
+    }
+    return copy(
+        nodeStatus = status,
+        batteryLevel = device.lastBatteryLevel?.roundToInt(),
+        lastReportTimestamp = device.lastConnection,
+    )
+}
 
 private data class RouteData(
     val coordinates: List<MapCoordinate> = emptyList(),
@@ -54,6 +82,7 @@ private data class ReferencePoint(
 @HiltViewModel
 class MapViewModel @Inject constructor(
     sensorNodeRepository: SensorNodeRepository,
+    private val telemetryRepository: TelemetryRepository,
     connectivityMonitor: ConnectivityMonitor,
     @param:ApplicationContext private val applicationContext: Context,
 ) : ViewModel() {
@@ -63,13 +92,27 @@ class MapViewModel @Inject constructor(
     private val routeData = MutableStateFlow(RouteData())
     private val nodesLoaded = MutableStateFlow(false)
 
-    private val sensorNodes = sensorNodeRepository.observeSensorNodes()
-        .onEach { nodesLoaded.value = true }
-        .catch { exception ->
-            if (exception is CancellationException) throw exception
-            nodesLoaded.value = true
-            emit(emptyList())
-        }
+    /** Dispositivos reales de la plataforma; null mientras no haya llegado ninguna respuesta. */
+    private val telemetryDevices = MutableStateFlow<List<TelemetryDevice>?>(null)
+
+    /**
+     * Los puntos y su ubicación salen del catálogo de nodos, pero la comunicación, la batería y la
+     * última lectura salen de la plataforma, igual que en Dispositivos: antes el mapa mostraba los
+     * valores de ejemplo y daba "En línea" a un nodo que llevaba horas sin enviar datos.
+     */
+    private val sensorNodes = combine(
+        sensorNodeRepository.observeSensorNodes()
+            .onEach { nodesLoaded.value = true }
+            .catch { exception ->
+                if (exception is CancellationException) throw exception
+                nodesLoaded.value = true
+                emit(emptyList())
+            },
+        telemetryDevices,
+    ) { nodes, devices ->
+        val now = Instant.now()
+        nodes.map { node -> node.withTelemetry(devices?.firstOrNull { it.matchesNode(node.id) }, now) }
+    }
 
     private val connected = connectivityMonitor.isOnline
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
@@ -100,12 +143,23 @@ class MapViewModel @Inject constructor(
         )
     }
 
-    val uiState: StateFlow<MapState> = combine(mapContent, connected) { content, isConnected ->
-        content.copy(isOffline = !isConnected)
+    val uiState: StateFlow<MapState> = combine(mapContent, connected, telemetryDevices) { content, isConnected, devices ->
+        content.copy(isOffline = !isConnected, telemetryLoaded = devices != null)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MapState())
 
     init {
         loadRouteData()
+    }
+
+    /**
+     * Pide de nuevo los dispositivos a la plataforma; la pantalla lo llama cada vez que se abre.
+     * Si falla (sin red), se conservan los últimos datos recibidos.
+     */
+    fun refreshTelemetry() {
+        viewModelScope.launch {
+            val result = telemetryRepository.devices(refresh = true)
+            if (result is TelemetryResult.Success) telemetryDevices.value = result.data
+        }
     }
 
     fun selectNode(nodeId: String) {
