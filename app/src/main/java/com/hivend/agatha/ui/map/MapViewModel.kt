@@ -6,6 +6,9 @@ import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.model.TelemetryDevice
 import com.hivend.agatha.domain.model.TelemetryResult
 import com.hivend.agatha.domain.repository.SensorNodeRepository
@@ -47,25 +50,35 @@ data class MapState(
 )
 
 /**
- * El nodo con la comunicación, la batería y la última lectura de su dispositivo en la
- * plataforma. Sin dispositivo, o con su último dato fuera de la ventana de conexión, el nodo
- * queda como aviso gris "Sin comunicación" (RN-02). El nivel de alerta no lo entrega esta API.
+ * El nodo con el estado real de la plataforma: comunicación, batería y última lectura de su
+ * dispositivo, y el color del nivel actual de su alerta en curso más alta (RN-03). Una alerta
+ * conserva su color aunque el nodo no comunique; sin alerta, el nodo es Normal si comunica y
+ * aviso gris "Sin comunicación" (RN-02) si no tiene dispositivo o su último dato es viejo.
  */
-internal fun SensorNode.withTelemetry(device: TelemetryDevice?, now: Instant): SensorNode {
-    if (device == null) {
-        return copy(nodeStatus = SensorNodeStatus.NO_COMMUNICATION, batteryLevel = null, lastReportTimestamp = null)
-    }
-    val status = when {
-        !device.isConnected(now) -> SensorNodeStatus.NO_COMMUNICATION
-        nodeStatus == SensorNodeStatus.NO_COMMUNICATION -> SensorNodeStatus.NORMAL
-        else -> nodeStatus
+internal fun SensorNode.withPlatformState(
+    device: TelemetryDevice?,
+    ongoingLevel: AlertLevel?,
+    now: Instant,
+): SensorNode {
+    val status = when (ongoingLevel) {
+        AlertLevel.RED -> SensorNodeStatus.RED
+        AlertLevel.ORANGE -> SensorNodeStatus.ORANGE
+        AlertLevel.YELLOW -> SensorNodeStatus.YELLOW
+        AlertLevel.GREEN, null ->
+            if (device?.isConnected(now) == true) SensorNodeStatus.NORMAL else SensorNodeStatus.NO_COMMUNICATION
     }
     return copy(
         nodeStatus = status,
-        batteryLevel = device.lastBatteryLevel?.roundToInt(),
-        lastReportTimestamp = device.lastConnection,
+        batteryLevel = device?.lastBatteryLevel?.roundToInt(),
+        lastReportTimestamp = device?.lastConnection,
     )
 }
+
+/** Nivel actual más alto entre las alertas en curso de cada dispositivo ("MP-11556"). */
+internal fun List<Alert>.ongoingLevelBySensor(): Map<String, AlertLevel> =
+    filter { it.isOngoing }
+        .groupBy { it.sensorId }
+        .mapValues { (_, alerts) -> alerts.maxOf { it.level } }
 
 private data class RouteData(
     val coordinates: List<MapCoordinate> = emptyList(),
@@ -83,6 +96,7 @@ private data class ReferencePoint(
 class MapViewModel @Inject constructor(
     sensorNodeRepository: SensorNodeRepository,
     private val telemetryRepository: TelemetryRepository,
+    private val alertRepository: AlertRepository,
     connectivityMonitor: ConnectivityMonitor,
     @param:ApplicationContext private val applicationContext: Context,
 ) : ViewModel() {
@@ -96,9 +110,10 @@ class MapViewModel @Inject constructor(
     private val telemetryDevices = MutableStateFlow<List<TelemetryDevice>?>(null)
 
     /**
-     * Los puntos y su ubicación salen del catálogo de nodos, pero la comunicación, la batería y la
-     * última lectura salen de la plataforma, igual que en Dispositivos: antes el mapa mostraba los
-     * valores de ejemplo y daba "En línea" a un nodo que llevaba horas sin enviar datos.
+     * Los puntos y su ubicación salen del catálogo de nodos; su estado sale de la plataforma: la
+     * comunicación, la batería y la última lectura, de los dispositivos (como en Dispositivos), y
+     * el color, de las alertas en curso. Antes el mapa mostraba los valores de ejemplo y daba
+     * "En línea" y Normal a un nodo que llevaba horas sin enviar datos.
      */
     private val sensorNodes = combine(
         sensorNodeRepository.observeSensorNodes()
@@ -109,9 +124,20 @@ class MapViewModel @Inject constructor(
                 emit(emptyList())
             },
         telemetryDevices,
-    ) { nodes, devices ->
+        alertRepository.observeAlerts().catch { exception ->
+            if (exception is CancellationException) throw exception
+            emit(emptyList())
+        },
+    ) { nodes, devices, alerts ->
         val now = Instant.now()
-        nodes.map { node -> node.withTelemetry(devices?.firstOrNull { it.matchesNode(node.id) }, now) }
+        val levels = alerts.ongoingLevelBySensor()
+        nodes.map { node ->
+            node.withPlatformState(
+                device = devices?.firstOrNull { it.matchesNode(node.id) },
+                ongoingLevel = levels[node.id],
+                now = now,
+            )
+        }
     }
 
     private val connected = connectivityMonitor.isOnline
@@ -152,14 +178,15 @@ class MapViewModel @Inject constructor(
     }
 
     /**
-     * Pide de nuevo los dispositivos a la plataforma; la pantalla lo llama cada vez que se abre.
-     * Si falla (sin red), se conservan los últimos datos recibidos.
+     * Pide de nuevo los dispositivos y las alertas a la plataforma; la pantalla lo llama cada vez
+     * que se abre. Si falla (sin red), se conservan los últimos datos recibidos.
      */
-    fun refreshTelemetry() {
+    fun refreshPlatformState() {
         viewModelScope.launch {
             val result = telemetryRepository.devices(refresh = true)
             if (result is TelemetryResult.Success) telemetryDevices.value = result.data
         }
+        viewModelScope.launch { alertRepository.refreshAlerts() }
     }
 
     fun selectNode(nodeId: String) {

@@ -1,5 +1,6 @@
 package com.hivend.agatha.ui.map
 
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.domain.model.TelemetryDevice
@@ -29,8 +30,8 @@ class MapTelemetryTest {
     )
 
     @Test
-    fun `a device without recent data is shown without communication`() {
-        val result = node.withTelemetry(device(minutesAgo = 120), now)
+    fun `a device without recent data and no alert is shown without communication`() {
+        val result = node.withPlatformState(device(minutesAgo = 120), ongoingLevel = null, now = now)
 
         assertEquals(SensorNodeStatus.NO_COMMUNICATION, result.nodeStatus)
         assertEquals(now.minus(Duration.ofMinutes(120)), result.lastReportTimestamp)
@@ -38,22 +39,22 @@ class MapTelemetryTest {
     }
 
     @Test
-    fun `a connected device keeps the node level`() {
-        val result = node.copy(nodeStatus = SensorNodeStatus.ORANGE).withTelemetry(device(minutesAgo = 10), now)
-
-        assertEquals(SensorNodeStatus.ORANGE, result.nodeStatus)
-    }
-
-    @Test
-    fun `a connected device is no longer a gray notice`() {
-        val result = node.copy(nodeStatus = SensorNodeStatus.NO_COMMUNICATION).withTelemetry(device(minutesAgo = 10), now)
+    fun `a connected device without an ongoing alert is normal`() {
+        val result = node.copy(nodeStatus = SensorNodeStatus.RED).withPlatformState(device(minutesAgo = 10), null, now)
 
         assertEquals(SensorNodeStatus.NORMAL, result.nodeStatus)
     }
 
     @Test
+    fun `an ongoing alert colors the node even without communication`() {
+        val result = node.withPlatformState(device(minutesAgo = 120), AlertLevel.ORANGE, now)
+
+        assertEquals(SensorNodeStatus.ORANGE, result.nodeStatus)
+    }
+
+    @Test
     fun `a node without a platform device drops the sample values`() {
-        val result = node.withTelemetry(device = null, now = now)
+        val result = node.withPlatformState(device = null, ongoingLevel = null, now = now)
 
         assertEquals(SensorNodeStatus.NO_COMMUNICATION, result.nodeStatus)
         assertNull(result.batteryLevel)

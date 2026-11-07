@@ -42,9 +42,11 @@ data class TelemetryDevice(
         return byName || Regex("\\d+$").find(nodeId)?.value?.toIntOrNull() == id
     }
 
-    private companion object {
-        val CODE = Regex("MP-\\d+", RegexOption.IGNORE_CASE)
-        val PK = Regex("PK\\s?(\\d+)\\s?[-+]\\s?(\\d+)", RegexOption.IGNORE_CASE)
+    companion object {
+        private val CODE = Regex("MP-\\d+", RegexOption.IGNORE_CASE)
+        private val PK = Regex("PK\\s?(\\d+)\\s?[-+]\\s?(\\d+)", RegexOption.IGNORE_CASE)
+
+        /** Sin datos durante más de esta ventana, el dispositivo se da por desconectado (lo usa también el mapa). */
         val CONNECTED_WINDOW: Duration = Duration.ofMinutes(45)
     }
 }

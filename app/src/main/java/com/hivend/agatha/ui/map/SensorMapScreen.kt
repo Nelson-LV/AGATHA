@@ -64,6 +64,9 @@ import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.agathaCard
+import com.hivend.agatha.domain.model.TelemetryDevice
+import java.time.Duration
+import java.time.Instant
 import java.time.format.FormatStyle
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -80,8 +83,8 @@ fun SensorMapScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
-    // Al abrir el mapa o volver a él, la comunicación y la batería de cada punto se piden de nuevo.
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshTelemetry() }
+    // Al abrir el mapa o volver a él, el estado de cada punto se pide de nuevo a la plataforma.
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshPlatformState() }
 
     Column(modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         AgathaHeader()
@@ -266,7 +269,7 @@ private fun NodeDetailsSheet(
                     R.string.map_value_not_available
                 } else if (!deviceInstalled) {
                     R.string.map_device_not_installed
-                } else if (node.nodeStatus == SensorNodeStatus.NO_COMMUNICATION) {
+                } else if (!node.isCommunicating(Instant.now())) {
                     R.string.notice_no_communication
                 } else {
                     R.string.map_communication_online
@@ -479,6 +482,10 @@ private fun PipelineLegendLine(color: Color, dashed: Boolean = false) {
         )
     }
 }
+
+/** Comunica si su último dato entra en la misma ventana que usa Dispositivos; un nodo en alerta puede no comunicar. */
+private fun SensorNode.isCommunicating(now: Instant): Boolean =
+    lastReportTimestamp?.let { Duration.between(it, now) < TelemetryDevice.CONNECTED_WINDOW } ?: false
 
 private fun SensorNodeStatus?.filterLabelResource(): Int = when (this) {
     null -> R.string.map_filter_all
