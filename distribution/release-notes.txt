@@ -1,0 +1,4 @@
+Primera versión de prueba de AGATHA para el piloto.
+- Bandeja y detalle de alertas, historial, mapa de nodos.
+- Reportes de inspección con fotos y sincronización offline.
+Reporten cualquier fallo al equipo de desarrollo.

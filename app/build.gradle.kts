@@ -1,3 +1,4 @@
+import com.google.firebase.appdistribution.gradle.firebaseAppDistribution
 import java.util.Properties
 
 plugins {
@@ -11,6 +12,8 @@ plugins {
     // Reads app/google-services.json (not committed), which must list both
     // com.hivend.agatha and com.hivend.agatha.debug.
     alias(libs.plugins.google.services)
+    // Sube el APK de release a los testers: ./gradlew assembleRelease appDistributionUploadRelease
+    alias(libs.plugins.firebase.appdistribution)
 }
 
 // Local, machine-specific secrets (never committed — see .gitignore). Falls back to an
@@ -28,6 +31,24 @@ val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
 val agathaApiBaseUrl: String =
     localProperties.getProperty("AGATHA_API_BASE_URL", "https://129.213.118.230/")
 
+// Firma de release: el keystore vive FUERA del repositorio. Se lee de local.properties en
+// cada máquina o de variables de entorno en el CI. Sin estos valores el release queda sin
+// firmar (el debug sigue igual). Todas las versiones distribuidas deben usar el mismo
+// keystore: con otra firma el celular rechaza la actualización y obliga a desinstalar,
+// lo que borraría los registros offline aún no sincronizados.
+fun releaseSecret(name: String): String? =
+    localProperties.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
+        ?: System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() }
+val releaseStoreFile: String? = releaseSecret("RELEASE_STORE_FILE")
+
+// versionCode = número de commits de la rama: crece solo en cada versión y permite que el
+// celular acepte la nueva como actualización. En el CI el checkout debe traer el historial
+// completo (fetch-depth: 0); si git no está disponible se usa 1.
+val gitCommitCount: Int = runCatching {
+    providers.exec { commandLine("git", "rev-list", "--count", "HEAD") }
+        .standardOutput.asText.get().trim().toInt()
+}.getOrDefault(1)
+
 android {
     namespace = "com.hivend.agatha"
     compileSdk = 36
@@ -39,12 +60,23 @@ android {
         // without a runtime storage permission.
         minSdk = 33
         targetSdk = 36
-        versionCode = 1
+        versionCode = gitCommitCount
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resValue("string", "google_maps_key", mapsApiKey)
         buildConfigField("String", "AGATHA_API_BASE_URL", "\"$agathaApiBaseUrl\"")
+    }
+
+    signingConfigs {
+        if (releaseStoreFile != null) {
+            create("release") {
+                storeFile = file(releaseStoreFile)
+                storePassword = releaseSecret("RELEASE_STORE_PASSWORD")
+                keyAlias = releaseSecret("RELEASE_KEY_ALIAS")
+                keyPassword = releaseSecret("RELEASE_KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
@@ -55,6 +87,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+            // Firebase App Distribution. Las notas que ven los testers salen de
+            // distribution/release-notes.txt: actualízalo antes de cada subida.
+            firebaseAppDistribution {
+                artifactType = "APK"
+                groups = "tecnicos-piloto"
+                releaseNotesFile = rootProject.file("distribution/release-notes.txt").path
+            }
         }
         debug {
             isMinifyEnabled = false
