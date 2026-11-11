@@ -7,6 +7,10 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+    alias(libs.plugins.room)
+    // Reads app/google-services.json (not committed), which must list both
+    // com.hivend.agatha and com.hivend.agatha.debug.
+    alias(libs.plugins.google.services)
 }
 
 // Local, machine-specific secrets (never committed — see .gitignore). Falls back to an
@@ -19,6 +23,10 @@ val localProperties = Properties().apply {
     }
 }
 val mapsApiKey: String = localProperties.getProperty("MAPS_API_KEY", "")
+// API de tablero del backend (solo lectura, sin autenticación). Se puede cambiar por máquina
+// con AGATHA_API_BASE_URL en local.properties; termina en "/" como pide Retrofit.
+val agathaApiBaseUrl: String =
+    localProperties.getProperty("AGATHA_API_BASE_URL", "https://129.213.118.230/")
 
 android {
     namespace = "com.hivend.agatha"
@@ -36,6 +44,7 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         resValue("string", "google_maps_key", mapsApiKey)
+        buildConfigField("String", "AGATHA_API_BASE_URL", "\"$agathaApiBaseUrl\"")
     }
 
     buildTypes {
@@ -61,6 +70,13 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
+    }
+
+    // Genera el locale_config a partir de res/values(-en): habilita el selector de idioma por
+    // app de Android 13+. El idioma por defecto (res/values) es español, ver res/resources.properties.
+    androidResources {
+        generateLocaleConfig = true
     }
 
     packaging {
@@ -72,6 +88,11 @@ android {
 
 kotlin {
     jvmToolchain(17)
+}
+
+// Room exports each schema version as JSON (committed) so migrations can be written and tested.
+room {
+    schemaDirectory("$projectDir/schemas")
 }
 
 dependencies {
@@ -100,14 +121,19 @@ dependencies {
     ksp(libs.hilt.compiler)
     implementation(libs.hilt.navigation.compose)
 
-    // Persistence for the offline-first flow (HE-07). Wired incrementally: see
-    // data/local/README describing the entities planned for Sprint 3.
+    // Persistence for the offline-first flow (HE-07): AgathaDatabase in data/local, one
+    // subpackage per feature (see docs/ARQUITECTURA_Y_DISENO.md § 1).
     implementation(libs.room.runtime)
     implementation(libs.room.ktx)
     ksp(libs.room.compiler)
 
-    // Networking against the AGATHA central API (HE-04, HE-07). Wired incrementally: see
-    // data/remote/README.
+    // Background sync of the outbound queue (HE-07): WorkManager with Hilt-injected workers.
+    implementation(libs.work.runtime.ktx)
+    implementation(libs.hilt.work)
+    ksp(libs.hilt.work.compiler)
+
+    // Networking against the AGATHA central API (HE-04, HE-07): NetworkModule in data/remote,
+    // one subpackage per API (see docs/ARQUITECTURA_Y_DISENO.md § 1).
     implementation(libs.retrofit.core)
     implementation(libs.retrofit.kotlinx.serialization.converter)
     implementation(libs.okhttp.core)
@@ -132,8 +158,18 @@ dependencies {
 
     implementation(libs.datastore.preferences)
 
+    // Alert push notifications (HE-04) through Firebase Cloud Messaging.
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.messaging)
+
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.okhttp.mockwebserver)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.compose.ui.test.junit4)
+    androidTestImplementation(libs.kotlinx.coroutines.test)
+
+    //Map osmdroid
+    implementation(libs.osmdroid.android)
 }

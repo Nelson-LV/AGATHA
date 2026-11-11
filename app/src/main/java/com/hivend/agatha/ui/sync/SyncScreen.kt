@@ -1,10 +1,19 @@
 package com.hivend.agatha.ui.sync
 
+import com.hivend.agatha.ui.components.agathaCard
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material3.Icon
+import androidx.compose.foundation.layout.size
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -17,34 +26,38 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.ConflictoSincronizacion
-import com.hivend.agatha.domain.model.RegistroPendiente
+import com.hivend.agatha.domain.model.SyncConflict
+import com.hivend.agatha.domain.model.PendingRecord
+import com.hivend.agatha.domain.model.SyncError
+import com.hivend.agatha.domain.model.SyncState
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
+import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.ConflictBorder
-import com.hivend.agatha.ui.theme.ConflictContainer
-import com.hivend.agatha.ui.theme.ConflictText
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.OfflineBannerBorder
-import com.hivend.agatha.ui.theme.OfflineBannerContainer
-import com.hivend.agatha.ui.theme.StateInspectionContainer
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
+import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.relativeTimeAgo
+import com.hivend.agatha.ui.components.resolve
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import com.hivend.agatha.R
+import java.time.Duration
+import java.time.Instant
 
 /**
  * Sincronización offline-first (HE-07, RNF-MOV-02/03/04). Corresponde al nodo 34:398 de
@@ -56,50 +69,72 @@ fun SyncScreen(
     modifier: Modifier = Modifier,
     viewModel: SyncViewModel = hiltViewModel(),
 ) {
-    val estado by viewModel.estado.collectAsStateWithLifecycle()
+    val status by viewModel.status.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { snackbarHostState.showSnackbar(resources.getString(it)) }
+    }
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
-        AgathaHeader()
-        ConnectivityBar(
-            conectado = estado?.conectado ?: false,
-            mensaje = if (estado?.conectado == true) {
-                "Conectado · Sincronizado ${estado?.ultimaSincronizacionExitosa}"
-            } else {
-                "Sin conexión · ${estado?.pendientes?.size ?: 0} pendientes por sincronizar"
-            },
-        )
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(modifier = Modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+            AgathaHeader()
+            val online = LocalOnline.current
+            val lastSync = status?.lastSuccessfulSync
+            ConnectivityBar(
+                connected = online,
+                message = when {
+                    !online -> {
+                        val pendingCount = status?.pending?.size ?: 0
+                        pluralStringResource(R.plurals.connectivity_offline_pending, pendingCount, pendingCount)
+                    }
+                    lastSync != null -> stringResource(R.string.connectivity_connected_synced, relativeTimeAgo(minutesSince(lastSync)))
+                    else -> stringResource(R.string.connectivity_online)
+                },
+            )
 
-        val actual = estado
-        if (actual != null) {
-            LazyColumn(
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.weight(1f),
-            ) {
-                item { SitePill(sitio = "Güepsa – San José de Pare") }
+            val current = status
+            if (current != null) {
+                LazyColumn(
+                    contentPadding = PaddingValues(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.weight(1f),
+                ) {
+                    item { SitePill(site = stringResource(R.string.common_default_site)) }
 
-                if (!actual.conectado) {
-                    item { OfflineBanner() }
-                }
+                    if (!online) {
+                        item { OfflineBanner() }
+                    }
 
-                if (actual.pendientes.isNotEmpty()) {
-                    item { PendingSyncCard(pendientes = actual.pendientes, onReintentar = viewModel::reintentar) }
-                }
+                    item {
+                        PendingSyncCard(
+                            pending = current.pending,
+                            showRetryAll = current.hasErrors,
+                            onRetry = viewModel::retry,
+                            onRetryAll = viewModel::retryAll,
+                        )
+                    }
 
-                actual.conflicto?.let { conflicto ->
-                    item { ConflictCard(conflicto = conflicto, onEntendido = { viewModel.confirmarConflicto(conflicto.alertaId) }) }
-                }
+                    current.conflict?.let { conflict ->
+                        item { ConflictCard(conflict = conflict, onUnderstood = { viewModel.confirmConflict(conflict.alertId) }) }
+                    }
 
-                item {
-                    SyncFooter(
-                        ultimaSincronizacion = actual.ultimaSincronizacionExitosa,
-                        onSincronizarAhora = viewModel::sincronizarAhora,
-                    )
+                    item {
+                        SyncFooter(
+                            lastSync = lastSync?.let { stringResource(R.string.sync_last_success, relativeTimeAgo(minutesSince(it))) }
+                                ?: stringResource(R.string.sync_last_success_never),
+                            onSyncNow = viewModel::syncNow,
+                        )
+                    }
                 }
             }
         }
+        SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
     }
 }
+
+private fun minutesSince(instant: Instant): Int =
+    Duration.between(instant, Instant.now()).toMinutes().toInt().coerceAtLeast(0)
 
 @Composable
 private fun OfflineBanner() {
@@ -107,16 +142,16 @@ private fun OfflineBanner() {
         horizontalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(OfflineBannerContainer, RoundedCornerShape(12.dp))
-            .border(1.3.dp, OfflineBannerBorder, RoundedCornerShape(12.dp))
+            .background(AgathaTheme.colors.offlineBannerContainer, RoundedCornerShape(12.dp))
+            .border(1.3.dp, AgathaTheme.colors.offlineBannerBorder, RoundedCornerShape(12.dp))
             .padding(14.dp),
     ) {
-        Text("📴", style = MaterialTheme.typography.titleMedium)
+        Icon(Icons.Filled.CloudOff, contentDescription = null, tint = AgathaTheme.colors.stateInspection, modifier = Modifier.size(22.dp))
         Column {
-            Text("Trabajando sin conexión", color = StateInspectionText, style = MaterialTheme.typography.titleSmall)
+            Text(stringResource(R.string.sync_offline_title), color = AgathaTheme.colors.stateInspection, style = MaterialTheme.typography.titleSmall)
             Text(
-                "Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.",
-                color = TextSecondary,
+                stringResource(R.string.sync_offline_body),
+                color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodyMedium,
             )
         }
@@ -124,93 +159,142 @@ private fun OfflineBanner() {
 }
 
 @Composable
-private fun PendingSyncCard(pendientes: List<RegistroPendiente>, onReintentar: (String) -> Unit) {
+private fun PendingSyncCard(
+    pending: List<PendingRecord>,
+    showRetryAll: Boolean,
+    onRetry: (String) -> Unit,
+    onRetryAll: () -> Unit,
+) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
+            .agathaCard()
             .padding(16.dp),
     ) {
-        Text("Pendientes por sincronizar (${pendientes.size})", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-        pendientes.forEach { registro ->
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(NeutralSurfaceVariant, RoundedCornerShape(8.dp))
-                    .padding(horizontal = 12.dp, vertical = 10.dp),
-            ) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text(registro.titulo, color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                    Text(registro.detalle, color = TextSecondary, style = MaterialTheme.typography.bodySmall)
-                }
-                StatusChip(text = "Pendiente", containerColor = StateInspectionContainer, contentColor = StateInspectionText)
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(R.string.sync_pending_title, pending.size),
+                color = AgathaTheme.colors.textPrimary,
+                style = MaterialTheme.typography.titleSmall,
+                modifier = Modifier.weight(1f),
+            )
+            if (showRetryAll) {
                 Text(
-                    "↻ Reintentar",
-                    color = AgathaBlue,
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier
-                        .clickable { onReintentar(registro.id) }
-                        .padding(start = 8.dp),
+                    stringResource(R.string.sync_retry_all),
+                    color = AgathaTheme.colors.brand,
+                    style = MaterialTheme.typography.labelLarge,
+                    modifier = Modifier.clickable(onClick = onRetryAll).padding(4.dp),
                 )
             }
         }
+        if (pending.isEmpty()) {
+            Text(stringResource(R.string.sync_nothing_pending), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+        }
+        pending.forEach { record -> PendingRecordRow(record, onRetry) }
     }
 }
 
 @Composable
-private fun ConflictCard(conflicto: ConflictoSincronizacion, onEntendido: () -> Unit) {
+private fun PendingRecordRow(record: PendingRecord, onRetry: (String) -> Unit) {
+    val registered = stringResource(R.string.sync_record_registered, formatDateTime(record.createdAt))
+    val detail = record.error?.let { stringResource(R.string.common_dot_separated, registered, it.label()) } ?: registered
+    val failed = record.state == SyncState.ERROR
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(8.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp),
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            val type = stringResource(record.type.labelRes())
+            val title = record.alertId?.let { stringResource(R.string.common_dot_separated, type, it) } ?: type
+            Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.labelLarge)
+            Text(detail, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        StatusChip(
+            text = stringResource(record.state.labelRes()),
+            containerColor = if (failed) AgathaTheme.colors.criticalSurface else AgathaTheme.colors.stateInspectionContainer,
+            contentColor = if (failed) AgathaTheme.colors.critical else AgathaTheme.colors.stateInspection,
+        )
+        // Solo un registro en Error se reintenta a mano; uno Pendiente ya sale solo (HU-7.3).
+        if (failed) {
+            Text(
+                stringResource(R.string.sync_retry),
+                color = AgathaTheme.colors.brand,
+                style = MaterialTheme.typography.labelMedium,
+                modifier = Modifier
+                    .clickable { onRetry(record.id) }
+                    .padding(start = 8.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun SyncError.label(): String = when (this) {
+    SyncError.NoConnection -> stringResource(R.string.sync_error_no_connection)
+    SyncError.InvalidResponse -> stringResource(R.string.sync_error_invalid_response)
+    is SyncError.Server -> stringResource(R.string.sync_error_server, httpCode)
+}
+
+@Composable
+private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(ConflictContainer, RoundedCornerShape(14.dp))
-            .border(1.3.dp, ConflictBorder, RoundedCornerShape(14.dp))
+            .background(AgathaTheme.colors.conflictContainer, RoundedCornerShape(14.dp))
+            .border(1.3.dp, AgathaTheme.colors.conflictBorder, RoundedCornerShape(14.dp))
             .padding(16.dp),
     ) {
-        Text("⚠ ${conflicto.tituloConflicto}", color = ConflictText, style = MaterialTheme.typography.titleSmall)
-        Text(conflicto.descripcion, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Filled.Warning, contentDescription = null, tint = AgathaTheme.colors.conflict, modifier = Modifier.size(18.dp))
+            Text(conflict.conflictTitle.resolve(), color = AgathaTheme.colors.conflict, style = MaterialTheme.typography.titleSmall)
+        }
+        Text(conflict.description.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ConflictVersion("TU CAMBIO (LOCAL)", conflicto.cambioLocal, Modifier.weight(1f))
-            ConflictVersion("CAMBIO DEL SERVIDOR", conflicto.cambioServidor, Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange.resolve(), Modifier.weight(1f))
+            ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange.resolve(), Modifier.weight(1f))
         }
         OutlinedButton(
-            onClick = onEntendido,
-            border = BorderStroke(1.2.dp, ConflictBorder),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = ConflictText),
+            onClick = onUnderstood,
+            border = BorderStroke(1.2.dp, AgathaTheme.colors.conflictBorder),
+            colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.conflict),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("Entendido")
+            Text(stringResource(R.string.sync_understood))
         }
     }
 }
 
 @Composable
-private fun ConflictVersion(etiqueta: String, valor: String, modifier: Modifier = Modifier) {
+private fun ConflictVersion(label: String, valor: String, modifier: Modifier = Modifier) {
     Column(
         modifier = modifier
-            .background(NeutralSurface, RoundedCornerShape(8.dp))
+            .background(AgathaTheme.colors.surface, RoundedCornerShape(8.dp))
             .padding(horizontal = 10.dp, vertical = 8.dp),
     ) {
-        Text(etiqueta, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-        Text(valor, color = TextPrimary, style = MaterialTheme.typography.bodyMedium)
+        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
+        Text(valor, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
     }
 }
 
 @Composable
-private fun SyncFooter(ultimaSincronizacion: String, onSincronizarAhora: () -> Unit) {
+private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Button(
-            onClick = onSincronizarAhora,
-            colors = ButtonDefaults.buttonColors(containerColor = AgathaBlue),
+            onClick = onSyncNow,
+            colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
             modifier = Modifier.fillMaxWidth(),
         ) {
-            Text("🔄 Sincronizar ahora")
+            Icon(Icons.Filled.Sync, contentDescription = null, modifier = Modifier.size(18.dp))
+            Text(stringResource(R.string.sync_now), modifier = Modifier.padding(start = 8.dp))
         }
         Text(
-            "Última sincronización correcta: $ultimaSincronizacion",
-            color = TextSecondary,
+            lastSync,
+            color = AgathaTheme.colors.textSecondary,
             style = MaterialTheme.typography.bodySmall,
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),

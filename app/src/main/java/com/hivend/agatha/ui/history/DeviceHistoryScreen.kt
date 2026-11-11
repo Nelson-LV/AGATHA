@@ -1,84 +1,174 @@
 package com.hivend.agatha.ui.history
 
+import com.hivend.agatha.ui.components.agathaCard
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Label
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.EventoHistorial
-import com.hivend.agatha.domain.model.TipoEvento
+import com.hivend.agatha.R
+import com.hivend.agatha.domain.model.AlertFailure
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.EventType
+import com.hivend.agatha.domain.model.HistoryEvent
+import com.hivend.agatha.ui.alerts.AlertCard
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.SitePill
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.AlertRed
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
+import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.resolve
+import com.hivend.agatha.ui.theme.AgathaTheme
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
 
-/**
- * Historial trazable de un dispositivo (HU-8.3, RNF-MOV-07). Corresponde al nodo 34:662 de
- * Figma. Es una de las 4 pantallas raíz con barra inferior.
- */
 @Composable
 fun DeviceHistoryScreen(
+    onAlertClick: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
-    val eventos by viewModel.eventos.collectAsStateWithLifecycle()
-
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
-        AgathaHeader()
-        ConnectivityBar(conectado = false, mensaje = "Sin conexión · mostrando datos locales")
-
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.weight(1f),
-        ) {
-            item { SitePill(sitio = "Güepsa – San José de Pare") }
-            item {
-                Text(
-                    "Historial de: Sensor ${viewModel.dispositivoId}",
-                    color = TextSecondary,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(NeutralSurfaceVariant, RoundedCornerShape(8.dp))
-                        .padding(horizontal = 10.dp, vertical = 6.dp),
+    val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val listState = rememberLazyListState(
+        initialFirstVisibleItemIndex = state.listScrollIndex,
+        initialFirstVisibleItemScrollOffset = state.listScrollOffset,
+    )
+    var restoredListPosition by remember { mutableStateOf(false) }
+    LaunchedEffect(state.isLoading, state.shownCount, state.listScrollIndex, state.listScrollOffset) {
+        if (!restoredListPosition && !state.isLoading) {
+            if (state.shownCount > 0) {
+                listState.scrollToItem(
+                    index = state.listScrollIndex.coerceAtMost(state.shownCount - 1),
+                    scrollOffset = state.listScrollOffset,
                 )
             }
-            item {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(NeutralSurface, RoundedCornerShape(14.dp))
-                        .padding(horizontal = 14.dp),
-                ) {
-                    eventos.forEachIndexed { index, evento ->
-                        HistoryRow(evento)
-                        if (index != eventos.lastIndex) HorizontalDivider(color = NeutralBorder)
+            restoredListPosition = true
+        }
+    }
+    LaunchedEffect(listState, state.isLoading, restoredListPosition) {
+        if (state.isLoading || !restoredListPosition) return@LaunchedEffect
+        snapshotFlow { listState.firstVisibleItemIndex to listState.firstVisibleItemScrollOffset }
+            .distinctUntilChanged()
+            .drop(1)
+            .collect { (index, offset) -> viewModel.updateListScrollPosition(index, offset) }
+    }
+    // Al cambiar un filtro la lista vuelve al inicio; sin esto seguiría a la fila que estaba arriba
+    // y dejaría ocultos los registros más recientes.
+    val filterKey = listOf(state.selectedEventType, state.dateFrom, state.dateThrough, state.selectedSensor?.id)
+    var appliedFilterKey by remember { mutableStateOf<List<Any?>?>(null) }
+    LaunchedEffect(filterKey, state.isLoading) {
+        if (state.isLoading) return@LaunchedEffect
+        val previous = appliedFilterKey
+        appliedFilterKey = filterKey
+        if (previous != null && previous != filterKey) listState.scrollToItem(0)
+    }
+    val connectivityMessage = when {
+        !state.isConnected -> state.lastSyncedAt?.let { lastSync ->
+            stringResource(R.string.history_offline_data_as_of, formatDateTime(lastSync))
+        } ?: stringResource(R.string.history_offline_no_timestamp)
+        state.isRefreshing -> stringResource(R.string.connectivity_syncing)
+        state.failure != null -> failureMessage(state.failure)
+        else -> state.lastSyncedAt?.let { lastSync ->
+            stringResource(R.string.connectivity_connected_synced, formatDateTime(lastSync))
+        } ?: stringResource(R.string.connectivity_connected_live)
+    }
+
+    Column(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background)) {
+        AgathaHeader()
+        ConnectivityBar(
+            connected = state.isConnected && state.failure == null,
+            message = connectivityMessage,
+        )
+        HistorySelectors(
+            state = state,
+            onSiteSelected = viewModel::selectSite,
+            onSensorSelected = viewModel::selectSensor,
+        )
+        HistoryEventFilterControls(
+            selectedEventType = state.selectedEventType,
+            dateFrom = state.dateFrom,
+            dateThrough = state.dateThrough,
+            hasAdditionalFilters = state.hasAdditionalFilters,
+            onSelectEventType = viewModel::setEventTypeFilter,
+            onDateRangeSelected = viewModel::setDateRange,
+            onClearFilters = viewModel::clearFilters,
+            modifier = Modifier.padding(bottom = 4.dp),
+        )
+
+        when {
+            state.isLoading && state.shownCount == 0 -> HistoryLoadingState(Modifier.weight(1f))
+            state.shownCount == 0 && state.hasAdditionalFilters -> HistoryEmptyState(
+                messageRes = R.string.history_no_filter_results,
+                modifier = Modifier.weight(1f),
+            )
+            state.shownCount == 0 && state.failure != null -> HistoryFailureState(
+                failure = state.failure,
+                onRetry = viewModel::refresh,
+                modifier = Modifier.weight(1f),
+            )
+            state.shownCount == 0 -> HistoryEmptyState(modifier = Modifier.weight(1f))
+            else -> LazyColumn(
+                modifier = Modifier.weight(1f),
+                state = listState,
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                if (state.selectedEventType == null) {
+                    items(state.alerts, key = Alert::id) { alert ->
+                        HistoryAlertRow(alert, onClick = { onAlertClick(alert.id) })
+                    }
+                } else {
+                    items(state.events, key = HistoryEvent::id) { event ->
+                        HistoryTypedEventRow(event, onAlertClick)
                     }
                 }
             }
@@ -87,48 +177,245 @@ fun DeviceHistoryScreen(
 }
 
 @Composable
-private fun HistoryRow(evento: EventoHistorial) {
-    Row(modifier = Modifier.fillMaxWidth().padding(vertical = 12.dp)) {
-        Text(evento.tipo.emoji(), style = MaterialTheme.typography.titleMedium)
-        Column(modifier = Modifier.padding(start = 10.dp)) {
-            Text("${evento.hora}  ${evento.tipo.etiqueta()}", color = evento.tipo.color(), style = MaterialTheme.typography.labelSmall)
-            Text(evento.titulo, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-            Text(evento.detalle, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
-            evento.etiquetaEstado?.let {
-                StatusChip(
-                    text = it,
-                    containerColor = NeutralSurfaceVariant,
-                    contentColor = TextSecondary,
-                    modifier = Modifier.padding(top = 4.dp),
+private fun HistorySelectors(
+    state: HistoryState,
+    onSiteSelected: (String) -> Unit,
+    onSensorSelected: (String) -> Unit,
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SelectorDropdown(
+            label = stringResource(R.string.history_site_selector),
+            selectedLabel = state.selectedSite?.let { stringResource(it.nameRes) }
+                ?: stringResource(R.string.history_site_unknown),
+            options = state.sites.map { site -> site.id to stringResource(site.nameRes) },
+            onSelected = onSiteSelected,
+        )
+        SelectorDropdown(
+            label = stringResource(R.string.history_sensor_selector),
+            selectedLabel = state.selectedSensor?.label ?: stringResource(R.string.history_no_sensor_selected),
+            options = state.sensors.map { sensor -> sensor.id to sensor.label },
+            onSelected = onSensorSelected,
+            enabled = state.sensors.isNotEmpty(),
+        )
+    }
+}
+
+@Composable
+private fun SelectorDropdown(
+    label: String,
+    selectedLabel: String,
+    options: List<Pair<String, String>>,
+    onSelected: (String) -> Unit,
+    enabled: Boolean = true,
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box(modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            enabled = enabled,
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.Start) {
+                Text(
+                    text = label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                Text(
+                    text = selectedLabel,
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Icon(Icons.Filled.ArrowDropDown, contentDescription = null)
+        }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { (id, optionLabel) ->
+                DropdownMenuItem(
+                    text = { Text(optionLabel) },
+                    onClick = {
+                        onSelected(id)
+                        expanded = false
+                    },
                 )
             }
         }
     }
 }
 
-private fun TipoEvento.emoji(): String = when (this) {
-    TipoEvento.ALERTA -> "🔴"
-    TipoEvento.INSPECCION -> "🔧"
-    TipoEvento.CLASIFICACION -> "🏷"
-    TipoEvento.EVIDENCIA -> "📷"
-    TipoEvento.OBSERVACION -> "📝"
-    TipoEvento.MANTENIMIENTO -> "✅"
+@Composable
+private fun HistoryAlertRow(alert: Alert, onClick: () -> Unit) {
+    AlertCard(alert = alert, onClick = onClick)
 }
 
-private fun TipoEvento.etiqueta(): String = when (this) {
-    TipoEvento.ALERTA -> "ALERTA"
-    TipoEvento.INSPECCION -> "INSPECCIÓN"
-    TipoEvento.CLASIFICACION -> "CLASIFICACIÓN"
-    TipoEvento.EVIDENCIA -> "EVIDENCIA"
-    TipoEvento.OBSERVACION -> "OBSERVACIÓN"
-    TipoEvento.MANTENIMIENTO -> "MANTENIMIENTO"
+@Composable
+private fun HistoryTypedEventRow(
+    event: HistoryEvent,
+    onAlertClick: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val eventColor = event.type.color()
+    Box(
+        modifier = modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .then(event.alertClickModifier(onAlertClick)),
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(14.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalAlignment = Alignment.Top,
+        ) {
+            Box(
+                modifier = Modifier.size(38.dp).background(eventColor.copy(alpha = 0.14f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = event.type.icon(),
+                    contentDescription = null,
+                    tint = eventColor,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(
+                        R.string.history_event_timestamp,
+                        formatDateTime(event.timestamp),
+                        stringResource(event.type.labelRes()),
+                    ),
+                    color = eventColor,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = FontWeight.SemiBold,
+                )
+                Text(
+                    text = event.title.resolve(),
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleSmall,
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(top = 3.dp),
+                )
+                Text(
+                    text = event.resolvedDetail(),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 2.dp),
+                )
+                event.statusLabel?.let { status ->
+                    StatusChip(
+                        text = status.resolve(),
+                        containerColor = AgathaTheme.colors.stateClosedContainer,
+                        contentColor = AgathaTheme.colors.stateClosed,
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                }
+            }
+        }
+    }
 }
 
-private fun TipoEvento.color(): androidx.compose.ui.graphics.Color = when (this) {
-    TipoEvento.ALERTA -> AlertRed
-    TipoEvento.INSPECCION -> AgathaBlue
-    TipoEvento.CLASIFICACION -> StateInspectionText
-    TipoEvento.EVIDENCIA -> AgathaBlue
-    TipoEvento.OBSERVACION -> TextSecondary
-    TipoEvento.MANTENIMIENTO -> AlertGreen
+@Composable
+private fun HistoryEvent.alertClickModifier(onAlertClick: (String) -> Unit): Modifier {
+    val alertId = alertIdForNavigation() ?: return Modifier
+    val actionLabel = stringResource(R.string.history_open_alert_detail_action)
+    val description = stringResource(R.string.history_open_alert_detail_description, alertId)
+    return Modifier
+        .semantics(mergeDescendants = true) { contentDescription = description }
+        .clickable(role = Role.Button, onClickLabel = actionLabel) { onAlertClick(alertId) }
+}
+
+@Composable
+private fun HistoryEvent.resolvedDetail(): String {
+    val parts = detailParts?.takeIf { it.isNotEmpty() } ?: return detail.resolve()
+    return parts.map { it.resolve() }.reduceOrNull { first, next ->
+        stringResource(R.string.common_dot_separated, first, next)
+    }.orEmpty()
+}
+
+@Composable
+private fun EventType.color(): Color = when (this) {
+    EventType.ALERT -> AgathaTheme.colors.critical
+    EventType.INSPECTION, EventType.EVIDENCE -> AgathaTheme.colors.brand
+    EventType.CLASSIFICATION -> AgathaTheme.colors.warning
+    EventType.OBSERVATION -> AgathaTheme.colors.notice
+    EventType.MAINTENANCE -> AgathaTheme.colors.positive
+}
+
+private fun EventType.icon(): ImageVector = when (this) {
+    EventType.ALERT -> Icons.Filled.Warning
+    EventType.INSPECTION -> Icons.Filled.Build
+    EventType.CLASSIFICATION -> Icons.AutoMirrored.Filled.Label
+    EventType.EVIDENCE -> Icons.Filled.PhotoCamera
+    EventType.OBSERVATION -> Icons.Filled.EditNote
+    EventType.MAINTENANCE -> Icons.Filled.CheckCircle
+}
+
+@Composable
+private fun HistoryLoadingState(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            CircularProgressIndicator()
+            Text(
+                text = stringResource(R.string.history_loading),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 12.dp),
+            )
+        }
+    }
+}
+
+@Composable
+private fun HistoryEmptyState(
+    @StringRes messageRes: Int = R.string.history_empty_alerts,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = stringResource(messageRes),
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+    }
+}
+
+@Composable
+private fun HistoryFailureState(
+    failure: AlertFailure?,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = failureMessage(failure),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodyLarge,
+        )
+        Button(onClick = onRetry, modifier = Modifier.padding(top = 12.dp)) {
+            Text(stringResource(R.string.common_retry))
+        }
+    }
+}
+
+@Composable
+private fun failureMessage(failure: AlertFailure?): String = when (failure) {
+    AlertFailure.NoConnection -> stringResource(R.string.alert_error_no_connection)
+    AlertFailure.Server -> stringResource(R.string.alert_error_server)
+    AlertFailure.NotFound -> stringResource(R.string.alert_detail_not_found)
+    is AlertFailure.Rejected -> failure.message ?: stringResource(R.string.alert_error_rejected)
+    null -> stringResource(R.string.alert_error_server)
 }

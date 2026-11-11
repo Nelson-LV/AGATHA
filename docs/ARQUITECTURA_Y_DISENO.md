@@ -5,6 +5,13 @@ Este documento es la referencia viva de cómo está construida la app móvil de 
 estructura, un patrón o la paleta — no describe aspiraciones, describe el código tal como
 está en `app/src/main/java/com/hivend/agatha`.
 
+> **Backlog 1.3 (10/10/2026).** Las reglas funcionales cambiaron: la web pasa a ser la
+> fuente de verdad y la app deja de tener estados propios. Este documento sigue
+> describiendo el código actual; lo que hay que cambiar, las reglas nuevas y las
+> referencias de la web están en [`BACKLOG_V1_3_APP_MOVIL.md`](BACKLOG_V1_3_APP_MOVIL.md).
+> Las secciones afectadas (máquina de estados en §2 y reglas del flujo en §4) están
+> marcadas.
+
 ## Índice
 
 1. [Estructura del proyecto](#1-estructura-del-proyecto)
@@ -36,14 +43,16 @@ app/src/main/java/com/hivend/agatha/
 │   └── util/                   # Utilidades pequeñas y puras (p. ej. FileProvider para fotos)
 │
 ├── domain/                     # Capa de dominio: NO depende de Android ni de Compose
-│   ├── model/                  # Alerta, Inspeccion, NodoSensor, EventoHistorial, enums…
+│   ├── model/                  # Alert, Inspection, SensorNode, HistoryEvent, enums…
 │   └── repository/             # Interfaces (puertos) que la UI consume
 │
 ├── data/                       # Implementaciones concretas de los puertos de dominio
 │   ├── repository/             # Hoy: InMemory*Repository con datos de muestra (§7)
-│   ├── local/                  # Futuro: Room (AppDatabase, entidades, DAOs) — ver README interno
-│   ├── remote/                 # Futuro: Retrofit (AgathaApiService, DTOs)
-│   └── sync/                   # Futuro: WorkManager (SyncWorker)
+│   ├── local/                  # Room: AgathaDatabase, Converters, DatabaseModule
+│   │   └── sync/               #   un subpaquete por feature (entidades + DAO); hoy la cola de salida
+│   ├── remote/                 # Retrofit: NetworkModule (cliente compartido)
+│   │   └── dashboard/          #   un subpaquete por API (interfaz Retrofit + DTOs + mappers)
+│   └── sync/                   # WorkManager: SyncWorker, SyncScheduler, SyncQueueProcessor
 │
 └── ui/                         # Presentación: un paquete por pantalla + uno compartido
     ├── theme/                  # Color.kt, Type.kt, Shape.kt, Theme.kt — Material 3
@@ -69,6 +78,32 @@ Cada paquete de `ui/<pantalla>/` sigue el mismo patrón de 2 archivos:
 (estado + llamadas a repositorios). Un paquete nuevo (por ejemplo, para una futura pantalla
 de login) debe replicar esta misma forma.
 
+**Persistencia y red por feature (desde el 29/10/2026).** Cada feature guarda sus entidades y
+su DAO en `data/local/<feature>/` y los registra en `AgathaDatabase` (entidad en `entities`,
+`version` + migración, getter del DAO) y en `DatabaseModule` (`@Provides` del DAO). El
+esquema de cada versión se exporta a `app/schemas/` y se commitea. Un registro creado en el
+celular se guarda en su tabla con un UUID generado en el celular y se encola en `sync_queue`
+(`SyncQueueDao.enqueue`, una vez por registro). Del lado remoto, cada API tiene su subpaquete
+`data/remote/<api>/` (interfaz Retrofit, DTOs, mappers) sobre el `Retrofit` compartido de
+`NetworkModule`.
+
+**Envío de la cola (desde el 29/10/2026).** `SyncWorker` (WorkManager, inyectado por Hilt) solo
+corre con red: `SyncScheduler.schedule()` lo pide al abrir la app y cada 15 minutos, y
+`syncNow()` se llama después de encolar un registro. El worker delega en `SyncQueueProcessor`,
+que envía en orden de registro respetando `dependsOn`, reintenta 3 veces los fallos
+reintentables y deja en Error los rechazos. Para que un tipo de registro salga, su feature
+implementa `SyncRecordSender` (llama a su API con `apiCall`) y lo registra con
+`@Binds @IntoSet`; mientras no exista su emisor, sus entradas esperan Pendientes.
+
+**Pantalla de sincronización con datos reales (desde el 29/10/2026).** `SyncScreen` lee la
+cola real a través de `RoomSyncRepository`, que reemplazó a `InMemorySyncRepository`. Cada
+registro muestra su tipo, la fecha en que se registró, su estado RN-17 y, si falló, el motivo.
+"Reintentar" (en un registro en Error) y "Reintentar todo" lo devuelven a Pendiente con sus
+reintentos automáticos de nuevo, y piden el envío de inmediato (`SyncScheduler.retryNow()`).
+Sin red, la pantalla avisa "Sin conexión. Se sincronizará automáticamente al recuperarla."
+(HU-7.3). La última sincronización correcta la guarda `LastSyncStore`. El conflicto RN-18 de
+esa pantalla vuelve con HU-7.4.
+
 ---
 
 ## 2. Patrones de diseño
@@ -77,10 +112,10 @@ de login) debe replicar esta misma forma.
 |---|---|---|
 | **Repository** | `domain/repository/*Repository` (interfaces) + `data/repository/InMemory*Repository` (implementación) | La UI y los ViewModels dependen de una interfaz, nunca de Room/Retrofit directamente. Cambiar el origen de datos (memoria → Room+API real) no requiere tocar `ui/`. Es el patrón que más impacto tendrá cuando se conecte la API central en el sprint 3. |
 | **Singleton** (vía DI) | Todas las clases `InMemory*Repository` están anotadas `@Singleton` y se enlazan en `core/di/RepositoryModule.kt` | Todas las pantallas deben observar el **mismo** estado de alertas/sincronización; si cada pantalla creara su propia instancia del repositorio, un cambio de estado en una pantalla no se reflejaría en otra. Con Hilt nunca se escribe manualmente `object` ni `getInstance()`: el contenedor de Hilt garantiza una única instancia por proceso. |
-| **Inyección de dependencias (Dependency Inversion)** | Hilt (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@Module`/`@Binds`) | Desacopla la construcción de un objeto de su uso. Facilita además las pruebas unitarias: un test puede inyectar un `AlertaRepository` falso sin tocar Hilt. |
+| **Inyección de dependencias (Dependency Inversion)** | Hilt (`@HiltAndroidApp`, `@AndroidEntryPoint`, `@HiltViewModel`, `@Module`/`@Binds`) | Desacopla la construcción de un objeto de su uso. Facilita además las pruebas unitarias: un test puede inyectar un `AlertRepository` falso sin tocar Hilt. |
 | **MVVM (Model-View-ViewModel)** | Cada `*ViewModel.kt` expone `StateFlow<UiState>`; el `Screen.kt` solo lo colecta con `collectAsStateWithLifecycle()` | Separa el estado de pantalla (sobrevive rotaciones, se testea sin Compose) de su representación visual. Es el patrón de arquitectura recomendado oficialmente para Compose. |
-| **Observer** | `kotlinx.coroutines.flow.StateFlow`/`Flow` en repositorios y ViewModels | Cuando `InMemoryAlertaRepository` cambia una alerta, **todas** las pantallas suscritas (bandeja, detalle, notificación) se recomponen solas — nadie hace polling ni recarga manual. |
-| **Máquina de estados (State Machine)** | `EstadoAlerta` (`GENERADA → RECIBIDA → EN_INSPECCION → CLASIFICADA → CERRADA`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). |
+| **Observer** | `kotlinx.coroutines.flow.StateFlow`/`Flow` en repositorios y ViewModels | Cuando `InMemoryAlertRepository` cambia una alerta, **todas** las pantallas suscritas (bandeja, detalle, notificación) se recomponen solas — nadie hace polling ni recarga manual. |
+| **Máquina de estados (State Machine)** | `AlertStatus` (`GENERATED → RECEIVED → IN_INSPECTION → CLASSIFIED → CLOSED`) gobierna qué botones muestra `AlertDetailScreen` | Evita si-anidados dispersos por la UI: el estado válido siguiente se decide en un solo `when` (`PrimaryActions` en `AlertDetailScreen.kt`). **Backlog 1.3:** estos estados se eliminan (D-19); el patrón se conserva sobre el estado de gestión de la web (`Sin clasificar → Clasificada sin etiqueta → Clasificada con etiqueta`). Ver `BACKLOG_V1_3_APP_MOVIL.md` §2 y §6. |
 | **Adapter implícito (mapper)** | Punto de extensión reservado en `data/remote` (DTO → `domain.model`) y `data/local` (Entity → `domain.model`) | Ningún DTO/Entity debe llegar nunca a `ui/`. Cuando se implemente, cada repositorio real mapea explícitamente. |
 | **Factory** (delegado a Hilt) | `@HiltViewModel` + `hiltViewModel()` en cada `Screen.kt` | Hilt genera la fábrica de cada ViewModel (incluida la inyección de argumentos de navegación vía `SavedStateHandle`), evitando `ViewModelProvider.Factory` manuales. |
 
@@ -98,11 +133,38 @@ de login) debe replicar esta misma forma.
 ## 3. Buenas prácticas de desarrollo
 
 **Nomenclatura**
-- Paquetes en inglés técnico (`ui`, `domain`, `data`), pero **nombres de dominio en
-  español** (`Alerta`, `EstadoAlerta`, `registrarInspeccion`) porque así habla el negocio
-  (0G Colombia, HIVEND, el backlog) — evita una capa de traducción mental constante.
+- Paquetes en inglés técnico (`ui`, `domain`, `data`) y también **nombres de dominio en
+  inglés** (`Alert`, `AlertStatus`, `registerInspection`) — ver "Convención de idioma"
+  abajo. El backlog y las conversaciones con 0G Colombia/HIVEND siguen en español; solo el
+  código pasa a inglés.
 - `Screen` para composables de pantalla completa, `ViewModel` para su estado, nunca
   abreviados (`VM`, `Scr`).
+
+**Convención de idioma**
+- Todo el código (clases, interfaces, enums, propiedades, parámetros, funciones,
+  constantes de enum) se escribe en **inglés**, en las cuatro capas (`domain`, `data`,
+  `ui`, `core`). Ejemplo del refactor de vocabulario hecho sobre HE-04..HE-08:
+
+  | Antes (español) | Ahora (inglés) |
+  |---|---|
+  | `Alerta`, `EstadoAlerta`, `NivelAlerta`, `TelemetriaAlerta` | `Alert`, `AlertStatus`, `AlertLevel`, `AlertTelemetry` |
+  | `Inspeccion`, `ResultadoInspeccion`, `CategoriaEvento` | `Inspection`, `InspectionResult`, `EventCategory` |
+  | `EvidenciaFoto`, `NodoSensor`, `EventoHistorial`, `TipoEvento` | `PhotoEvidence`, `SensorNode`, `HistoryEvent`, `EventType` |
+  | `EstadoSincronizacion`, `RegistroPendiente`, `ConflictoSincronizacion` | `SyncStatus`, `PendingRecord`, `SyncConflict` |
+  | `AlertaRepository`, `HistorialRepository`, `NodoSensorRepository`, `SincronizacionRepository` | `AlertRepository`, `HistoryRepository`, `SensorNodeRepository`, `SyncRepository` |
+  | `registrarInspeccion`, `observarAlertas`, `actualizarEstado`, `sincronizarAhora` | `registerInspection`, `observeAlerts`, `updateStatus`, `syncNow` |
+
+- **Excepción — comentarios y KDoc**: pueden quedarse en español (es el idioma de trabajo
+  del equipo). No se traducen como efecto secundario de un cambio no relacionado.
+- **Excepción — cadenas de texto de la UI**: lo que ve el usuario de campo (`Text(...)`,
+  `contentDescription`, mensajes) está en **español (idioma por defecto) e inglés** vía
+  recursos de Android: `res/values/strings.xml` (español) + `res/values-en/strings.xml`
+  (inglés). Ningún Composable ni ViewModel escribe texto visible como literal: se usa
+  `stringResource(R.string.…)` / `pluralStringResource(...)`, y toda clave nueva se agrega
+  en los dos archivos en el mismo cambio. Los enums del dominio no llevan texto; la UI los
+  traduce a `@StringRes` en `ui/components/Labels.kt`. Las reglas completas están en
+  `CLAUDE.md` § "User-facing strings". Los datos de ejemplo de `data/repository/` simulan
+  contenido que enviará la API y no se traducen en la app.
 
 **Compose**
 - Un composable de pantalla jamás recibe un `NavController`: recibe funciones lambda
@@ -122,8 +184,13 @@ de login) debe replicar esta misma forma.
 **Offline-first (HE-07)**
 - Cualquier pantalla que escriba datos de campo (inspección, evidencia) debe poder
   guardar sin conexión y mostrarlo de inmediato en la UI local — nunca esperar una
-  respuesta de red para dar feedback. `InMemoryAlertaRepository` ya modela esto: escribe
-  primero en el estado local, la sincronización es un paso aparte (`data/sync`, futuro).
+  respuesta de red para dar feedback. `InMemoryAlertRepository` ya modela esto: escribe
+  primero en el estado local, la sincronización es un paso aparte (`data/sync`).
+- El estado de la red es real (desde el 29/10/2026): `ConnectivityMonitor`
+  (`data/connectivity/AndroidConnectivityMonitor`, internet *validado*, así un wifi sin salida
+  cuenta como sin conexión) lo publica `MainActivity` como `LocalOnline`. Una pantalla lo lee
+  con `LocalOnline.current` para su `ConnectivityBar`, sin pasar por su ViewModel. Nunca se
+  escribe `connected = true` fijo.
 
 **Seguridad**
 - Ninguna clave (Maps API key, credenciales de Firebase) se escribe en el repositorio: se
@@ -139,6 +206,10 @@ de login) debe replicar esta misma forma.
   incremento de sprint.
 - Nunca commitear `local.properties`, `google-services.json` ni cualquier `*.jks` de firma
   (ver `.gitignore`).
+- **Commit por tarea, push por trabajo terminado**: al terminar cada tarea se verifica que
+  compila y funciona (`./gradlew assembleDebug lintDebug testDebugUnitTest`, y prueba en
+  emulador si toca UI) y se hace commit; cuando se termina la tarea grande completa se hace
+  `git push`. Detalle en `CLAUDE.md` § "Git workflow".
 
 **Verificación antes de dar por completada una tarea**
 - Antes de decir que una pantalla o cambio "funciona", correr como mínimo
@@ -151,21 +222,26 @@ de login) debe replicar esta misma forma.
 ## 4. Navegación
 
 Un solo `NavHost` (`core/navigation/AgathaApp.kt`), con una barra inferior que **solo se
-muestra en las 4 pantallas raíz** — igual que en el prototipo de Figma, donde las pantallas
-de detalle/formulario reemplazan la barra por una flecha de regreso.
+muestra en las 5 pantallas raíz** — igual que en el prototipo de Figma, donde las pantallas
+de detalle/formulario reemplazan la barra por una flecha de regreso. La pestaña
+**Dispositivos** no estaba en el prototipo. Desde el 17/10/2026 lista solo los dispositivos
+reales de la API de tablero (sin los nodos de ejemplo, sin nivel ni tipo), con su batería y
+su último dato, y se actualiza a mano deslizando hacia abajo o con el botón de actualizar.
+
+"Ver historial" (desde Mapa, Dispositivos o el detalle de una alerta) abre la pestaña
+Historial como **cambio de pestaña** (`navigateToHistory`), no apilada sobre la pantalla de
+origen. Así cada pestaña conserva su propia pila: al tocar Mapa o Dispositivos después de
+ver el historial se vuelve a esa pantalla, y Alertas conserva el detalle abierto.
 
 ```
-notification_preview (inicio)
-        │  tap en la notificación
-        ▼
-┌─── alerts ───┬─── map ───┬─── history/{deviceId} ───┬─── sync ───┐   ← bottom bar
-│   (Alertas)  │  (Mapa)   │       (Historial)        │  (Sync)    │
-└──────┬───────┴─────┬─────┴───────────────────────────┴────────────┘
-       │ tap alerta   │ tap nodo → "Ver historial completo"
-       ▼              └──────────────┐
-alert_detail/{alertId}                ▼
-       │ "Registrar inspección"   history/{deviceId}
-       ▼
+┌─ alerts ─┬─ devices ──┬─ map ─┬─ history/{deviceId} ─┬─ sync ─┐   ← bottom bar
+│ (Alertas)│(Dispositivos)│(Mapa)│     (Historial)     │ (Sync) │
+└────┬─────┴─────┬──────┴───┬───┴──────────────────────┴────────┘
+     │ tap alerta │ "Ver historial completo" (lista o nodo del mapa)
+     ▼            └──────────┴──────────► history/{deviceId}
+alert_detail/{alertId}  ── "Cerrar alerta" → diálogo de confirmación → Cerrada
+     │ botón verde "Iniciar / Continuar inspección"
+     ▼
 inspection_form/{alertId}
        │ "Guardar inspección"
        ▼
@@ -178,29 +254,82 @@ photo_evidence/{alertId}
 Decisión de diseño relevante: el prototipo de Figma dibuja **"Detalle de Alerta"** dos
 veces (`Recibida` y `En inspección`) como si fueran pantallas distintas. En código es
 **una sola** `AlertDetailScreen`, cuyos botones principales cambian según
-`Alerta.estado` (`PrimaryActions` en el archivo). Duplicar la pantalla por cada estado
+`Alert.status` (`PrimaryActions` en el archivo). Duplicar la pantalla por cada estado
 posible (5 estados) habría significado 5 composables casi idénticos y un bug garantizado
 el día que alguien actualice uno y olvide los otros cuatro.
+
+**Reglas del flujo de una alerta** (acordadas con el equipo de campo el 07/10/2026).
+
+> **Backlog 1.3 choca con varias de estas reglas** (amarillo también es alerta, no existe
+> "cerrar alerta", no hay estados `IN_INSPECTION`/`CLASSIFIED`, la etiqueta web es "Fuga
+> confirmada en campo"). **Rige el Backlog 1.3** (decisión de Nelson, 10/10/2026): estas
+> reglas describen el código actual y se retiran en el próximo sprint. Detalle en
+> `BACKLOG_V1_3_APP_MOVIL.md` §5.
+
+- **Solo naranja y rojo son alertas.** El verde indica normalidad: esos nodos siguen en el
+  mapa y en Dispositivos, pero no aparecen en la bandeja (`AlertLevel.requiresAttention`).
+- **El botón verde siempre lleva a la inspección.** "Iniciar inspección" pasa la alerta a
+  `IN_INSPECTION` y abre el formulario; "Continuar inspección" lo reabre. La alerta solo pasa
+  a `CLASSIFIED` al guardar la inspección, nunca con un botón suelto.
+- **Se puede cerrar sin inspección**, con un diálogo de confirmación. Las observaciones
+  pendientes se guardan antes de cerrar.
+- **Las observaciones viven en el detalle**, al mismo nivel que la información de la alerta
+  (`Alert.observations`), no dentro del formulario de inspección.
+- **La inspección es visual y superficial.** El personal de campo no tiene acceso directo a
+  la tubería: el formulario prioriza clasificar la alerta y solo registra lo observado en
+  superficie y en el dispositivo. Por eso no existe "Fuga confirmada" sino "Indicios de
+  fuga", que confirma el operador.
 
 ---
 
 ## 5. Sistema visual (Material 3)
 
-La paleta se extrajo directamente de los prototipos aprobados en Figma
-(`AGATHA — Prototipos App Móvil`, nodos `2:2`, `1:4` y `34:398`) y se mapeó a roles de
-color de Material 3 en `ui/theme/Color.kt` / `Theme.kt`. Ningún valor es inventado: cada
-hex de esta tabla es el que Figma reporta para ese elemento.
+**Identidad.** Un azul "acero" profundo como color de marca (instrumentación industrial,
+sobrio) sobre neutros fríos. Rojo, ámbar y verde quedan **reservados** a severidad y estado,
+nunca a decoración, para que una alerta roja sea lo primero que ve el técnico. El logotipo es
+una A cuya barra es el gasoducto que la atraviesa, con el nodo sensor en su extremo; las capas
+del ícono del launcher (`ic_launcher_*`) son también las de `AgathaLogoMark`.
 
-| Rol Material 3 | Color | Uso en el prototipo |
-|---|---|---|
-| `primary` | `#2563EB` (Agatha Blue) | Logo, enlaces, botón "Sincronizar ahora", chip "Recibida" |
-| `background` | `#F1F1F1` | Fondo general de todas las pantallas |
-| `surface` | `#FFFFFF` | Tarjetas, encabezados |
-| `surfaceVariant` | `#FAFAFA` | Filas de lista, pastilla de sitio |
-| `error` | `#DB2626` (Alert Red) | Alerta crítica, botón "Cerrar alerta" |
-| — semántico — | `#17A34A` (Alert Green) | Acciones positivas: "Actualizar estado", "Guardar" |
-| — semántico — | `#D9591A` / `#B2660D` (Amber) | Alerta media, chip "En inspección", "Pendiente" |
-| — semántico — | `#804DD9` (Púrpura) | Chip "Clasificada" |
+**Profundidad.** Como en la web, los encabezados son oscuros (`headerBackground`, igual en claro
+y oscuro) y llegan hasta la barra de estado; toda tarjeta usa `Modifier.agathaCard()`, con sombra
+suave y borde fino. Las tarjetas de alerta añaden la franja izquierda del color de su nivel.
+
+No se usan emojis en la interfaz: todo pictograma es un ícono Material
+(`material-icons-extended`), que respeta el tinte del tema y no cambia según el fabricante.
+
+**Claro y oscuro.** `ui/theme/Color.kt` define `AgathaColors`, una paleta **por roles**
+(`brand`, `critical`, `stateInspection`, `offline`, `nodeCritical`…) con dos instancias,
+`LightAgathaColors` y `DarkAgathaColors`. Las pantallas nunca usan un hex: leen
+`AgathaTheme.colors.<rol>`, y `Theme.kt` deriva además el `ColorScheme` de Material 3 de esa
+misma paleta, así los componentes de Material y los propios no se contradicen. En oscuro los
+colores semánticos se aclaran y sus fondos se oscurecen para mantener contraste AA sin
+deslumbrar de noche. La ventana de arranque (`values/` y `values-night/themes.xml`) usa el
+mismo fondo para que no haya destello al abrir.
+
+| Rol | Claro | Oscuro | Uso |
+|---|---|---|---|
+| `brand` | `#2563EB` | `#60A5FA` | Logo, enlaces, acciones principales, pestaña activa |
+| `background` | `#F3F5F8` | `#0D1117` | Fondo general |
+| `surface` | `#FFFFFF` | `#161B22` | Tarjetas, barra inferior |
+| `headerBackground` | `#0F1B2E` | `#131F35` | Encabezados y franja de conexión en línea |
+| `textPrimary` / `textSecondary` | `#0F172A` / `#5A6474` | `#E7EBF0` / `#A8B1BD` | Texto |
+| `critical` | `#C62828` | `#FF8A80` | Alerta roja, "Cerrar alerta" |
+| `warning` / `stateInspection` | `#B45309` / `#9A4A06` | `#F5B054` | Alerta naranja, "En inspección", "Pendiente" |
+| `positive` | `#15803D` | `#5BD68A` | "Iniciar/Continuar inspección", "Guardar", conectado |
+| `stateClassified` | `#6D3FC0` | `#C8B5FF` | Chip "Clasificada" |
+| `nodeNormal` / `nodeCaution` / `nodeNotice` | `#22C55E` / `#EAB308` / `#9CA3AF` | `#4ADE80` / `#FACC15` / `#9CA3AF` | Nodos del mapa: en línea, amarilla, sin comunicación |
+| `chartLine` / `chartGrid` | `#3B82F6` / `#F0F0F0` | `#60A5FA` / `#262C35` | Serie y cuadrícula de las gráficas de telemetría |
+| `chartLineSecondary` | `#F59E0B` | `#FBBF24` | Segunda serie de una gráfica compartida (pitch/roll, B1/B2) |
+
+Los valores partieron de los prototipos de Figma (`AGATHA — Prototipos App Móvil`, nodos
+`2:2`, `1:4` y `34:398`) y se ajustaron para contraste y para el modo oscuro, que el
+prototipo no cubría. El 10/10/2026 se alinearon con el documento "AGATHA Frontend — Paleta y
+Tipografías" de la web: la marca pasó a la familia Tailwind `blue` de la web (`blue-600` en
+claro para que el texto blanco cumpla AA; la web usa `#3b82f6`), los nodos del mapa a los
+estados de sensor de la web y la gráfica del detalle a su "Línea 1" y "Grid". La web aún no
+define colores de nivel de alerta (`severity.ts`), así que los de severidad no cambiaron. De
+la paleta de gráficas solo se tomó la serie 1 y la cuadrícula, porque la app tiene una sola
+gráfica con una sola serie; las líneas 2-5 se agregan cuando haya gráficas multi-serie.
 
 **Por qué no usamos Dynamic Color.** Material 3 permite generar la paleta a partir del
 wallpaper del usuario (Material You). Se decidió **no** activarla: el rojo/ámbar/verde de
@@ -210,29 +339,31 @@ podría volverse ambiguo distinguir una alerta crítica de una normal — inacep
 app que se usa para decidir si hay que atender una fuga de gas. La paleta es **fija e
 idéntica en todos los dispositivos**.
 
-**Tipografía.** La escala (`ui/theme/Type.kt`) reproduce los tamaños medidos en Figma
-(17px el wordmark "AGATHA", 14.5px los títulos de tarjeta, 10.5px el cuerpo de las filas).
-El prototipo especifica la fuente Inter; el proyecto usa `FontFamily.Default` (misma familia
-geométrica, cero peso adicional en el APK) con un único punto de cambio documentado en el
-propio archivo para cuando se agregue la fuente variable real en `res/font/`.
+**Tipografía.** La escala (`ui/theme/Type.kt`) está pensada para lectura en campo (sol
+directo, guantes, vehículo en movimiento): cuerpo a 14 sp y nunca menos de 12 sp, títulos
+SemiBold/Bold, y etiquetas en mayúsculas con tracking positivo. El prototipo medía el cuerpo
+en 10,5 px y las etiquetas en 8,5 px, por debajo del mínimo legible de Material 3, así que no
+se copió literal. Las familias son las de la web: **Geist** para toda la interfaz y
+**JetBrains Mono** para datos técnicos y métricas (`AgathaDataTextStyle`, `font-data-mono`
+en la web). Ambas son OFL y van empaquetadas como fuentes variables en `res/font` (no como
+fuentes descargables, porque la app opera sin conexión); licencias en `docs/licencias-fuentes/`.
 
 **Formas.** Radios de esquina (`ui/theme/Shape.kt`): 8dp pastillas/barra de sitio, 10-12dp
 botones, 14dp tarjetas — medidos directamente del archivo de diseño.
 
 **Mapa de nodos: mock-up vs. SDK real.** La pantalla `SensorMapScreen` dibuja los nodos con
-un `Canvas`/`Box` posicionado por coordenadas normalizadas (`NodoSensor.xNormalizado/
-yNormalizado`), igual de fiel visualmente al prototipo (que tampoco usa un mapa real, sino
+un `Canvas`/`Box` posicionado por coordenadas normalizadas (`SensorNode.normalizedX/
+normalizedY`), igual de fiel visualmente al prototipo (que tampoco usa un mapa real, sino
 un fondo verde con puntos de color). `com.google.maps.android:maps-compose` ya está en el
 catálogo de versiones para cuando existan coordenadas lat/lng reales de los nodos AGATHA —
 no se activó todavía porque su versión actual exige `compileSdk 37`/AGP 9.1+, un salto que
 este proyecto evita por ahora (§6).
 
-**Notificaciones push: simulación vs. FCM real.** `NotificationPreviewScreen` reproduce
-visualmente una notificación de Android (reloj, tarjeta blanca, punto rojo) para poder
-navegar el flujo "notificación → detalle" (HU-4.1/4.2) sin depender todavía de un proyecto
-Firebase real. Cuando se configure Firebase Cloud Messaging (HE-04, RNF-MOV-06), esta
-pantalla deja de ser el punto de entrada de la app: la notificación la posta el sistema
-operativo y su `PendingIntent` abrirá `alert_detail/{alertId}` directamente.
+**Notificaciones push: pendiente de FCM real.** La app arranca directamente en la Bandeja
+de alertas (`alerts`). Hubo una pantalla que simulaba visualmente una notificación de
+Android (nodo 34:2 de Figma), pero se retiró: la notificación debe implementarse de verdad
+con Firebase Cloud Messaging (HE-04, RNF-MOV-06), donde la posta el sistema operativo y su
+`PendingIntent` abre `alert_detail/{alertId}` directamente.
 
 ---
 
@@ -281,15 +412,40 @@ Todas las pantallas ya son **interactivas** (no son solo maquetas estáticas): n
 actualizan estado, guardan formularios y reflejan esos cambios donde corresponda. Lo hacen
 contra `data/repository/InMemory*Repository`, que mantiene el estado en un
 `MutableStateFlow` sembrado con `SampleAgathaData` (los mismos 4 sensores, sitio y textos
-exactos del prototipo de Figma: `MP-1156`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
-"Güepsa – San José de Pare").
+del prototipo de Figma: `MP-11556`, `MP-1189`, `MP-1122`, `MP-1201`, sitio
+"Güepsa – San José de Pare"). Desde el 17/10/2026 el primero usa el código del dispositivo
+real de la plataforma (`MP-11556`, PK34+470; el prototipo decía `MP-1156`) para que sus
+gráficas muestren datos reales.
+
+**Excepción, telemetría real (17/10/2026):** las gráficas de "Ver sensores" (Dispositivos) y
+"Ver gráfica" (detalle de alerta, HU-4.2) leen la API de tablero del backend
+(`data/remote/dashboard/DashboardApi`, base `AGATHA_API_BASE_URL`, por defecto
+`https://129.213.118.230/`) a través de `TelemetryRepository`. Son solo con conexión y no se
+guardan en el celular. El nodo de la app se relaciona con el dispositivo de la API por el
+código en su nombre ("Sensor MP-11556 PK34-470"); un nodo sin dispositivo muestra "todavía no
+tiene datos en la plataforma". Los huecos de datos no se rellenan y el umbral del indicador no
+se dibuja hasta que el endpoint lo traiga.
+
+**Cliente compartido para las APIs nuevas (29/10/2026).** Todas usan el `Retrofit` de
+`data/remote/NetworkModule`: cada API va en su subpaquete `data/remote/<api>/` (interfaz,
+DTOs, mappers) con su `@Provides` en ese módulo. Los repositorios envuelven cada llamada en
+`apiCall(json) { … }` (`data/remote/ApiResult.kt`), que devuelve `ApiResult.Success` o
+`ApiResult.Failure(ApiError)`: `NoConnection`, `Http(code, body)` con el `{code, message}` del
+backend, o `InvalidResponse`. `isRetryable` (sin conexión, 408, 429, 5xx) dice si la cola de
+sincronización debe reintentar (RN-17) e `isConflict` (409) señala el conflicto RN-18.
+
+Los datos de ejemplo **también se traducen**: sus textos son claves `sample_*` en
+`values/` y `values-en/strings.xml`, envueltas en `LocalizedText.Resource`, y lo
+estructurado (tiempos, tipo de sensor, aceleración) son minutos o enums que la UI formatea.
+Así la demo se ve completa en el idioma del dispositivo. Cuando llegue la API real, el texto
+escrito por personas (observaciones, notas del operador) viajará como `LocalizedText.Plain`.
 
 Esto es intencional para esta fase del proyecto (pantallas + navegación + paleta, sin
 integración con la API central todavía). El contrato para el sprint de integración es
 simple porque ya está trazado por interfaces:
 
-1. Implementar `AlertaRepository`, `NodoSensorRepository`, `HistorialRepository` y
-   `SincronizacionRepository` respaldadas por Room (cache local) + Retrofit (API central) +
+1. Implementar `AlertRepository`, `SensorNodeRepository`, `HistoryRepository` y
+   `SyncRepository` respaldadas por Room (cache local) + Retrofit (API central) +
    WorkManager (sincronización diferida).
 2. Enlazarlas en `core/di/RepositoryModule.kt` en lugar de las `InMemory*`.
 3. Ninguna pantalla ni ViewModel cambia — es exactamente el problema que el patrón

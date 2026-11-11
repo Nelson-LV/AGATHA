@@ -1,6 +1,441 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Textos visibles de AGATHA. Este archivo es el idioma por defecto (español, ver
+    res/resources.properties). Toda clave nueva debe agregarse también en
+    res/values-en/strings.xml con su traducción al inglés. Convención de nombres:
+    <pantalla o componente>_<qué es>, en snake_case y en inglés.
+-->
 <resources>
-    <string name="app_name">AGATHA</string>
+    <string name="app_name" translatable="false">AGATHA</string>
     <!-- google_maps_key is generated at build time from local.properties (MAPS_API_KEY);
          see the resValue() call in app/build.gradle.kts. -->
+
+    <!-- Comunes -->
+    <string name="common_back">Volver</string>
+    <string name="common_cancel">Cancelar</string>
+    <string name="common_saving">Guardando…</string>
+    <string name="common_empty_value" translatable="false">—</string>
+    <string name="common_percent">%1$d%%</string>
+    <string name="common_sensor">Sensor %1$s</string>
+    <string name="common_dot_separated" translatable="false">%1$s · %2$s</string>
+    <!-- Sitio por defecto mientras la API no entrega el sitio asignado al técnico (nombre propio). -->
+    <string name="common_default_site" translatable="false">Güepsa – San José de Pare</string>
+
+    <!-- Encabezado de marca -->
+    <string name="header_tagline">Alertas tempranas · Gasoducto Otero-Santana</string>
+
+    <!-- Pestañas inferiores -->
+    <string name="tab_alerts">Alertas</string>
+    <string name="tab_devices">Dispositivos</string>
+    <string name="tab_map">Mapa</string>
+    <string name="tab_history">Historial</string>
+    <string name="tab_sync">Sync</string>
+
+    <!-- Barra de conectividad -->
+    <string name="connectivity_online">Conectado</string>
+    <string name="connectivity_connected_synced">Conectado · Sincronizado %1$s</string>
+    <string name="connectivity_offline_local_data">Sin conexión · mostrando datos locales</string>
+    <string name="connectivity_offline_saved_locally">Sin conexión · se guarda localmente</string>
+    <plurals name="connectivity_offline_pending">
+        <item quantity="one">Sin conexión · %d pendiente por sincronizar</item>
+        <item quantity="other">Sin conexión · %d pendientes por sincronizar</item>
+    </plurals>
+
+    <!-- Pastilla de sitio -->
+    <string name="site_pill">Sitio: %1$s</string>
+
+    <!-- Estados de alerta -->
+
+    <!-- Niveles de alerta -->
+    <string name="alert_level_red">ALERTA ROJA</string>
+    <string name="alert_level_orange">ALERTA NARANJA</string>
+    <string name="alert_level_green">ALERTA VERDE</string>
+    <string name="alert_level_yellow">ALERTA AMARILLA</string>
+    <string name="level_red">Rojo</string>
+    <string name="level_orange">Naranja</string>
+    <string name="level_yellow">Amarillo</string>
+    <string name="level_normal">Normal</string>
+    <string name="alert_list_location">Disp. %1$s · %2$s</string>
+
+    <!-- Avisos (RN-02): gris, no son alertas -->
+    <string name="notice_no_communication">Sin comunicación</string>
+    <string name="notice_indicator_unavailable">Indicador no calculable</string>
+
+    <!-- Evento de la alerta (RN-12) -->
+    <string name="alert_event_leak">Fuga</string>
+    <string name="alert_event_movement">Movimiento</string>
+    <string name="alert_event_leak_and_movement">Fuga y Movimiento</string>
+
+    <!-- Clasificación y estado de gestión (RN-06) -->
+    <string name="classification_confirmed">Confirmada</string>
+    <string name="classification_false_alarm">Falsa alerta</string>
+    <string name="management_status_unclassified">Sin clasificar</string>
+    <string name="management_status_classified_without_tag">Clasificada sin etiqueta</string>
+    <string name="management_status_classified_with_tag">Clasificada con etiqueta</string>
+
+    <!-- Etiquetas (RN-07) -->
+    <string name="alert_tag_leak_confirmed_in_field">Fuga confirmada en campo</string>
+    <string name="alert_tag_ground_movement">Movimiento de tierra</string>
+    <string name="alert_tag_third_party_machinery">Intervención de maquinaria ajena</string>
+    <string name="alert_tag_extreme_weather">Condiciones climáticas extremas</string>
+    <string name="alert_tag_heavy_vehicle_traffic">Tránsito de vehículo pesado</string>
+    <string name="alert_tag_scheduled_maintenance">Mantenimiento o intervención programada</string>
+
+    <!-- Origen del registro (RN-10) -->
+    <string name="origin_web">Web</string>
+    <string name="origin_mobile_app">App móvil · %1$s</string>
+
+    <!-- Leyendas de mapa y gráfica -->
+    <string name="legend_connected">Conectado</string>
+    <string name="legend_alert">Alerta</string>
+    <string name="legend_critical">Crítico</string>
+
+    <!-- Bandeja de alertas -->
+    <string name="inbox_my_alerts">Mis alertas</string>
+    <plurals name="inbox_active_count">
+        <item quantity="one">%d activa</item>
+        <item quantity="other">%d activas</item>
+    </plurals>
+    <string name="inbox_empty">No hay alertas sin clasificar ni activas. Todos los puntos están en condiciones normales.</string>
+    <string name="inbox_nav_map">Mapa de nodos</string>
+    <string name="inbox_nav_history">Historial</string>
+    <string name="inbox_nav_sync">Sincronización</string>
+
+    <!-- Detalle de alerta -->
+    <string name="alert_detail_title">Detalle de Alerta</string>
+    <string name="alert_detail_not_found">Alerta no encontrada</string>
+    <string name="alert_detail_alert_id">Alerta %1$s</string>
+    <string name="alert_detail_device">Dispositivo</string>
+    <string name="alert_detail_municipality">Municipio</string>
+    <string name="alert_detail_pk" translatable="false">PK</string>
+    <string name="alert_detail_event">Evento</string>
+    <string name="alert_detail_start">Inicio</string>
+    <string name="alert_detail_end">Fin</string>
+    <string name="alert_detail_ongoing">En curso</string>
+    <string name="alert_detail_indicator">Indicador</string>
+    <string name="alert_detail_indicator_value" translatable="false">%1$.2f</string>
+    <string name="alert_detail_max_level">Nivel máximo</string>
+    <string name="alert_detail_timeline">Línea de tiempo de evolución del evento</string>
+    <string name="alert_detail_timeline_duration">Duración acumulada: %1$s</string>
+    <string name="alert_detail_timeline_current">(Actual)</string>
+    <string name="alert_detail_timeline_value" translatable="false">%1$.2f</string>
+    <string name="alert_detail_classification">Clasificación</string>
+    <string name="alert_detail_unclassified_hint">Clasifícala con “Falsa alerta” o “Confirmar alerta” en la tarjeta de la alerta.</string>
+    <string name="alert_detail_no_tag">Sin etiqueta</string>
+    <plurals name="alert_detail_reports">
+        <item quantity="one">Reportes de inspección (%d)</item>
+        <item quantity="other">Reportes de inspección (%d)</item>
+    </plurals>
+    <string name="alert_detail_no_reports">Todavía no hay reportes de inspección para esta alerta.</string>
+    <string name="alert_detail_pending_sync">Pendiente de sincronizar</string>
+    <string name="alert_detail_report_maintenance">Mantenimiento: %1$s</string>
+    <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
+    <string name="alert_detail_classify_dialog_title">¿Clasificar como “%1$s”?</string>
+    <string name="alert_detail_classify_dialog_text">La clasificación se guarda de inmediato y no se puede cambiar después. Luego podrás agregar la etiqueta, observaciones, mantenimiento y fotos en el reporte de inspección.</string>
+    <string name="alert_detail_classify_dialog_confirm">Clasificar</string>
+    <string name="alert_detail_view_device_history">Ver historial del dispositivo</string>
+    <string name="alert_detail_observations_title">Observaciones de campo</string>
+    <string name="alert_detail_observations_placeholder">Describe lo que observas en el sitio…</string>
+    <string name="alert_detail_observations_save">Agregar observación</string>
+    <string name="alert_detail_device_history">HISTORIAL DEL DISPOSITIVO</string>
+    <string name="telemetry_confidence">CONFIANZA</string>
+    <string name="telemetry_acceleration">ACELERACIÓN</string>
+    <string name="telemetry_time_ago">HACE</string>
+    <string name="telemetry_battery">BATERÍA</string>
+    <string name="telemetry_real_data">Dato real</string>
+    <string name="telemetry_simulated_data">Dato simulado</string>
+    <string name="sensor_motion_title">Movimiento y orientación (detecta deslizamiento)</string>
+    <string name="sensor_motion_detail">Acelerómetro + giroscopio triaxial. Umbral de alerta: 3 cm de desplazamiento.</string>
+    <string name="sensor_acoustic_title">Acústica (detecta fuga de gas)</string>
+    <string name="sensor_acoustic_detail">Micrófono de contacto sobre la tubería. Detecta el patrón acústico de una fuga.</string>
+    <string name="sensor_environment_title">Condiciones ambientales</string>
+    <string name="sensor_environment_detail">Temperatura y humedad relativa alrededor del punto de monitoreo.</string>
+    <string name="sensor_power_title">Energía del dispositivo</string>
+    <string name="sensor_power_detail">Nivel de batería y estado del panel solar del nodo.</string>
+
+    <!-- Historial del dispositivo -->
+    <string name="history_device">Historial de: Sensor %1$s</string>
+    <string name="event_type_alert">ALERTA</string>
+    <string name="event_type_inspection">INSPECCIÓN</string>
+    <string name="event_type_classification">CLASIFICACIÓN</string>
+    <string name="event_type_evidence">EVIDENCIA</string>
+    <string name="event_type_observation">OBSERVACIÓN</string>
+    <string name="event_type_maintenance">MANTENIMIENTO</string>
+
+
+    <!-- Formulario de inspección -->
+    <string name="inspection_top_bar_title">Reporte de inspección</string>
+    <string name="inspection_title">Nuevo reporte de inspección</string>
+    <string name="inspection_save">Guardar reporte</string>
+    <string name="inspection_device_subtitle">Dispositivo %1$s · %2$s</string>
+    <string name="inspection_alert_line">%1$s · Alerta %2$s · %3$s</string>
+    <string name="inspection_classification_title">Clasificación de la alerta</string>
+    <string name="inspection_classification_info">Al clasificar, la alerta pasa a “Clasificada sin etiqueta” y se registran la fecha, la hora y el origen. La clasificación no se puede modificar después.</string>
+    <string name="inspection_false_alarm">Falsa alerta</string>
+    <string name="inspection_confirm_alert">Confirmar alerta</string>
+    <string name="inspection_classification_read_only">La alerta ya está clasificada y la clasificación no se puede modificar.</string>
+    <string name="inspection_saved_tag">Etiqueta: %1$s</string>
+    <string name="inspection_tag_title_confirmed">Causa de la alerta confirmada (opcional)</string>
+    <string name="inspection_tag_title_false_alarm">Causa de la falsa alerta (opcional)</string>
+    <string name="inspection_observations_title">Observaciones (opcional)</string>
+    <string name="inspection_observations_placeholder">Escriba lo observado en campo (opcional)…</string>
+    <string name="inspection_previous_observation">Observación previa</string>
+    <string name="inspection_maintenance_toggle">Se realizó mantenimiento</string>
+    <string name="inspection_maintenance_types">Tipo de mantenimiento (puede elegir varios)</string>
+    <string name="inspection_maintenance_description">Descripción (opcional)</string>
+    <string name="inspection_maintenance_description_placeholder">Describa el mantenimiento realizado (opcional)…</string>
+    <string name="inspection_other_detail_title">¿Cuál? (obligatorio, 1 a 100 caracteres)</string>
+    <string name="inspection_other_detail_placeholder">Escriba cuál</string>
+    <string name="inspection_other_detail_error">Indique la causa para poder guardar.</string>
+    <string name="inspection_save_hint">“Guardar reporte” se habilita al agregar al menos un dato (etiqueta, observación, mantenimiento o foto) y completar los campos obligatorios.</string>
+    <string name="inspection_classify_first">Clasifica la alerta desde su detalle para poder elegir la etiqueta.</string>
+    <string name="maintenance_type_battery">Cambio o recarga de batería</string>
+    <string name="maintenance_type_cleaning">Limpieza</string>
+    <string name="maintenance_type_adjustment">Ajuste o reinstalación</string>
+    <string name="maintenance_type_component_replacement">Reemplazo de componente</string>
+    <string name="common_other_which">Otro ¿Cuál?</string>
+    <string name="common_date_time_pattern">dd/MM/yyyy HH:mm</string>
+    <string name="common_time_pattern">HH:mm</string>
+    <string name="common_char_counter" translatable="false">%1$d/%2$d</string>
+
+    <!-- Evidencia fotográfica -->
+    <string name="evidence_title">Evidencias fotográficas (opcional)</string>
+    <string name="evidence_add_description">Descripción (opcional)…</string>
+    <string name="evidence_take_photo">Tomar foto</string>
+    <string name="evidence_pick_gallery">Galería</string>
+    <string name="evidence_formats_hint">JPG, JPEG o PNG · máx. 5 fotos · 5 MB por foto (se comprimen en el celular)</string>
+    <string name="evidence_limit_reached">Máximo 5 fotografías por reporte</string>
+    <string name="evidence_format_not_allowed">Formato no permitido</string>
+    <string name="evidence_unreadable">No se pudo leer la imagen</string>
+    <string name="evidence_remove">Quitar</string>
+
+    <!-- Dispositivos -->
+    <string name="devices_title">Dispositivos del tramo</string>
+    <string name="devices_sensors_show">Ver sensores</string>
+    <string name="devices_sensors_hide">Ocultar sensores</string>
+    <plurals name="devices_count">
+        <item quantity="one">%d nodo</item>
+        <item quantity="other">%d nodos</item>
+    </plurals>
+    <string name="device_status_normal">Normal</string>
+    <string name="device_status_alert">Alerta</string>
+    <string name="device_status_critical">Crítico</string>
+
+    <!-- Mapa de nodos -->
+    <string name="map_node_type">TIPO</string>
+    <string name="map_node_battery">BATERÍA</string>
+    <string name="map_node_last_communication">ÚLT. COMUNICACIÓN</string>
+    <string name="map_view_full_history">Ver historial completo</string>
+    <string name="map_zoom_in">Acercar</string>
+    <string name="map_zoom_out">Alejar</string>
+    <string name="map_recenter">Centrar mapa</string>
+
+    <!-- Sincronización -->
+    <string name="sync_offline_title">Trabajando sin conexión</string>
+    <string name="sync_offline_body">Tus registros (inspecciones, clasificaciones, observaciones y fotos) se guardan en este dispositivo y se sincronizarán automáticamente al recuperar señal.</string>
+    <string name="sync_pending_title">Pendientes por sincronizar (%1$d)</string>
+    <string name="sync_retry">Reintentar</string>
+    <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
+    <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
+    <string name="sync_understood">Entendido</string>
+    <string name="sync_now">Sincronizar ahora</string>
+    <string name="sync_last_success">Última sincronización correcta: %1$s</string>
+    <!-- Estado de sincronización de un registro (RN-17) -->
+    <string name="sync_state_pending">Pendiente</string>
+    <string name="sync_state_syncing">Sincronizando</string>
+    <string name="sync_state_synced">Sincronizado</string>
+    <string name="sync_state_error">Error</string>
+    <!-- Reintento manual y registros de la cola (HU-7.3) -->
+    <string name="sync_retry_all">Reintentar todo</string>
+    <string name="sync_retry_offline">Sin conexión. Se sincronizará automáticamente al recuperarla.</string>
+    <string name="sync_nothing_pending">No hay registros pendientes por sincronizar.</string>
+    <string name="sync_last_success_never">Todavía no hay una sincronización correcta.</string>
+    <string name="sync_record_registered">Registrado %1$s</string>
+    <string name="sync_error_no_connection">Sin conexión</string>
+    <string name="sync_error_server">El servidor respondió con error %1$d</string>
+    <string name="sync_error_invalid_response">Respuesta inesperada del servidor</string>
+    <string name="sync_record_type_classification">Clasificación de alerta</string>
+    <string name="sync_record_type_inspection_report">Reporte de inspección</string>
+    <string name="sync_record_type_observation">Observación</string>
+    <string name="sync_record_type_photo">Foto</string>
+
+    <!-- Tiempos relativos (el dominio entrega minutos; ver ui/components/Texts.kt) -->
+    <string name="time_just_now">justo ahora</string>
+    <string name="time_minutes_ago">hace %1$d min</string>
+    <string name="time_hours_ago">hace %1$d h</string>
+    <string name="duration_minutes" translatable="false">%1$d min</string>
+    <string name="duration_hours" translatable="false">%1$d h</string>
+    <string name="duration_hours_minutes" translatable="false">%1$dh %2$02dm</string>
+    <string name="duration_minutes_short" translatable="false">%1$dm</string>
+
+    <!-- Valores del dominio (enums y números que la UI formatea) -->
+    <string name="node_name">Nodo %1$s</string>
+    <string name="acceleration_low">Baja</string>
+    <string name="acceleration_medium">Media</string>
+    <string name="acceleration_high">Alta</string>
+    <string name="sensor_type_motion">Acelerómetro + giroscopio</string>
+    <string name="sensor_type_acoustic">Acústico</string>
+    <string name="sensor_type_environment">Condiciones ambientales</string>
+    <string name="sensor_type_power">Energía / batería</string>
+
+    <!--
+        Datos de ejemplo de los repositorios en memoria (data/repository/SampleAgathaData.kt
+        e InMemorySyncRepository.kt). También se traducen: la demo debe verse completa en el
+        idioma del dispositivo. Desaparecen cuando la API central entregue datos reales.
+    -->
+    <!-- Telemetría (API de tablero): gráficas de "Ver sensores" y "Ver gráfica" -->
+    <string name="telemetry_window_24h">Últimas 24 h · hora de Colombia · solo con conexión</string>
+    <string name="telemetry_loading">Cargando datos del sensor…</string>
+    <string name="telemetry_no_data">Sin datos en las últimas 24 h</string>
+    <string name="telemetry_error_no_connection">Sin conexión. Las gráficas solo se ven con internet.</string>
+    <string name="telemetry_error_device_not_found">Este dispositivo todavía no tiene datos en la plataforma.</string>
+    <string name="telemetry_error_server">La plataforma no pudo entregar los datos. Intenta de nuevo.</string>
+    <string name="telemetry_y_range">Mín. %1$s · Máx. %2$s</string>
+    <string name="telemetry_chart_description">%1$s, últimas 24 h: mínimo %2$s, máximo %3$s</string>
+    <string name="telemetry_value_unit" translatable="false">%1$s %2$s</string>
+    <string name="telemetry_series_separator" translatable="false">%1$s / %2$s</string>
+    <string name="telemetry_battery_last">Última batería informada: %1$s</string>
+    <string name="telemetry_last_data">Último dato recibido: %1$s</string>
+    <string name="telemetry_threshold_pending">Umbral pendiente de validar: no se dibuja todavía.</string>
+    <string name="telemetry_variable_temperature">Temperatura</string>
+    <string name="telemetry_variable_humidity">Humedad</string>
+    <string name="telemetry_variable_b1">B1 fuga 500–1200 Hz</string>
+    <string name="telemetry_variable_b2">B2 fuga 1200–2000 Hz</string>
+    <string name="telemetry_variable_indicator">Indicador I (24 h)</string>
+    <string name="telemetry_variable_density">Densidad D (24 h)</string>
+    <string name="telemetry_variable_drift">Deriva</string>
+    <string name="telemetry_variable_pitch">Pitch</string>
+    <string name="telemetry_variable_roll">Roll</string>
+    <string name="telemetry_variable_acceleration">Aceleración (magnitud promedio)</string>
+    <string name="alert_detail_indicator_chart">INDICADOR · ÚLTIMAS 24 H</string>
+    <string name="alert_detail_view_chart">Ver gráfica</string>
+    <string name="alert_detail_hide_chart">Ocultar gráfica</string>
+    <string name="devices_updated_at">Conectado · Actualizado %1$s</string>
+    <string name="devices_offline">Sin conexión · desliza hacia abajo para reintentar</string>
+    <string name="devices_refresh">Actualizar dispositivos y gráficas</string>
+    <string name="devices_empty">La plataforma todavía no tiene dispositivos registrados.</string>
+
+    <!-- Push de alertas (HU-4.1) -->
+    <string name="push_channel_alerts_id" translatable="false">agatha_alerts</string>
+    <string name="push_channel_alerts_name">Alertas</string>
+    <string name="push_channel_alerts_description">Alertas nuevas y alertas que suben de nivel</string>
+    <string name="push_title_new">Nueva alerta %1$s: %2$s</string>
+    <string name="push_title_level_up">La alerta %1$s subió a %2$s</string>
+    <string name="push_body_pk">PK %1$s</string>
+    <string name="push_body_started">Inicio %1$s</string>
+
+    <!-- Permiso de notificaciones (HU-4.1) -->
+    <string name="notifications_permission_title">Activa las notificaciones</string>
+    <string name="notifications_permission_rationale">AGATHA te avisa al instante cuando un dispositivo genera una alerta o cuando una alerta sube de nivel. Sin este permiso solo verás las alertas al abrir la app.</string>
+    <string name="notifications_permission_allow">Permitir</string>
+    <string name="notifications_permission_later">Ahora no</string>
+    <string name="notifications_disabled_banner">Notificaciones desactivadas: no recibirás avisos de alertas nuevas.</string>
+    <string name="notifications_open_settings">Abrir ajustes</string>
+
+    <!-- Map screen (HE-08) -->
+    <string name="map_legend_title">Leyenda</string>
+    <string name="map_legend_status_heading">Estado del punto:</string>
+    <string name="map_legend_yellow_alert">Alerta amarilla</string>
+    <string name="map_legend_orange_alert">Alerta naranja</string>
+    <string name="map_legend_red_alert">Alerta roja</string>
+    <string name="map_legend_no_communication">Sin comunicación / no operativo</string>
+    <string name="map_legend_red_unclassified_hint">(titila mientras esté sin clasificar)</string>
+    <string name="map_legend_alert_notice">Alerta + aviso</string>
+    <string name="map_legend_alert_notice_hint">(conserva el color de la alerta)</string>
+    <string name="map_legend_pipeline_heading">Tubería</string>
+    <string name="map_legend_steel">Acero</string>
+    <string name="map_legend_flexible">Flexible</string>
+    <string name="map_legend_river">Río</string>
+    <string name="map_legend_creek">Quebrada</string>
+    <string name="map_legend_expand">Expandir leyenda</string>
+    <string name="map_legend_collapse">Contraer leyenda</string>
+    <string name="map_title">Gasoducto Otero–Santana</string>
+    <string name="map_status_online">En línea</string>
+    <string name="map_status_offline">Sin conexión</string>
+    <string name="map_filter_all">Todos</string>
+    <string name="map_node_id">ID</string>
+    <string name="map_node_communication">Comunicación</string>
+    <string name="map_node_status">Estado</string>
+    <string name="map_node_last_reading">Última lectura</string>
+    <string name="map_communication_online">En línea</string>
+    <string name="map_action_view_history">Ver historial</string>
+    <string name="map_action_start_inspection">Iniciar inspección</string>
+    <string name="map_loading">Cargando datos del mapa</string>
+    <string name="map_route_unavailable">No se pudo cargar el trazado</string>
+    <string name="map_value_not_available">No disponible</string>
+    <string name="map_device_not_installed">Sin dispositivo instalado</string>
+    <!-- History screen (HE-08) -->
+    <string name="history_loading">Cargando historial…</string>
+    <string name="history_empty_30_days">No hay eventos en los últimos 30 días</string>
+    <string name="history_event_node_pk">%1$s · PK %2$s</string>
+    <string name="history_filter_all_nodes">Todos los nodos</string>
+    <string name="history_filter_type">Tipo</string>
+    <string name="history_filter_classifications">Clasificaciones</string>
+    <string name="history_filter_maintenance">Mantenimientos</string>
+    <string name="history_clear_filters">Limpiar filtros</string>
+    <string name="history_filter_dates">Fechas</string>
+    <string name="history_filter_date_range">%1$s – %2$s</string>
+    <string name="history_filter_short_date_pattern">dd/MM</string>
+    <string name="history_filter_from">Desde: %1$s</string>
+    <string name="history_filter_through">Hasta: %1$s</string>
+    <string name="history_date_confirm">Aplicar</string>
+    <string name="history_detail_type">Tipo</string>
+    <string name="history_detail_timestamp">Fecha y hora</string>
+    <string name="history_detail_node">Nodo</string>
+    <string name="history_detail_description">Descripción</string>
+    <string name="history_detail_telemetry">Snapshot de telemetría</string>
+    <string name="history_detail_acceleration">Aceleración</string>
+    <string name="history_detail_gyroscope">Giro</string>
+    <string name="history_detail_acoustics">Acústica</string>
+    <string name="history_detail_temperature">Temperatura</string>
+    <string name="history_detail_humidity">Humedad</string>
+    <string name="history_detail_evidence_reference">Referencia de evidencia</string>
+    <string name="history_detail_origin">Origen</string>
+    <string name="history_offline_data_as_of">Sin conexión · Datos al %1$s</string>
+    <string name="history_offline_no_timestamp">Sin conexión · Sin datos disponibles</string>
+    <string name="connectivity_syncing">Sincronizando…</string>
+    <string name="alert_list_refresh">Actualizar alertas</string>
+    <string name="common_retry">Reintentar</string>
+    <string name="alert_error_no_connection">Sin conexión con el servidor. Revisa tu red e inténtalo de nuevo.</string>
+    <string name="alert_error_server">El servidor no pudo atender la solicitud. Inténtalo más tarde.</string>
+    <string name="alert_error_rejected">El servidor rechazó el envío.</string>
+    <string name="alert_classify_saved_offline">Clasificación guardada en el celular; se enviará cuando haya conexión.</string>
+    <string name="alert_classify_conflict_confirmed">Esta alerta ya estaba clasificada como Confirmada. Tu clasificación quedó registrada como observación.</string>
+    <string name="alert_classify_conflict_false_alarm">Esta alerta ya estaba clasificada como Falsa alerta. Tu clasificación quedó registrada como observación.</string>
+    <string name="alert_detail_observations_empty">Aún no hay observaciones.</string>
+    <string name="observation_kind_classification_conflict">Conflicto de clasificación</string>
+    <string name="observation_kind_tag_conflict">Conflicto de etiqueta</string>
+    <string name="alert_detail_report_local_only">El mantenimiento y las fotos se guardan solo en este celular por ahora.</string>
+    <string name="history_alert_started">Alerta %1$s generada</string>
+    <string name="history_alert_detail" translatable="false">%1$s · %2$s</string>
+    <string name="history_alert_ended">Fin de la alerta</string>
+    <string name="history_alert_ended_detail">Nivel máximo: %1$s</string>
+    <string name="history_classification_title">Clasificación del evento</string>
+    <string name="history_inspection_title">Inspección registrada</string>
+    <string name="history_inspection_detail_default">Reporte sin observaciones</string>
+    <string name="history_inspection_tag_detail">Etiqueta: %1$s</string>
+    <string name="history_inspection_tag_other_detail">Etiqueta: %1$s · %2$s</string>
+    <string name="history_maintenance_title">Mantenimiento realizado</string>
+    <string name="history_maintenance_detail_default">Detalle en el reporte de inspección</string>
+    <string name="history_evidence_title">Evidencia adjunta</string>
+    <string name="history_evidence_detail">Fotografías: %1$d</string>
+    <string name="connectivity_connected_live">Conectado · Al día</string>
+    <string name="history_site_guepsa">Güepsa – San José de Pare</string>
+    <string name="history_site_selector">Sitio</string>
+    <string name="history_site_unknown">Sitio sin catálogo</string>
+    <string name="history_sensor_selector">Historial de</string>
+    <string name="history_no_sensor_selected">Selecciona un sensor</string>
+    <string name="history_alert_timestamp">%1$s · ALERTA</string>
+    <string name="history_empty_alerts">No hay alertas históricas para este sensor.</string>
+    <string name="history_filter_observations">Observaciones</string>
+    <string name="history_event_timestamp">%1$s · %2$s</string>
+    <string name="history_observation_title">Observación de campo</string>
+    <string name="history_maintenance_completed">Completado</string>
+    <string name="history_classification_event_tag_detail">%1$s · %2$s</string>
+    <string name="history_classification_event_tag_other_detail">%1$s · %2$s · %3$s</string>
+    <string name="history_alert_tag_detail">Etiqueta: %1$s</string>
+    <string name="history_alert_tag_other_detail">Etiqueta: %1$s · %2$s</string>
+    <string name="history_open_alert_detail_action">Abrir detalle de alerta</string>
+    <string name="history_open_alert_detail_description">Abrir detalle de la alerta %1$s</string>
+    <string name="history_no_filter_results">Sin eventos para los filtros seleccionados.</string>
 </resources>

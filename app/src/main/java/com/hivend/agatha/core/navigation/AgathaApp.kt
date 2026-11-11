@@ -1,8 +1,26 @@
 package com.hivend.agatha.core.navigation
 
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.FastOutLinearInEasing
+import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearOutSlowInEasing
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.layout.padding
+import androidx.navigation.NavBackStackEntry
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -16,32 +34,44 @@ import androidx.navigation.compose.composable
 import com.hivend.agatha.core.navigation.AgathaDestination.AlertDetail
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.AgathaDestination.InspectionForm
-import com.hivend.agatha.core.navigation.AgathaDestination.NotificationPreview
-import com.hivend.agatha.core.navigation.AgathaDestination.PhotoEvidence
 import com.hivend.agatha.ui.alertdetail.AlertDetailScreen
 import com.hivend.agatha.ui.alerts.AlertInboxScreen
 import com.hivend.agatha.ui.components.AgathaBottomNavBar
 import com.hivend.agatha.ui.components.rootRoute
-import com.hivend.agatha.ui.evidence.PhotoEvidenceScreen
+import com.hivend.agatha.ui.devices.DeviceListScreen
 import com.hivend.agatha.ui.history.DeviceHistoryScreen
 import com.hivend.agatha.ui.inspection.InspectionFormScreen
 import com.hivend.agatha.ui.map.SensorMapScreen
-import com.hivend.agatha.ui.notification.NotificationPreviewScreen
 import com.hivend.agatha.ui.sync.SyncScreen
 
 /**
- * Composición raíz de AGATHA: un único [NavHost] con barra inferior condicional. Las 4
+ * Composición raíz de AGATHA: un único [NavHost] con barra inferior condicional. Las 5
  * pestañas ([BottomTab]) muestran [AgathaBottomNavBar]; el resto de pantallas se apilan a
  * pantalla completa, igual que en el prototipo Figma. Ver
  * docs/ARQUITECTURA_Y_DISENO.md § "Navegación" para el diagrama completo de rutas.
+ *
+ * [alertToOpen] es la alerta de un push tocado (HU-4.1): se abre su detalle sobre la lista de
+ * alertas, también en arranque en frío, y se avisa con [onAlertOpened] para no repetirlo.
  */
 @Composable
-fun AgathaApp() {
+fun AgathaApp(
+    alertToOpen: String? = null,
+    onAlertOpened: () -> Unit = {},
+) {
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentTab = BottomTab.all.find { it.route == backStackEntry?.destination?.route }
 
+    LaunchedEffect(alertToOpen) {
+        if (alertToOpen != null) {
+            navController.navigate(AlertDetail.buildRoute(alertToOpen))
+            onAlertOpened()
+        }
+    }
+
     Scaffold(
+        // La barra de estado la cubre cada encabezado para que su color oscuro llegue hasta arriba.
+        contentWindowInsets = WindowInsets.systemBars.only(WindowInsetsSides.Horizontal + WindowInsetsSides.Bottom),
         bottomBar = {
             if (currentTab != null) {
                 AgathaBottomNavBar(currentTab = currentTab) { tab -> navController.navigateToTab(tab) }
@@ -50,18 +80,13 @@ fun AgathaApp() {
     ) { innerPadding ->
         NavHost(
             navController = navController,
-            startDestination = NotificationPreview.route,
+            startDestination = BottomTab.Alerts.route,
             modifier = Modifier.padding(innerPadding),
+            enterTransition = { if (isTabSwitch()) tabEnter() else forwardEnter() },
+            exitTransition = { if (isTabSwitch()) tabExit() else forwardExit() },
+            popEnterTransition = { if (isTabSwitch()) tabEnter() else backEnter() },
+            popExitTransition = { if (isTabSwitch()) tabExit() else backExit() },
         ) {
-            composable(NotificationPreview.route) {
-                NotificationPreviewScreen(
-                    onAbrirDetalle = { alertId ->
-                        navController.navigate(BottomTab.Alerts.route)
-                        navController.navigate(AlertDetail.buildRoute(alertId))
-                    },
-                )
-            }
-
             composable(BottomTab.Alerts.route) {
                 AlertInboxScreen(
                     onAlertClick = { alertId -> navController.navigate(AlertDetail.buildRoute(alertId)) },
@@ -71,9 +96,15 @@ fun AgathaApp() {
                 )
             }
 
+            composable(BottomTab.Devices.route) {
+                DeviceListScreen(
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
+                )
+            }
+
             composable(BottomTab.Map.route) {
                 SensorMapScreen(
-                    onVerHistorial = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
                 )
             }
 
@@ -81,7 +112,13 @@ fun AgathaApp() {
                 route = BottomTab.History.route,
                 arguments = listOf(navArgument(BottomTab.History.ARG_DEVICE_ID) { type = NavType.StringType }),
             ) {
-                DeviceHistoryScreen()
+                DeviceHistoryScreen(
+                    onAlertClick = { alertId ->
+                        navController.navigate(AlertDetail.buildRoute(alertId)) {
+                            launchSingleTop = true
+                        }
+                    },
+                )
             }
 
             composable(BottomTab.Sync.route) {
@@ -94,8 +131,8 @@ fun AgathaApp() {
             ) {
                 AlertDetailScreen(
                     onBack = { navController.popBackStack() },
-                    onRegistrarInspeccion = { alertId -> navController.navigate(InspectionForm.buildRoute(alertId)) },
-                    onVerHistorial = { deviceId -> navController.navigate(BottomTab.History.buildRoute(deviceId)) },
+                    onRegisterInspection = { alertId -> navController.navigate(InspectionForm.buildRoute(alertId)) },
+                    onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
                 )
             }
 
@@ -105,24 +142,50 @@ fun AgathaApp() {
             ) {
                 InspectionFormScreen(
                     onBack = { navController.popBackStack() },
-                    onGuardado = { alertId -> navController.navigate(PhotoEvidence.buildRoute(alertId)) },
-                )
-            }
-
-            composable(
-                route = PhotoEvidence.route,
-                arguments = listOf(navArgument(PhotoEvidence.ARG_ALERT_ID) { type = NavType.StringType }),
-            ) {
-                PhotoEvidenceScreen(
-                    onBack = { navController.popBackStack() },
-                    onGuardado = { alertId ->
-                        navController.popBackStack(route = AlertDetail.buildRoute(alertId), inclusive = false)
-                    },
+                    onSaved = { navController.popBackStack() },
                 )
             }
         }
     }
 }
+
+/*
+ * Transiciones (Material motion). Entre pestañas: "fade through" corto, porque son destinos
+ * hermanos sin relación espacial. Al apilar una pantalla (detalle, reporte): "shared axis X",
+ * la nueva entra desde la derecha y la anterior se desplaza un poco a la izquierda; al volver,
+ * al revés. Reemplaza el fundido largo por defecto de Navigation Compose.
+ */
+private const val TAB_FADE_OUT_MS = 90
+private const val TAB_FADE_IN_MS = 210
+private const val AXIS_MS = 300
+private const val AXIS_FADE_MS = 150
+
+private fun AnimatedContentTransitionScope<NavBackStackEntry>.isTabSwitch(): Boolean =
+    initialState.destination.route.isTabRoute() && targetState.destination.route.isTabRoute()
+
+private fun String?.isTabRoute(): Boolean = BottomTab.all.any { it.route == this }
+
+private fun tabEnter(): EnterTransition =
+    fadeIn(tween(TAB_FADE_IN_MS, delayMillis = TAB_FADE_OUT_MS, easing = LinearOutSlowInEasing)) +
+        scaleIn(tween(TAB_FADE_IN_MS, delayMillis = TAB_FADE_OUT_MS, easing = LinearOutSlowInEasing), initialScale = 0.96f)
+
+private fun tabExit(): ExitTransition = fadeOut(tween(TAB_FADE_OUT_MS, easing = FastOutLinearInEasing))
+
+private fun forwardEnter(): EnterTransition =
+    slideInHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { it / 3 } +
+        fadeIn(tween(AXIS_FADE_MS, delayMillis = AXIS_MS - AXIS_FADE_MS))
+
+private fun forwardExit(): ExitTransition =
+    slideOutHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { -it / 3 } +
+        fadeOut(tween(AXIS_FADE_MS))
+
+private fun backEnter(): EnterTransition =
+    slideInHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { -it / 3 } +
+        fadeIn(tween(AXIS_FADE_MS, delayMillis = AXIS_MS - AXIS_FADE_MS))
+
+private fun backExit(): ExitTransition =
+    slideOutHorizontally(tween(AXIS_MS, easing = FastOutSlowInEasing)) { it / 3 } +
+        fadeOut(tween(AXIS_FADE_MS))
 
 /** Cambia de pestaña conservando el estado de cada una (patrón estándar de bottom nav + Navigation Compose). */
 private fun NavHostController.navigateToTab(tab: BottomTab) {
@@ -130,5 +193,19 @@ private fun NavHostController.navigateToTab(tab: BottomTab) {
         popUpTo(graph.findStartDestination().id) { saveState = true }
         launchSingleTop = true
         restoreState = true
+    }
+}
+
+/**
+ * "Ver historial" desde Mapa, Dispositivos o el detalle de una alerta. El historial es una
+ * pestaña, así que se abre como cambio de pestaña y no apilado sobre la pantalla actual: si se
+ * apilara, la pestaña de origen guardaría el historial en su pila y al tocarla de nuevo
+ * volvería a mostrarlo en vez de su propia pantalla. No restaura el historial anterior porque
+ * se abre el del dispositivo elegido.
+ */
+private fun NavHostController.navigateToHistory(deviceId: String) {
+    navigate(BottomTab.History.buildRoute(deviceId)) {
+        popUpTo(graph.findStartDestination().id) { saveState = true }
+        launchSingleTop = true
     }
 }

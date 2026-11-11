@@ -1,15 +1,25 @@
 package com.hivend.agatha.ui.inspection
 
+import android.net.Uri
 import androidx.lifecycle.SavedStateHandle
+import com.hivend.agatha.core.util.PhotoProcessor
+import com.hivend.agatha.core.util.PreparedPhoto
+import com.hivend.agatha.domain.model.PhotoEvidence
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.hivend.agatha.core.device.DeviceOriginProvider
 import com.hivend.agatha.core.navigation.AgathaDestination
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.CategoriaEvento
-import com.hivend.agatha.domain.model.Inspeccion
-import com.hivend.agatha.domain.model.ResultadoInspeccion
-import com.hivend.agatha.domain.repository.AlertaRepository
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertTag
+import com.hivend.agatha.domain.model.Inspection
+import com.hivend.agatha.domain.model.MaintenanceRecord
+import com.hivend.agatha.domain.model.MaintenanceType
+import com.hivend.agatha.domain.model.TextLimits
+import com.hivend.agatha.domain.repository.AlertRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.time.Instant
+import java.util.UUID
 import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -19,61 +29,162 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
+/** Lo que el técnico va llenando en el reporte. Ver [InspectionFormUiState] para lo derivado. */
+data class InspectionDraft(
+    val tag: AlertTag? = null,
+    val tagOtherDetail: String = "",
+    val observations: String = "",
+    val maintenanceDone: Boolean = false,
+    val maintenanceTypes: Set<MaintenanceType> = emptySet(),
+    val maintenanceOtherDetail: String = "",
+    val maintenanceDescription: String = "",
+    val photos: List<PhotoDraft> = emptyList(),
+    /** Archivos que no se aceptaron: se muestran con su error, como en la web (CA-2.3.4). */
+    val rejectedPhotos: List<PreparedPhoto.Rejected> = emptyList(),
+)
+
+data class PhotoDraft(val uri: String, val description: String = "")
+
 data class InspectionFormUiState(
-    val alerta: Alerta? = null,
-    val resultado: ResultadoInspeccion? = null,
-    val categoria: CategoriaEvento? = CategoriaEvento.MOVIMIENTO_TIERRA,
-    val observaciones: String = "",
-    val guardando: Boolean = false,
-    val guardadoConExito: Boolean = false,
+    val alert: Alert? = null,
+    val draft: InspectionDraft = InspectionDraft(),
+    val saving: Boolean = false,
+    val savedSuccessfully: Boolean = false,
 ) {
-    val puedeGuardar: Boolean get() = resultado != null && categoria != null
+    /** Clasificación ya guardada desde el detalle; el reporte la muestra en solo lectura. */
+    val classification: AlertClassification? get() = alert?.classification?.classification
+
+    /** La etiqueta solo se puede elegir si la alerta está clasificada y aún no tiene una (RN-06). */
+    val canTag: Boolean
+        get() = classification != null && alert?.classification?.tag == null
+
+    val tagDetailMissing: Boolean
+        get() = canTag && draft.tag?.requiresDetail == true && draft.tagOtherDetail.isBlank()
+
+    val maintenanceIncomplete: Boolean
+        get() = draft.maintenanceDone && (
+            draft.maintenanceTypes.isEmpty() ||
+                (MaintenanceType.OTHER in draft.maintenanceTypes && draft.maintenanceOtherDetail.isBlank())
+            )
+
+    /** Sin "Resultado" obligatorio, el reporte necesita al menos un dato que guardar. */
+    val hasContent: Boolean
+        get() = (canTag && draft.tag != null) || draft.observations.isNotBlank() ||
+            draft.maintenanceDone || draft.photos.isNotEmpty()
+
+    val canSave: Boolean
+        get() = hasContent && !tagDetailMissing && !maintenanceIncomplete
+
+    val remainingPhotos: Int get() = PhotoEvidence.MAX_PER_REPORT - draft.photos.size
 }
 
+/**
+ * Reporte de inspección (HE-05), segundo envío después de clasificar la alerta en el detalle:
+ * etiqueta de la clasificación guardada (HU-5.2), observación (HU-5.3), mantenimiento (HU-5.4)
+ * y fotos (HE-06). Funciona sin conexión:
+ * guarda en el repositorio local con fecha-hora y origen del celular.
+ */
 @HiltViewModel
 class InspectionFormViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val alertaRepository: AlertaRepository,
+    private val alertRepository: AlertRepository,
+    private val originProvider: DeviceOriginProvider,
+    private val photoProcessor: PhotoProcessor,
 ) : ViewModel() {
 
-    val alertaId: String =
+    val alertId: String =
         checkNotNull(savedStateHandle[AgathaDestination.InspectionForm.ARG_ALERT_ID])
 
     private val formState = MutableStateFlow(InspectionFormUiState())
     val uiState: StateFlow<InspectionFormUiState> = combine(
         formState,
-        alertaRepository.observarAlerta(alertaId),
-    ) { form, alerta -> form.copy(alerta = alerta) }
+        alertRepository.observeAlert(alertId),
+    ) { form, alert -> form.copy(alert = alert) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), InspectionFormUiState())
 
-    fun onResultadoSeleccionado(resultado: ResultadoInspeccion) {
-        formState.update { it.copy(resultado = resultado) }
+    private fun edit(block: (InspectionDraft) -> InspectionDraft) {
+        formState.update { it.copy(draft = block(it.draft)) }
     }
 
-    fun onCategoriaSeleccionada(categoria: CategoriaEvento) {
-        formState.update { it.copy(categoria = categoria) }
+    fun onTagSelected(tag: AlertTag) = edit {
+        if (it.tag == tag) it.copy(tag = null, tagOtherDetail = "") else it.copy(tag = tag, tagOtherDetail = "")
     }
 
-    fun onObservacionesChange(texto: String) {
-        formState.update { it.copy(observaciones = texto) }
+    fun onTagOtherDetailChange(text: String) = edit { it.copy(tagOtherDetail = text.take(TextLimits.OTHER_DETAIL)) }
+
+    fun onObservationsChange(text: String) = edit { it.copy(observations = text.take(TextLimits.OBSERVATIONS)) }
+
+    fun onMaintenanceToggled(done: Boolean) = edit { it.copy(maintenanceDone = done) }
+
+    fun onMaintenanceTypeToggled(type: MaintenanceType) = edit {
+        val types = if (type in it.maintenanceTypes) it.maintenanceTypes - type else it.maintenanceTypes + type
+        it.copy(maintenanceTypes = types)
     }
 
-    fun guardarInspeccion() {
-        val estado = uiState.value
-        if (!estado.puedeGuardar || estado.guardando) return
+    fun onMaintenanceOtherDetailChange(text: String) = edit { it.copy(maintenanceOtherDetail = text.take(TextLimits.OTHER_DETAIL)) }
+
+    fun onMaintenanceDescriptionChange(text: String) = edit { it.copy(maintenanceDescription = text.take(TextLimits.OBSERVATIONS)) }
+
+    /** HU-6.1: máximo 5 por reporte; cada archivo se valida, se copia y se comprime. */
+    fun onPhotosPicked(uris: List<Uri>) {
+        val accepted = uris.take(uiState.value.remainingPhotos)
+        viewModelScope.launch {
+            accepted.forEach { uri ->
+                when (val photo = photoProcessor.prepare(uri)) {
+                    is PreparedPhoto.Accepted -> edit {
+                        if (it.photos.size >= PhotoEvidence.MAX_PER_REPORT) it else it.copy(photos = it.photos + PhotoDraft(photo.uri))
+                    }
+                    is PreparedPhoto.Rejected -> edit { it.copy(rejectedPhotos = it.rejectedPhotos + photo) }
+                }
+            }
+        }
+    }
+
+    fun onPhotoRemoved(uri: String) = edit { draft -> draft.copy(photos = draft.photos.filterNot { it.uri == uri }) }
+
+    fun onRejectedPhotoDismissed(photo: PreparedPhoto.Rejected) = edit { it.copy(rejectedPhotos = it.rejectedPhotos - photo) }
+
+    fun onPhotoDescriptionChange(uri: String, text: String) = edit { draft ->
+        draft.copy(
+            photos = draft.photos.map {
+                if (it.uri == uri) it.copy(description = text.take(PhotoEvidence.DESCRIPTION_MAX_LENGTH)) else it
+            },
+        )
+    }
+
+    fun saveInspection() {
+        val state = uiState.value
+        val alert = state.alert ?: return
+        if (!state.canSave || state.saving) return
+        val draft = state.draft
+        val tag = draft.tag.takeIf { state.canTag }
 
         viewModelScope.launch {
-            formState.update { it.copy(guardando = true) }
-            alertaRepository.registrarInspeccion(
-                Inspeccion(
-                    alertaId = alertaId,
-                    resultado = estado.resultado!!,
-                    categoria = estado.categoria!!,
-                    observaciones = estado.observaciones,
-                    registradaSinConexion = true,
-                )
+            formState.update { it.copy(saving = true) }
+            alertRepository.registerInspection(
+                Inspection(
+                    id = UUID.randomUUID().toString(),
+                    deviceId = alert.sensorId,
+                    alertId = alert.id,
+                    tag = tag,
+                    tagOtherDetail = draft.tagOtherDetail.trim().takeIf { tag?.requiresDetail == true },
+                    observations = draft.observations.trim().ifBlank { null },
+                    maintenance = if (draft.maintenanceDone) {
+                        MaintenanceRecord(
+                            types = draft.maintenanceTypes,
+                            otherDetail = draft.maintenanceOtherDetail.trim()
+                                .takeIf { MaintenanceType.OTHER in draft.maintenanceTypes },
+                            description = draft.maintenanceDescription.trim().ifBlank { null },
+                        )
+                    } else {
+                        null
+                    },
+                    photos = draft.photos.map { PhotoEvidence(it.uri, it.description.trim()) },
+                    recordedAt = Instant.now(),
+                    origin = originProvider.current(),
+                ),
             )
-            formState.update { it.copy(guardando = false, guardadoConExito = true) }
+            formState.update { it.copy(saving = false, savedSuccessfully = true) }
         }
     }
 }

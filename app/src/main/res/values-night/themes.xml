@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark counterpart of values/themes.xml (launch window only). -->
+    <style name="Theme.Agatha" parent="android:Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/agatha_window_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+    </style>
+
+    <color name="agatha_window_background">#0D1117</color>
+</resources>

@@ -14,9 +14,9 @@ import java.util.Locale
  * cámara únicamente a través de un content:// URI de [FileProvider], nunca de una ruta
  * file:// directa (requisito de Android 7+ y buena práctica de seguridad).
  */
-fun crearUriParaEvidencia(context: Context): Uri {
-    val carpeta = File(context.cacheDir, "evidencias").apply { mkdirs() }
-    val marcaDeTiempo = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-    val archivo = File(carpeta, "AGATHA_$marcaDeTiempo.jpg")
-    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", archivo)
+fun createEvidenceUri(context: Context): Uri {
+    val folder = File(context.cacheDir, "evidencias").apply { mkdirs() }
+    val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
+    val file = File(folder, "AGATHA_$timestamp.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }

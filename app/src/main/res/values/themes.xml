@@ -2,9 +2,13 @@
 <resources>
     <!-- Only used for the launch window and the app's manifest theme attribute; every
          screen's actual colors/typography come from ui/theme/Theme.kt (Compose Material 3),
-         which is the single source of truth described in docs/ARQUITECTURA_Y_DISENO.md. -->
+         which is the single source of truth described in docs/ARQUITECTURA_Y_DISENO.md.
+         The window background matches AgathaColors.background so there is no flash on
+         launch; values-night/themes.xml holds the dark counterpart. -->
     <style name="Theme.Agatha" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:statusBarColor">@android:color/white</item>
+        <item name="android:windowBackground">@color/agatha_window_background</item>
         <item name="android:windowLightStatusBar">true</item>
     </style>
+
+    <color name="agatha_window_background">#F3F5F8</color>
 </resources>

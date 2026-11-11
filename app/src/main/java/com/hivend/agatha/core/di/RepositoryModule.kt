@@ -1,13 +1,17 @@
 package com.hivend.agatha.core.di
 
-import com.hivend.agatha.data.repository.InMemoryAlertaRepository
-import com.hivend.agatha.data.repository.InMemoryHistorialRepository
-import com.hivend.agatha.data.repository.InMemoryNodoSensorRepository
-import com.hivend.agatha.data.repository.InMemorySincronizacionRepository
-import com.hivend.agatha.domain.repository.AlertaRepository
-import com.hivend.agatha.domain.repository.HistorialRepository
-import com.hivend.agatha.domain.repository.NodoSensorRepository
-import com.hivend.agatha.domain.repository.SincronizacionRepository
+import com.hivend.agatha.data.connectivity.AndroidConnectivityMonitor
+import com.hivend.agatha.data.repository.AlertHistoryRepository
+import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
+import com.hivend.agatha.data.repository.RemoteAlertRepository
+import com.hivend.agatha.data.repository.RemoteTelemetryRepository
+import com.hivend.agatha.data.repository.RoomSyncRepository
+import com.hivend.agatha.domain.repository.AlertRepository
+import com.hivend.agatha.domain.repository.ConnectivityMonitor
+import com.hivend.agatha.domain.repository.HistoryRepository
+import com.hivend.agatha.domain.repository.SensorNodeRepository
+import com.hivend.agatha.domain.repository.SyncRepository
+import com.hivend.agatha.domain.repository.TelemetryRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -26,17 +30,25 @@ abstract class RepositoryModule {
 
     @Binds
     @Singleton
-    abstract fun bindAlertaRepository(impl: InMemoryAlertaRepository): AlertaRepository
+    abstract fun bindAlertRepository(impl: RemoteAlertRepository): AlertRepository
 
     @Binds
     @Singleton
-    abstract fun bindNodoSensorRepository(impl: InMemoryNodoSensorRepository): NodoSensorRepository
+    abstract fun bindSensorNodeRepository(impl: InMemorySensorNodeRepository): SensorNodeRepository
 
     @Binds
     @Singleton
-    abstract fun bindHistorialRepository(impl: InMemoryHistorialRepository): HistorialRepository
+    abstract fun bindHistoryRepository(impl: AlertHistoryRepository): HistoryRepository
 
     @Binds
     @Singleton
-    abstract fun bindSincronizacionRepository(impl: InMemorySincronizacionRepository): SincronizacionRepository
+    abstract fun bindSyncRepository(impl: RoomSyncRepository): SyncRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindTelemetryRepository(impl: RemoteTelemetryRepository): TelemetryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindConnectivityMonitor(impl: AndroidConnectivityMonitor): ConnectivityMonitor
 }

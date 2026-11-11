@@ -15,3 +15,5 @@ captures/
 *.dex
 google-services.json
 graphify-out/
+# Placeholder used only by CI (fake values, see .github/workflows/android-ci.yml).
+!.github/ci/google-services.json

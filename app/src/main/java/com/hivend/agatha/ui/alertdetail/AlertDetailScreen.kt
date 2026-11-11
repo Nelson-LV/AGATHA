@@ -1,7 +1,9 @@
 package com.hivend.agatha.ui.alertdetail
 
+import com.hivend.agatha.ui.components.agathaCard
+import com.hivend.agatha.ui.theme.AgathaDataTextStyle
+import com.hivend.agatha.ui.theme.AgathaTheme
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,17 +15,19 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ExpandMore
-import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.EditNote
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -33,46 +37,60 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.hivend.agatha.domain.model.SensorSection
+import androidx.annotation.StringRes
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.text.style.TextAlign
+import com.hivend.agatha.domain.model.AlertObservation
+import com.hivend.agatha.domain.model.ObservationKind
+import com.hivend.agatha.domain.model.TextLimits
+import com.hivend.agatha.ui.components.UiMessage
+import com.hivend.agatha.ui.components.toUiMessage
+import com.hivend.agatha.ui.components.TelemetryChart
+import com.hivend.agatha.ui.components.TelemetryStateContent
+import com.hivend.agatha.ui.telemetry.TelemetryViewModel
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.PathEffect
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.Alerta
-import com.hivend.agatha.domain.model.EstadoAlerta
-import com.hivend.agatha.domain.model.EventoHistorial
-import com.hivend.agatha.domain.model.NivelAlerta
+import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertClassification
+import com.hivend.agatha.domain.model.AlertFailure
+import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.EstadoAlertaChip
-import com.hivend.agatha.ui.components.SitePill
+import com.hivend.agatha.ui.components.LocalOnline
+import com.hivend.agatha.ui.components.ClassificationChip
+import com.hivend.agatha.ui.components.ManagementStatusChip
+import com.hivend.agatha.ui.components.LevelChip
+import com.hivend.agatha.ui.components.levelColor
+import com.hivend.agatha.ui.components.shortLabelRes
+import com.hivend.agatha.ui.components.formatDateTime
+import com.hivend.agatha.ui.components.label
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.StatusChip
-import com.hivend.agatha.ui.theme.AgathaBlue
-import com.hivend.agatha.ui.theme.AgathaBlueContainer
-import com.hivend.agatha.ui.theme.AlertGreen
-import com.hivend.agatha.ui.theme.AlertRed
-import com.hivend.agatha.ui.theme.AlertRedBorder
-import com.hivend.agatha.ui.theme.AlertRedSurface
-import com.hivend.agatha.ui.theme.NeutralBackground
-import com.hivend.agatha.ui.theme.NeutralBorder
-import com.hivend.agatha.ui.theme.NeutralSurface
-import com.hivend.agatha.ui.theme.NeutralSurfaceVariant
-import com.hivend.agatha.ui.theme.MapCanvasBackground
-import com.hivend.agatha.ui.theme.NodeAlert
-import com.hivend.agatha.ui.theme.NodeCritical
-import com.hivend.agatha.ui.theme.NodeNormal
-import com.hivend.agatha.ui.theme.StateClosedText
-import com.hivend.agatha.ui.theme.StateInspectionText
-import com.hivend.agatha.ui.theme.TextOnMuted
-import com.hivend.agatha.ui.theme.TextPrimary
-import com.hivend.agatha.ui.theme.TextSecondary
-import com.hivend.agatha.ui.theme.TextTertiary
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
+import coil3.compose.AsyncImage
+import com.hivend.agatha.domain.model.Inspection
+import com.hivend.agatha.domain.model.MaintenanceType
+import com.hivend.agatha.R
+import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.resolve
+import com.hivend.agatha.ui.components.shortDuration
 
 /**
  * Detalle de alerta (HE-04). Corresponde a los nodos 1:4 ("En inspección") y 27:2
@@ -84,21 +102,72 @@ import com.hivend.agatha.ui.theme.TextTertiary
 @Composable
 fun AlertDetailScreen(
     onBack: () -> Unit,
-    onRegistrarInspeccion: (String) -> Unit,
-    onVerHistorial: (String) -> Unit,
+    onRegisterInspection: (String) -> Unit,
+    onViewHistory: (String) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: AlertDetailViewModel = hiltViewModel(),
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-    val alerta = uiState.alerta
+    val alert = uiState.alert
+    val snackbarHostState = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    LaunchedEffect(viewModel) {
+        viewModel.messages.collect { message ->
+            snackbarHostState.showSnackbar(
+                when (message) {
+                    is UiMessage.Res -> resources.getString(message.id)
+                    is UiMessage.Raw -> message.text
+                },
+            )
+        }
+    }
+    /** Clasificación elegida que espera confirmación: no se puede cambiar después (RN-06). */
+    var pendingChoice by remember { mutableStateOf<AlertClassification?>(null) }
 
-    Column(modifier = modifier.fillMaxSize().background(NeutralBackground)) {
-        BackTopBar(title = "Detalle de Alerta", onBack = onBack)
-        ConnectivityBar(conectado = true, mensaje = "Conectado · Sincronizado hace 2 min")
+    pendingChoice?.let { choice ->
+        ClassifyDialog(
+            classification = choice,
+            onConfirm = {
+                pendingChoice = null
+                viewModel.classify(choice) { onRegisterInspection(viewModel.alertId) }
+            },
+            onDismiss = { pendingChoice = null },
+        )
+    }
 
-        if (alerta == null) {
-            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Alerta no encontrada", color = TextSecondary)
+    Box(modifier = modifier.fillMaxSize().background(AgathaTheme.colors.background).imePadding()) {
+    Column(modifier = Modifier.fillMaxSize()) {
+        BackTopBar(title = stringResource(R.string.alert_detail_title), onBack = onBack)
+        val online = LocalOnline.current
+        // Una alerta que no existe es una respuesta del servidor, no un problema de conexión.
+        val unreachable = uiState.loadFailure != null && uiState.loadFailure != AlertFailure.NotFound
+        ConnectivityBar(
+            connected = online && !unreachable,
+            message = stringResource(
+                when {
+                    !online || unreachable -> R.string.connectivity_offline_local_data
+                    uiState.loading -> R.string.connectivity_syncing
+                    else -> R.string.connectivity_connected_live
+                },
+            ),
+        )
+        if (uiState.loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AgathaTheme.colors.brand)
+
+        if (alert == null) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxSize().padding(24.dp),
+            ) {
+                val failure = uiState.loadFailure
+                if (!uiState.loading || failure != null) {
+                    Text(
+                        failure?.toUiMessage()?.resolve() ?: stringResource(R.string.alert_detail_not_found),
+                        color = AgathaTheme.colors.textSecondary,
+                        textAlign = TextAlign.Center,
+                    )
+                    if (unreachable) TextButton(onClick = viewModel::load) { Text(stringResource(R.string.common_retry)) }
+                }
             }
             return@Column
         }
@@ -107,332 +176,446 @@ fun AlertDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item { SitePill(sitio = alerta.sitio) }
             item {
                 AlertCard(
-                    alerta = alerta,
-                    onAvanzar = { viewModel.avanzarEstado(it) },
-                    onRegistrarInspeccion = { onRegistrarInspeccion(alerta.id) },
+                    alert = alert,
+                    onClassify = { pendingChoice = it },
+                    onNewReport = { onRegisterInspection(alert.id) },
                 )
             }
             item {
-                FiltersRow(
-                    estado = alerta.estado,
-                    onVerHistorial = { onVerHistorial(alerta.sensorId) },
+                ClassificationCard(
+                    alert = alert,
+                    pendingSync = uiState.classificationPendingSync,
+                    onViewHistory = { onViewHistory(alert.sensorId) },
                 )
             }
-            item { AccelerationGraphCard() }
-            item { RecentHistoryCard(eventos = uiState.historialReciente) }
-            item { SensorAccordionList() }
+            item { ReportsCard(uiState.reports, uiState.pendingReportIds) }
+            item {
+                ObservationsCard(
+                    observations = alert.observations,
+                    draft = uiState.observationDraft,
+                    canAdd = uiState.canAddObservation,
+                    saving = uiState.savingObservation,
+                    onDraftChange = viewModel::onObservationChange,
+                    onAdd = viewModel::addObservation,
+                )
+            }
+            item { IndicatorChartCard(sensorId = alert.sensorId) }
+            item { RecentHistoryCard(events = uiState.recentHistory) }
         }
+    }
+    SnackbarHost(snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
     }
 }
 
+/**
+ * Encabezado y datos de la alerta como en la web (referencia 02): "chip nivel + Alerta ALR-xxxx +
+ * chip estado" y la grilla Dispositivo, PK, Municipio, Evento, Inicio, Fin, Indicador y nivel
+ * máximo (HU-4.2, RN-04, RN-05). Sin clasificar, la acción es "Falsa alerta" / "Confirmar
+ * alerta" (HU-5.2); ya clasificada, un nuevo reporte de inspección.
+ */
 @Composable
-private fun AlertCard(alerta: Alerta, onAvanzar: (EstadoAlerta) -> Unit, onRegistrarInspeccion: () -> Unit) {
+private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, onNewReport: () -> Unit) {
     Column(
         verticalArrangement = Arrangement.spacedBy(12.dp),
         modifier = Modifier
             .fillMaxWidth()
-            .background(AlertRedSurface, RoundedCornerShape(14.dp))
-            .border(1.5.dp, AlertRedBorder, RoundedCornerShape(14.dp))
+            .agathaCard(stripeColor = alert.level.levelColor())
             .padding(14.dp),
     ) {
-        Text(
-            text = "${alerta.nivel.etiqueta()} · Sensor ${alerta.sensorId} · ${alerta.pk}",
-            color = AlertRed,
-            style = MaterialTheme.typography.labelLarge,
-        )
-        Text(alerta.descripcion, color = TextPrimary, style = MaterialTheme.typography.titleMedium)
-
-        PrimaryActions(estado = alerta.estado, onAvanzar = onAvanzar)
-
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(6.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(AgathaBlueContainer, RoundedCornerShape(10.dp))
-                .border(1.3.dp, AgathaBlueContainer, RoundedCornerShape(10.dp))
-                .padding(10.dp),
-        ) {
-            Text("🔧", style = MaterialTheme.typography.bodyLarge)
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            LevelChip(alert.level)
             Text(
-                "Mantenimiento programado",
-                color = AgathaBlue,
-                style = MaterialTheme.typography.labelLarge,
+                stringResource(R.string.alert_detail_alert_id, alert.id),
+                color = AgathaTheme.colors.textPrimary,
+                style = MaterialTheme.typography.titleMedium,
                 modifier = Modifier.weight(1f),
-                textAlign = TextAlign.Center,
             )
+            ManagementStatusChip(alert.managementStatus)
         }
-
-        TelemetryRow(alerta)
-
-        Text("📝  Siguiente paso", color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, NeutralBorder, RoundedCornerShape(8.dp))
-                .clickable(onClick = onRegistrarInspeccion)
-                .padding(horizontal = 12.dp, vertical = 10.dp),
-        ) {
-            Text(alerta.siguientePaso, color = AgathaBlue, style = MaterialTheme.typography.bodyMedium)
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
-        }
-    }
-}
-
-@Composable
-private fun PrimaryActions(estado: EstadoAlerta, onAvanzar: (EstadoAlerta) -> Unit) {
-    when (estado) {
-        EstadoAlerta.GENERADA, EstadoAlerta.RECIBIDA -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = { onAvanzar(EstadoAlerta.EN_INSPECCION) },
-                colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("Iniciar inspección", modifier = Modifier.padding(start = 4.dp))
-            }
-            OutlinedButton(
-                onClick = { onAvanzar(EstadoAlerta.CERRADA) },
-                border = BorderStroke(1.3.dp, AlertRed),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("Marcar como falsa", modifier = Modifier.padding(start = 4.dp))
-            }
-        }
-        EstadoAlerta.EN_INSPECCION -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            Button(
-                onClick = { onAvanzar(EstadoAlerta.CLASIFICADA) },
-                colors = ButtonDefaults.buttonColors(containerColor = AlertGreen),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Check, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("Actualizar estado", modifier = Modifier.padding(start = 4.dp))
-            }
-            OutlinedButton(
-                onClick = { onAvanzar(EstadoAlerta.CERRADA) },
-                border = BorderStroke(1.3.dp, AlertRed),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = AlertRed),
-                modifier = Modifier.weight(1f),
-            ) {
-                Icon(Icons.Filled.Close, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text("Cerrar alerta", modifier = Modifier.padding(start = 4.dp))
-            }
-        }
-        EstadoAlerta.CLASIFICADA, EstadoAlerta.CERRADA -> StatusChip(
-            text = if (estado == EstadoAlerta.CERRADA) "Sin acciones pendientes" else "Pendiente de cierre por operador",
-            containerColor = NeutralSurfaceVariant,
-            contentColor = TextSecondary,
-            modifier = Modifier.fillMaxWidth(),
+        DataGrid(
+            listOf(
+                stringResource(R.string.alert_detail_device) to alert.sensorId,
+                stringResource(R.string.alert_detail_pk) to alert.pk,
+                stringResource(R.string.alert_detail_event) to stringResource(alert.event.labelRes()),
+                stringResource(R.string.alert_detail_start) to formatDateTime(alert.startedAt),
+                stringResource(R.string.alert_detail_end) to (alert.endedAt?.let { formatDateTime(it) } ?: ""),
+                stringResource(R.string.alert_detail_indicator) to (
+                    alert.indicatorValue?.let { stringResource(R.string.alert_detail_indicator_value, it) }
+                        ?: stringResource(R.string.common_empty_value)
+                    ),
+                stringResource(R.string.alert_detail_max_level) to stringResource(alert.maxLevel.shortLabelRes()),
+            ),
+            ongoing = alert.isOngoing,
         )
-    }
-}
 
-@Composable
-private fun TelemetryRow(alerta: Alerta) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(NeutralSurfaceVariant, RoundedCornerShape(10.dp))
-            .border(1.dp, NeutralBorder, RoundedCornerShape(10.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp),
-    ) {
-        Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-            TelemetryStat("CONFIANZA", "${alerta.telemetria.confianzaPorcentaje}%")
-            TelemetryStat("ACELERACIÓN", alerta.telemetria.aceleracion)
-            TelemetryStat("HACE", alerta.telemetria.tiempoRelativo)
-            TelemetryStat("BATERÍA", "${alerta.telemetria.bateriaPorcentaje}%")
-        }
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(5.dp)) {
-            Box(Modifier.size(6.dp).background(if (alerta.telemetria.esDatoReal) AlertGreen else TextTertiary, CircleShape))
+        LevelTimeline(alert)
+
+        if (alert.classification == null) {
             Text(
-                if (alerta.telemetria.esDatoReal) "Dato real" else "Dato simulado",
-                color = StateClosedText,
-                style = MaterialTheme.typography.bodyMedium,
+                stringResource(R.string.inspection_classification_info),
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
             )
-        }
-    }
-}
-
-@Composable
-private fun TelemetryStat(label: String, value: String) {
-    Column {
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelMedium)
-        Text(value, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
-    }
-}
-
-@Composable
-private fun FiltersRow(estado: EstadoAlerta, onVerHistorial: () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-    ) {
-        StatusChip(
-            text = "Estado: ${estado.etiquetaCorta()}",
-            containerColor = NeutralSurfaceVariant,
-            contentColor = TextOnMuted,
-        )
-        Text(
-            "⬇  Ver historial de cambios de estado",
-            color = AgathaBlue,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.clickable(onClick = onVerHistorial),
-        )
-    }
-}
-
-@Composable
-private fun AccelerationGraphCard() {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-    ) {
-        Text("🗺  GRÁFICA ACELERACIÓN 24H", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
-        Canvas(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(140.dp)
-                .background(MapCanvasBackground, RoundedCornerShape(10.dp)),
-        ) {
-            val points = listOf(
-                Offset(size.width * 0.06f, size.height * 0.82f) to NodeNormal,
-                Offset(size.width * 0.5f, size.height * 0.45f) to NodeAlert,
-                Offset(size.width * 0.92f, size.height * 0.14f) to NodeCritical,
-            )
-            drawLine(
-                color = AgathaBlue,
-                start = points[0].first,
-                end = points[1].first,
-                strokeWidth = 3f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
-            )
-            drawLine(
-                color = AgathaBlue,
-                start = points[1].first,
-                end = points[2].first,
-                strokeWidth = 3f,
-                pathEffect = PathEffect.dashPathEffect(floatArrayOf(10f, 8f)),
-            )
-            points.forEach { (offset, color) ->
-                drawCircle(color = color, radius = 7f, center = offset)
-                drawCircle(color = Color.White, radius = 7f, center = offset, style = Stroke(width = 2f))
+            Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
+                ClassificationButton(
+                    text = stringResource(R.string.inspection_false_alarm),
+                    color = AgathaTheme.colors.classificationFalseAlarm,
+                    onClick = { onClassify(AlertClassification.FALSE_ALARM) },
+                    modifier = Modifier.weight(1f),
+                )
+                ClassificationButton(
+                    text = stringResource(R.string.inspection_confirm_alert),
+                    color = AgathaTheme.colors.critical,
+                    onClick = { onClassify(AlertClassification.CONFIRMED) },
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        } else {
+            Button(
+                onClick = onNewReport,
+                colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
             }
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            LegendDot("Normal", NodeNormal)
-            LegendDot("Alerta", NodeAlert)
-            LegendDot("Crítico", NodeCritical)
-        }
     }
 }
 
 @Composable
-private fun LegendDot(label: String, color: Color) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(3.dp)) {
-        Box(Modifier.size(6.dp).background(color, CircleShape))
-        Text(label, color = TextSecondary, style = MaterialTheme.typography.labelSmall)
-    }
+private fun ClassificationButton(text: String, color: Color, onClick: () -> Unit, modifier: Modifier) {
+    OutlinedButton(
+        onClick = onClick,
+        border = BorderStroke(1.3.dp, color),
+        colors = ButtonDefaults.outlinedButtonColors(contentColor = color),
+        modifier = modifier,
+    ) { Text(text) }
 }
 
+/** Confirma la clasificación antes de guardarla: es el primer envío y no se puede editar. */
 @Composable
-private fun RecentHistoryCard(eventos: List<EventoHistorial>) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(2.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(14.dp))
-            .padding(14.dp),
-    ) {
-        Text("📰  HISTORIAL DEL DISPOSITIVO", color = TextSecondary, style = MaterialTheme.typography.labelLarge)
-        eventos.forEach { evento ->
-            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                Text("${evento.hora} · ${evento.titulo}", color = TextPrimary, style = MaterialTheme.typography.labelLarge)
-                Text(evento.detalle, color = TextSecondary, style = MaterialTheme.typography.bodyMedium)
-                evento.etiquetaEstado?.let {
-                    StatusChip(
-                        text = it,
-                        containerColor = NeutralSurfaceVariant,
-                        contentColor = TextSecondary,
-                        modifier = Modifier.padding(top = 2.dp),
-                    )
+private fun ClassifyDialog(classification: AlertClassification, onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.alert_detail_classify_dialog_title, stringResource(classification.labelRes()))) },
+        text = { Text(stringResource(R.string.alert_detail_classify_dialog_text)) },
+        confirmButton = {
+            TextButton(onClick = onConfirm) { Text(stringResource(R.string.alert_detail_classify_dialog_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text(stringResource(R.string.common_cancel)) }
+        },
+    )
+}
+
+/** Grilla de dos columnas etiqueta/valor. Un "Fin" vacío se muestra como "En curso" en rojo. */
+@Composable
+private fun DataGrid(items: List<Pair<String, String>>, ongoing: Boolean) {
+    val endLabel = stringResource(R.string.alert_detail_end)
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        items.chunked(2).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { (label, value) ->
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(label, color = AgathaTheme.colors.textTertiary, style = MaterialTheme.typography.labelMedium)
+                        if (label == endLabel && ongoing) {
+                            Text(stringResource(R.string.alert_detail_ongoing), color = AgathaTheme.colors.critical, style = MaterialTheme.typography.bodyMedium)
+                        } else {
+                            Text(value, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+                        }
+                    }
                 }
             }
         }
     }
 }
 
-private data class SensorInfo(val emoji: String, val titulo: String, val detalle: String, val color: Color)
-
-private val sensores = listOf(
-    SensorInfo("📡", "Movimiento y orientación (detecta deslizamiento)", "Acelerómetro + giroscopio triaxial. Umbral de alerta: 3 cm de desplazamiento.", AlertRed),
-    SensorInfo("🎵", "Acústica (detecta fuga de gas)", "Micrófono de contacto sobre la tubería. Detecta el patrón acústico de una fuga.", StateInspectionText),
-    SensorInfo("🌡", "Condiciones ambientales", "Temperatura y humedad relativa alrededor del punto de monitoreo.", AgathaBlue),
-    SensorInfo("🔋", "Energía del dispositivo", "Nivel de batería y estado del panel solar del nodo.", AlertGreen),
-)
-
+/** Clasificación, estado de gestión y etiqueta, con fecha-hora y origen (RN-06, RN-10). */
 @Composable
-private fun SensorAccordionList() {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        sensores.forEach { sensor -> AccordionRow(sensor) }
-    }
-}
-
-@Composable
-private fun AccordionRow(sensor: SensorInfo) {
-    var expanded by remember { mutableStateOf(false) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(NeutralSurface, RoundedCornerShape(12.dp))
-            .clickable { expanded = !expanded }
-            .padding(horizontal = 14.dp, vertical = 13.dp),
-    ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween,
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(sensor.emoji, color = sensor.color, style = MaterialTheme.typography.titleSmall)
-                Text(sensor.titulo, color = TextPrimary, style = MaterialTheme.typography.titleSmall)
+private fun ClassificationCard(alert: Alert, pendingSync: Boolean, onViewHistory: () -> Unit) {
+    SectionCard(title = stringResource(R.string.alert_detail_classification)) {
+        val record = alert.classification
+        if (record == null) {
+            ManagementStatusChip(alert.managementStatus)
+            Text(stringResource(R.string.alert_detail_unclassified_hint), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                ClassificationChip(record.classification)
+                ManagementStatusChip(alert.managementStatus)
             }
-            Icon(Icons.Filled.ExpandMore, contentDescription = null, tint = TextSecondary)
-        }
-        if (expanded) {
+            if (pendingSync) PendingSyncChip()
+            val whenAndWho = listOfNotNull(record.classifiedAt?.let { formatDateTime(it) }, record.origin?.label())
+            if (whenAndWho.isNotEmpty()) {
+                Text(
+                    whenAndWho.reduce { first, second -> stringResource(R.string.common_dot_separated, first, second) },
+                    color = AgathaTheme.colors.textSecondary,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+            val tag = record.tag
             Text(
-                sensor.detalle,
-                color = TextSecondary,
+                if (tag == null) stringResource(R.string.alert_detail_no_tag)
+                else stringResource(R.string.inspection_saved_tag, tag.otherDetail ?: stringResource(tag.tag.labelRes())),
+                color = AgathaTheme.colors.textPrimary,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
             )
         }
+        Text(
+            stringResource(R.string.alert_detail_view_device_history),
+            color = AgathaTheme.colors.brand,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.clickable(onClick = onViewHistory),
+        )
     }
 }
 
-private fun NivelAlerta.etiqueta(): String = when (this) {
-    NivelAlerta.ROJO -> "ALERTA ROJA"
-    NivelAlerta.AMARILLO -> "ALERTA AMARILLA"
-    NivelAlerta.VERDE -> "ALERTA VERDE"
+/**
+ * Reportes de inspección de la alerta (HU-4.2): resultado, mantenimiento, observación y fotos,
+ * con fecha-hora y origen. No se editan; los guardados en el celular esperan sincronizarse.
+ */
+@Composable
+private fun ReportsCard(reports: List<Inspection>, pendingIds: Set<String>) {
+    SectionCard(title = pluralStringResource(R.plurals.alert_detail_reports, reports.size, reports.size)) {
+        if (reports.isEmpty()) {
+            Text(stringResource(R.string.alert_detail_no_reports), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        reports.forEach { report ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(4.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.common_dot_separated, formatDateTime(report.recordedAt), report.origin.label()),
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (report.id in pendingIds) PendingSyncChip()
+                }
+                report.tag?.let { tag ->
+                    Text(
+                        stringResource(R.string.inspection_saved_tag, report.tagOtherDetail ?: stringResource(tag.labelRes())),
+                        color = AgathaTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                }
+                report.maintenance?.let { maintenance ->
+                    val types = maintenance.types.sortedBy { it.ordinal }.map {
+                        if (it == MaintenanceType.OTHER) maintenance.otherDetail.orEmpty() else stringResource(it.labelRes())
+                    }
+                    Text(
+                        stringResource(R.string.alert_detail_report_maintenance, types.joinToString(", ")),
+                        color = AgathaTheme.colors.textPrimary,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
+                    maintenance.description?.let {
+                        Text(it, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+                    }
+                }
+                report.observations?.let {
+                    Text(it, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                }
+                if (report.maintenance != null || report.photos.isNotEmpty()) {
+                    Text(
+                        stringResource(R.string.alert_detail_report_local_only),
+                        color = AgathaTheme.colors.textTertiary,
+                        style = MaterialTheme.typography.labelSmall,
+                    )
+                }
+                if (report.photos.isNotEmpty()) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                        report.photos.forEach { photo ->
+                            AsyncImage(
+                                model = photo.uri,
+                                contentDescription = photo.description.ifBlank { null },
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.size(52.dp).clip(RoundedCornerShape(8.dp)),
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
-private fun EstadoAlerta.etiquetaCorta(): String = when (this) {
-    EstadoAlerta.GENERADA -> "Generada"
-    EstadoAlerta.RECIBIDA -> "Recibida"
-    EstadoAlerta.EN_INSPECCION -> "En inspección"
-    EstadoAlerta.CLASIFICADA -> "Clasificada"
-    EstadoAlerta.CERRADA -> "Cerrada"
+@Composable
+private fun PendingSyncChip() {
+    StatusChip(
+        text = stringResource(R.string.alert_detail_pending_sync),
+        containerColor = AgathaTheme.colors.offlineContainer,
+        contentColor = AgathaTheme.colors.offline,
+    )
+}
+
+@Composable
+private fun SectionCard(title: String, content: @Composable () -> Unit) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .padding(14.dp),
+    ) {
+        Text(title, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        content()
+    }
+}
+
+/**
+ * Observaciones de campo al mismo nivel que la información de la alerta: el técnico las agrega
+ * una a una sin entrar a un reporte de inspección. No se editan (RN-06); las que dejó la web o
+ * un conflicto de sincronización aparecen en la misma lista, con su fecha-hora y origen.
+ */
+@Composable
+private fun ObservationsCard(
+    observations: List<AlertObservation>,
+    draft: String,
+    canAdd: Boolean,
+    saving: Boolean,
+    onDraftChange: (String) -> Unit,
+    onAdd: () -> Unit,
+) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            Icon(Icons.Filled.EditNote, contentDescription = null, tint = AgathaTheme.colors.brand, modifier = Modifier.size(20.dp))
+            Text(stringResource(R.string.alert_detail_observations_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleSmall)
+        }
+        if (observations.isEmpty()) {
+            Text(stringResource(R.string.alert_detail_observations_empty), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodySmall)
+        }
+        observations.forEach { observation ->
+            Column(
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(AgathaTheme.colors.surfaceVariant, RoundedCornerShape(10.dp))
+                    .padding(12.dp),
+            ) {
+                val whenAndWho = listOfNotNull(observation.recordedAt?.let { formatDateTime(it) }, observation.origin?.label())
+                if (whenAndWho.isNotEmpty()) {
+                    Text(
+                        whenAndWho.reduce { first, second -> stringResource(R.string.common_dot_separated, first, second) },
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.labelMedium,
+                    )
+                }
+                observation.kind.labelRes()?.let {
+                    StatusChip(
+                        text = stringResource(it),
+                        containerColor = AgathaTheme.colors.offlineContainer,
+                        contentColor = AgathaTheme.colors.offline,
+                    )
+                }
+                Text(observation.text, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+        OutlinedTextField(
+            value = draft,
+            onValueChange = onDraftChange,
+            placeholder = { Text(stringResource(R.string.alert_detail_observations_placeholder)) },
+            supportingText = { Text(stringResource(R.string.common_char_counter, draft.length, TextLimits.OBSERVATIONS)) },
+            minLines = 3,
+            modifier = Modifier.fillMaxWidth(),
+        )
+        Row(horizontalArrangement = Arrangement.End, modifier = Modifier.fillMaxWidth()) {
+            OutlinedButton(onClick = onAdd, enabled = canAdd) {
+                Text(stringResource(if (saving) R.string.common_saving else R.string.alert_detail_observations_save))
+            }
+        }
+    }
+}
+
+@StringRes
+private fun ObservationKind.labelRes(): Int? = when (this) {
+    ObservationKind.NOTE -> null
+    ObservationKind.CLASSIFICATION_CONFLICT -> R.string.observation_kind_classification_conflict
+    ObservationKind.TAG_CONFLICT -> R.string.observation_kind_tag_conflict
+}
+
+/**
+ * "Ver gráfica" (HU-4.2): el indicador del dispositivo en las últimas 24 h, pedido a la API de
+ * tablero solo cuando el técnico abre la gráfica y solo con conexión. El umbral no se dibuja:
+ * el endpoint todavía no lo trae y no se inventa un valor.
+ */
+@Composable
+private fun IndicatorChartCard(sensorId: String) {
+    var open by rememberSaveable { mutableStateOf(false) }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .padding(14.dp),
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.fillMaxWidth()) {
+            Text(
+                stringResource(R.string.alert_detail_indicator_chart),
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.labelLarge,
+                modifier = Modifier.weight(1f),
+            )
+            TextButton(onClick = { open = !open }) {
+                Text(stringResource(if (open) R.string.alert_detail_hide_chart else R.string.alert_detail_view_chart))
+            }
+        }
+        if (open) {
+            val viewModel: TelemetryViewModel = hiltViewModel(key = "indicator-$sensorId")
+            LaunchedEffect(sensorId) { viewModel.load(sensorId, setOf(SensorSection.INDICATOR_KEY)) }
+            val state by viewModel.state.collectAsStateWithLifecycle()
+            TelemetryStateContent(state = state, onRetry = viewModel::retry) { telemetry ->
+                val series = listOfNotNull(telemetry.series(SensorSection.INDICATOR_KEY))
+                TelemetryChart(series = series, from = telemetry.from, to = telemetry.to)
+                Text(
+                    stringResource(R.string.telemetry_threshold_pending),
+                    color = AgathaTheme.colors.textTertiary,
+                    style = MaterialTheme.typography.labelSmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentHistoryCard(events: List<HistoryEvent>) {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .agathaCard()
+            .padding(14.dp),
+    ) {
+        Text(stringResource(R.string.alert_detail_device_history), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelLarge)
+        events.forEach { event ->
+            Column(modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
+                Text(
+                    stringResource(R.string.common_dot_separated, formatDateTime(event.at), event.title.resolve()),
+                    color = AgathaTheme.colors.textPrimary,
+                    style = MaterialTheme.typography.labelLarge,
+                )
+                Text(event.detail.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
+                event.statusLabel?.let {
+                    StatusChip(
+                        text = it.resolve(),
+                        containerColor = AgathaTheme.colors.surfaceVariant,
+                        contentColor = AgathaTheme.colors.textSecondary,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+            }
+        }
+    }
 }

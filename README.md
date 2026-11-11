@@ -11,6 +11,10 @@ sistema visual (paleta Material 3) vive en
 [`docs/ARQUITECTURA_Y_DISENO.md`](docs/ARQUITECTURA_Y_DISENO.md). Léelo antes de tocar
 código.**
 
+📋 **Reglas funcionales vigentes (Backlog 1.3, la web es la fuente de verdad) y capturas
+de referencia de la web:
+[`docs/BACKLOG_V1_3_APP_MOVIL.md`](docs/BACKLOG_V1_3_APP_MOVIL.md).**
+
 ## Requisitos
 
 - Android Studio Narwhal o más reciente.
