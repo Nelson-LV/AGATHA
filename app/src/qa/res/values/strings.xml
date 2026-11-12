@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nombre de la variante QA (rama develop): distinto del de la app de los técnicos para que
+     en el celular se sepa cuál es cuál. Nombre propio, igual en todos los idiomas. -->
+<resources>
+    <string name="app_name" translatable="false">AGATHA QA</string>
+</resources>
