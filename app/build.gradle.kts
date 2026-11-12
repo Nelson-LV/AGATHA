@@ -49,6 +49,13 @@ val gitCommitCount: Int = runCatching {
         .standardOutput.asText.get().trim().toInt()
 }.getOrDefault(1)
 
+// Notas de la versión QA (rama develop, grupo equipo-desarrollo): los títulos de los últimos
+// commits. El equipo no necesita más; las notas para técnicos se escriben a mano.
+val qaReleaseNotes: String = runCatching {
+    providers.exec { commandLine("git", "log", "-10", "--no-merges", "--format=- %s") }
+        .standardOutput.asText.get().trim()
+}.getOrDefault("").ifEmpty { "Versión QA de develop." }
+
 android {
     namespace = "com.hivend.agatha"
     compileSdk = 36
@@ -94,6 +101,21 @@ android {
                 artifactType = "APK"
                 groups = "tecnicos-piloto"
                 releaseNotesFile = rootProject.file("distribution/release-notes.txt").path
+            }
+        }
+        // Igual al release (R8 y firma oficial) pero como otra app: "AGATHA QA", que convive
+        // en el celular con la de los técnicos. Sale de develop para el equipo del proyecto:
+        // ./gradlew assembleQa appDistributionUploadQa
+        create("qa") {
+            initWith(getByName("release"))
+            applicationIdSuffix = ".qa"
+            versionNameSuffix = "-qa"
+            matchingFallbacks += "release"
+            signingConfigs.findByName("release")?.let { signingConfig = it }
+            firebaseAppDistribution {
+                artifactType = "APK"
+                groups = "equipo-desarrollo"
+                releaseNotes = qaReleaseNotes
             }
         }
         debug {
