@@ -3,6 +3,7 @@ package com.hivend.agatha.ui.sync
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.R
+import com.hivend.agatha.core.device.DeviceOriginProvider
 import com.hivend.agatha.domain.model.SyncStatus
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.repository.SyncRepository
@@ -21,7 +22,14 @@ import kotlinx.coroutines.launch
 class SyncViewModel @Inject constructor(
     private val syncRepository: SyncRepository,
     private val connectivity: ConnectivityMonitor,
+    deviceOrigin: DeviceOriginProvider,
 ) : ViewModel() {
+
+    /**
+     * Identificador de este celular (`CEL-XXXXXX`), el mismo con el que firma sus registros y
+     * registra su token de push. Se muestra para que soporte o backend puedan ubicarlo.
+     */
+    val deviceId: String = deviceOrigin.deviceId
 
     val status: StateFlow<SyncStatus?> = syncRepository.observeStatus()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
