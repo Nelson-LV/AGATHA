@@ -250,6 +250,7 @@
     <string name="sync_retry_offline">Sin conexión. Se sincronizará automáticamente al recuperarla.</string>
     <string name="sync_nothing_pending">No hay registros pendientes por sincronizar.</string>
     <string name="sync_last_success_never">Todavía no hay una sincronización correcta.</string>
+    <string name="sync_device_id">Identificador de este celular: %1$s</string>
     <string name="sync_record_registered">Registrado %1$s</string>
     <string name="sync_error_no_connection">Sin conexión</string>
     <string name="sync_error_server">El servidor respondió con error %1$d</string>

@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -123,6 +124,7 @@ fun SyncScreen(
                         SyncFooter(
                             lastSync = lastSync?.let { stringResource(R.string.sync_last_success, relativeTimeAgo(minutesSince(it))) }
                                 ?: stringResource(R.string.sync_last_success_never),
+                            deviceId = stringResource(R.string.sync_device_id, viewModel.deviceId),
                             onSyncNow = viewModel::syncNow,
                         )
                     }
@@ -282,7 +284,7 @@ private fun ConflictVersion(label: String, valor: String, modifier: Modifier = M
 }
 
 @Composable
-private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
+private fun SyncFooter(lastSync: String, deviceId: String, onSyncNow: () -> Unit) {
     Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.fillMaxWidth()) {
         Button(
             onClick = onSyncNow,
@@ -299,5 +301,15 @@ private fun SyncFooter(lastSync: String, onSyncNow: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 6.dp),
         )
+        // Seleccionable para poder copiarlo y enviarlo a soporte o al backend.
+        SelectionContainer {
+            Text(
+                deviceId,
+                color = AgathaTheme.colors.textSecondary,
+                style = MaterialTheme.typography.bodySmall,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(top = 2.dp),
+            )
+        }
     }
 }

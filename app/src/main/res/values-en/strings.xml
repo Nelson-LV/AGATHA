@@ -236,6 +236,7 @@
     <string name="sync_retry_offline">No connection. It will sync automatically when the connection returns.</string>
     <string name="sync_nothing_pending">Nothing is waiting to sync.</string>
     <string name="sync_last_success_never">No successful sync yet.</string>
+    <string name="sync_device_id">Phone ID: %1$s</string>
     <string name="sync_record_registered">Recorded %1$s</string>
     <string name="sync_error_no_connection">No connection</string>
     <string name="sync_error_server">The server answered with error %1$d</string>
