@@ -23,6 +23,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -86,10 +87,14 @@ fun DeviceListScreen(
             },
         )
 
+        // Misma señal de recarga que Alertas: la barra azul bajo la conectividad, sin la rueda.
+        if (state.refreshing) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AgathaTheme.colors.brand)
+
         PullToRefreshBox(
             isRefreshing = state.refreshing,
             onRefresh = viewModel::refresh,
             modifier = Modifier.weight(1f),
+            indicator = {},
         ) {
             LazyColumn(
                 contentPadding = PaddingValues(16.dp),
