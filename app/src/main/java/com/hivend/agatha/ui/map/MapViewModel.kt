@@ -8,6 +8,7 @@ import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.repository.AlertRepository
 import com.hivend.agatha.domain.model.TelemetryDevice
 import com.hivend.agatha.domain.model.TelemetryResult
@@ -47,6 +48,8 @@ data class MapState(
     val routeError: Boolean = false,
     /** true cuando ya llegó la lista de dispositivos de la plataforma. */
     val telemetryLoaded: Boolean = false,
+    /** Alerta que abre "Iniciar inspección" en el nodo seleccionado; null si no tiene ninguna pendiente. */
+    val inspectionAlertId: String? = null,
 )
 
 /**
@@ -80,6 +83,14 @@ internal fun List<Alert>.ongoingLevelBySensor(): Map<String, AlertLevel> =
         .groupBy { it.sensorId }
         .mapValues { (_, alerts) -> alerts.maxOf { it.level } }
 
+/**
+ * La alerta que se inspecciona desde el mapa: la más reciente del dispositivo que sigue Sin
+ * clasificar, la misma que el técnico abriría desde Alertas para clasificarla.
+ */
+internal fun List<Alert>.latestUnclassifiedFor(sensorId: String): Alert? =
+    filter { it.sensorId == sensorId && it.managementStatus == ManagementStatus.UNCLASSIFIED }
+        .maxByOrNull { it.startedAt }
+
 private data class RouteData(
     val coordinates: List<MapCoordinate> = emptyList(),
     val referencePoints: List<ReferencePoint> = emptyList(),
@@ -109,6 +120,14 @@ class MapViewModel @Inject constructor(
     /** Dispositivos reales de la plataforma; null mientras no haya llegado ninguna respuesta. */
     private val telemetryDevices = MutableStateFlow<List<TelemetryDevice>?>(null)
 
+    /** Alertas de la plataforma: dan el color de cada punto y la alerta que abre "Iniciar inspección". */
+    private val alerts = alertRepository.observeAlerts()
+        .catch { exception ->
+            if (exception is CancellationException) throw exception
+            emit(emptyList())
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     /**
      * Los puntos y su ubicación salen del catálogo de nodos; su estado sale de la plataforma: la
      * comunicación, la batería y la última lectura, de los dispositivos (como en Dispositivos), y
@@ -124,10 +143,7 @@ class MapViewModel @Inject constructor(
                 emit(emptyList())
             },
         telemetryDevices,
-        alertRepository.observeAlerts().catch { exception ->
-            if (exception is CancellationException) throw exception
-            emit(emptyList())
-        },
+        alerts,
     ) { nodes, devices, alerts ->
         val now = Instant.now()
         val levels = alerts.ongoingLevelBySensor()
@@ -169,8 +185,12 @@ class MapViewModel @Inject constructor(
         )
     }
 
-    val uiState: StateFlow<MapState> = combine(mapContent, connected, telemetryDevices) { content, isConnected, devices ->
-        content.copy(isOffline = !isConnected, telemetryLoaded = devices != null)
+    val uiState: StateFlow<MapState> = combine(mapContent, connected, telemetryDevices, alerts) { content, isConnected, devices, alertList ->
+        content.copy(
+            isOffline = !isConnected,
+            telemetryLoaded = devices != null,
+            inspectionAlertId = content.selectedNode?.let { alertList.latestUnclassifiedFor(it.id)?.id },
+        )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MapState())
 
     init {
