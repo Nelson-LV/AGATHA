@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Scoped storage location the FileProvider is allowed to share: only the app-private
-     "evidencias" cache folder used to stage a photo before/after the system camera intent
-     (HE-06). Nothing else on the device is exposed. -->
+<!-- Scoped storage locations the FileProvider is allowed to share, both app-private cache
+     folders: "evidencias" stages a photo before/after the system camera intent (HE-06) and
+     "exportaciones" holds the alert history Excel while it is shared (HE-09). Nothing else on
+     the device is exposed. -->
 <paths>
     <cache-path name="evidencias" path="evidencias/" />
+    <cache-path name="exportaciones" path="exportaciones/" />
 </paths>
