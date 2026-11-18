@@ -5,8 +5,6 @@ import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertSearchFilters
-import com.hivend.agatha.domain.model.EventType
-import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.ManagementStatus
 import java.io.File
 import java.time.Instant
@@ -28,10 +26,7 @@ sealed interface HistoryExportState {
     data class Failed(val failure: AlertFailure) : HistoryExportState
 }
 
-/**
- * Sin tipo elegido la lista son las alertas ([alerts], buscadas en el servidor con los filtros de
- * la web y paginadas); con tipo, los registros de ese tipo del dispositivo elegido ([events]).
- */
+/** Historial de alertas ([alerts]), buscado en el servidor con los filtros de la web y paginado. */
 data class HistoryState(
     val alerts: List<Alert> = emptyList(),
     /** Alertas que cumplen los filtros en el servidor (o en el celular, sin conexión). */
@@ -39,11 +34,9 @@ data class HistoryState(
     val isLoadingMore: Boolean = false,
     /** La lista sale de las alertas guardadas en el celular porque no hay conexión. */
     val showingLocalAlerts: Boolean = false,
-    val events: List<HistoryEvent> = emptyList(),
     val devices: List<HistoryDeviceOption> = emptyList(),
     /** null = todos los dispositivos. */
     val selectedDevice: HistoryDeviceOption? = null,
-    val selectedEventType: EventType? = null,
     val dateFrom: LocalDate? = null,
     val dateThrough: LocalDate? = null,
     val maxLevels: Set<AlertLevel> = emptySet(),
@@ -59,19 +52,14 @@ data class HistoryState(
     val listScrollIndex: Int = 0,
     val listScrollOffset: Int = 0,
 ) {
-    val showsAlerts: Boolean get() = selectedEventType == null
+    val shownCount: Int get() = alerts.size
 
-    /** Los registros (clasificaciones, observaciones, mantenimientos) son de un dispositivo. */
-    val needsDeviceForRecords: Boolean get() = !showsAlerts && selectedDevice == null
-
-    val shownCount: Int get() = if (showsAlerts) alerts.size else events.size
-
-    val canLoadMore: Boolean get() = showsAlerts && !showingLocalAlerts && alerts.size < totalAlerts
+    val canLoadMore: Boolean get() = !showingLocalAlerts && alerts.size < totalAlerts
 
     /** Se exporta con conexión, si hay algo que exportar y no pasa del límite del servidor. */
     val canExport: Boolean
-        get() = showsAlerts && isConnected && !showingLocalAlerts && totalAlerts in 1..AlertSearchFilters.MAX_EXPORT &&
+        get() = isConnected && !showingLocalAlerts && totalAlerts in 1..AlertSearchFilters.MAX_EXPORT &&
             export != HistoryExportState.Running
 
-    val exceedsExportLimit: Boolean get() = showsAlerts && totalAlerts > AlertSearchFilters.MAX_EXPORT
+    val exceedsExportLimit: Boolean get() = totalAlerts > AlertSearchFilters.MAX_EXPORT
 }

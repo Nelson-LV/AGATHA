@@ -8,10 +8,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.core.content.FileProvider
 import java.io.File
-import com.hivend.agatha.ui.components.agathaCard
 import androidx.annotation.StringRes
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,16 +22,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Label
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.EditNote
-import androidx.compose.material.icons.filled.PhotoCamera
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -51,13 +42,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -65,15 +50,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.EventType
-import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.alerts.AlertCard
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
-import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
-import com.hivend.agatha.ui.components.labelRes
-import com.hivend.agatha.ui.components.resolve
 import com.hivend.agatha.ui.theme.AgathaTheme
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -112,7 +92,6 @@ fun DeviceHistoryScreen(
     // Al cambiar un filtro la lista vuelve al inicio; sin esto seguiría a la fila que estaba arriba
     // y dejaría ocultos los registros más recientes.
     val filterKey = listOf(
-        state.selectedEventType,
         state.dateFrom,
         state.dateThrough,
         state.selectedDevice?.id,
@@ -166,14 +145,12 @@ fun DeviceHistoryScreen(
         }
         DeviceSelector(state = state, onDeviceSelected = viewModel::selectDevice)
         HistoryEventFilterControls(
-            selectedEventType = state.selectedEventType,
             dateFrom = state.dateFrom,
             dateThrough = state.dateThrough,
             maxLevels = state.maxLevels,
             alertEvents = state.alertEvents,
             statuses = state.statuses,
             hasAdditionalFilters = state.hasAdditionalFilters,
-            onSelectEventType = viewModel::setEventTypeFilter,
             onDateRangeSelected = viewModel::setDateRange,
             onToggleMaxLevel = viewModel::toggleMaxLevel,
             onToggleAlertEvent = viewModel::toggleAlertEvent,
@@ -181,15 +158,11 @@ fun DeviceHistoryScreen(
             onClearFilters = viewModel::clearFilters,
             modifier = Modifier.padding(bottom = 4.dp),
         )
-        if (state.showsAlerts && !state.isLoading) {
+        if (!state.isLoading) {
             AlertSummaryRow(state = state, onExport = viewModel::export)
         }
 
         when {
-            state.needsDeviceForRecords -> HistoryEmptyState(
-                messageRes = R.string.history_records_need_device,
-                modifier = Modifier.weight(1f),
-            )
             state.isLoading && state.shownCount == 0 -> HistoryLoadingState(Modifier.weight(1f))
             state.shownCount == 0 && state.failure != null && !state.showingLocalAlerts -> HistoryFailureState(
                 failure = state.failure,
@@ -197,7 +170,7 @@ fun DeviceHistoryScreen(
                 modifier = Modifier.weight(1f),
             )
             state.shownCount == 0 && state.hasAdditionalFilters -> HistoryEmptyState(
-                messageRes = if (state.showsAlerts) R.string.history_no_alert_results else R.string.history_no_filter_results,
+                messageRes = R.string.history_no_alert_results,
                 modifier = Modifier.weight(1f),
             )
             state.shownCount == 0 -> HistoryEmptyState(
@@ -210,17 +183,11 @@ fun DeviceHistoryScreen(
                 contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 20.dp),
                 verticalArrangement = Arrangement.spacedBy(10.dp),
             ) {
-                if (state.showsAlerts) {
-                    items(state.alerts, key = Alert::id) { alert ->
-                        HistoryAlertRow(alert, onClick = { onAlertClick(alert.id) })
-                    }
-                    if (state.canLoadMore) {
-                        item(key = LOAD_MORE_KEY) { LoadingMoreRow() }
-                    }
-                } else {
-                    items(state.events, key = HistoryEvent::id) { event ->
-                        HistoryTypedEventRow(event, onAlertClick)
-                    }
+                items(state.alerts, key = Alert::id) { alert ->
+                    HistoryAlertRow(alert, onClick = { onAlertClick(alert.id) })
+                }
+                if (state.canLoadMore) {
+                    item(key = LOAD_MORE_KEY) { LoadingMoreRow() }
                 }
             }
         }
@@ -365,108 +332,6 @@ private fun SelectorDropdown(
 @Composable
 private fun HistoryAlertRow(alert: Alert, onClick: () -> Unit) {
     AlertCard(alert = alert, onClick = onClick)
-}
-
-@Composable
-private fun HistoryTypedEventRow(
-    event: HistoryEvent,
-    onAlertClick: (String) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val eventColor = event.type.color()
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-            .agathaCard()
-            .then(event.alertClickModifier(onAlertClick)),
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(14.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.Top,
-        ) {
-            Box(
-                modifier = Modifier.size(38.dp).background(eventColor.copy(alpha = 0.14f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = event.type.icon(),
-                    contentDescription = null,
-                    tint = eventColor,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(
-                        R.string.history_event_timestamp,
-                        formatDateTime(event.timestamp),
-                        stringResource(event.type.labelRes()),
-                    ),
-                    color = eventColor,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = FontWeight.SemiBold,
-                )
-                Text(
-                    text = event.title.resolve(),
-                    color = MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.padding(top = 3.dp),
-                )
-                Text(
-                    text = event.resolvedDetail(),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 2.dp),
-                )
-                event.statusLabel?.let { status ->
-                    StatusChip(
-                        text = status.resolve(),
-                        containerColor = AgathaTheme.colors.stateClosedContainer,
-                        contentColor = AgathaTheme.colors.stateClosed,
-                        modifier = Modifier.padding(top = 8.dp),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun HistoryEvent.alertClickModifier(onAlertClick: (String) -> Unit): Modifier {
-    val alertId = alertIdForNavigation() ?: return Modifier
-    val actionLabel = stringResource(R.string.history_open_alert_detail_action)
-    val description = stringResource(R.string.history_open_alert_detail_description, alertId)
-    return Modifier
-        .semantics(mergeDescendants = true) { contentDescription = description }
-        .clickable(role = Role.Button, onClickLabel = actionLabel) { onAlertClick(alertId) }
-}
-
-@Composable
-private fun HistoryEvent.resolvedDetail(): String {
-    val parts = detailParts?.takeIf { it.isNotEmpty() } ?: return detail.resolve()
-    return parts.map { it.resolve() }.reduceOrNull { first, next ->
-        stringResource(R.string.common_dot_separated, first, next)
-    }.orEmpty()
-}
-
-@Composable
-private fun EventType.color(): Color = when (this) {
-    EventType.ALERT -> AgathaTheme.colors.critical
-    EventType.INSPECTION, EventType.EVIDENCE -> AgathaTheme.colors.brand
-    EventType.CLASSIFICATION -> AgathaTheme.colors.warning
-    EventType.OBSERVATION -> AgathaTheme.colors.notice
-    EventType.MAINTENANCE -> AgathaTheme.colors.positive
-}
-
-private fun EventType.icon(): ImageVector = when (this) {
-    EventType.ALERT -> Icons.Filled.Warning
-    EventType.INSPECTION -> Icons.Filled.Build
-    EventType.CLASSIFICATION -> Icons.AutoMirrored.Filled.Label
-    EventType.EVIDENCE -> Icons.Filled.PhotoCamera
-    EventType.OBSERVATION -> Icons.Filled.EditNote
-    EventType.MAINTENANCE -> Icons.Filled.CheckCircle
 }
 
 @Composable

@@ -12,8 +12,6 @@ import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.AlertSearchFilters
-import com.hivend.agatha.domain.model.EventType
-import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.TelemetryDevice
@@ -29,7 +27,6 @@ import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,26 +34,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**
- * Historial (HE-08, HE-09). Sin tipo elegido muestra el historial de alertas de la plataforma con
- * los filtros de la web (dispositivo, fechas, nivel máximo, evento y estado), buscado en el
- * servidor de a 10 por página y exportable a Excel con los mismos filtros. Sin conexión muestra
- * las alertas que ya tiene el celular, filtradas igual. Con un tipo elegido muestra los registros
- * de ese tipo del dispositivo elegido, como antes.
+ * Historial de alertas (HE-09): las alertas de la plataforma con los filtros de la web
+ * (dispositivo, fechas, nivel máximo, evento y estado), buscadas en el servidor de a 10 por
+ * página y exportables a Excel con los mismos filtros. Sin conexión muestra las alertas que ya
+ * tiene el celular, filtradas igual.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
 class HistoryViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
-    private val historyRepository: HistoryRepository,
+    historyRepository: HistoryRepository,
     private val searchRepository: AlertSearchRepository,
     private val telemetryRepository: TelemetryRepository,
     sensorNodeRepository: SensorNodeRepository,
@@ -64,13 +55,6 @@ class HistoryViewModel @Inject constructor(
     private val selectionStore: HistorySelectionStore,
     private val exportFiles: ExportFileStore,
 ) : ViewModel() {
-
-    /** Descarga del historial del dispositivo, para los registros por tipo. */
-    private data class SyncState(
-        val refreshing: Boolean = false,
-        val lastSyncedAt: Instant? = null,
-        val failure: AlertFailure? = null,
-    )
 
     /** La búsqueda de alertas en el servidor para [filters], con las páginas ya cargadas. */
     private data class SearchState(
@@ -84,13 +68,6 @@ class HistoryViewModel @Inject constructor(
         val searchedAt: Instant? = null,
     )
 
-    private data class RecordsSnapshot(
-        val events: List<HistoryEvent> = emptyList(),
-        val loaded: Boolean = false,
-    )
-
-    private var refreshJob: Job? = null
-    private var refreshingSensorId: String? = null
     private var searchJob: Job? = null
     private var lastSearchAt: Instant? = null
 
@@ -108,7 +85,6 @@ class HistoryViewModel @Inject constructor(
         .distinctUntilChanged()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    private val sync = MutableStateFlow(SyncState())
     private val search = MutableStateFlow(SearchState())
     private val export = MutableStateFlow<HistoryExportState>(HistoryExportState.Idle)
     private val selection = selectionStore.selection
@@ -117,24 +93,6 @@ class HistoryViewModel @Inject constructor(
         historyDeviceOptions(devices, allNodes, stored.sensorId)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    /** Registros del dispositivo elegido; solo hacen falta con un tipo elegido. */
-    private val records = selection
-        .map { stored -> stored.sensorId.takeIf { stored.eventType != null } }
-        .distinctUntilChanged()
-        .flatMapLatest { sensorId ->
-            if (sensorId == null) {
-                flowOf(RecordsSnapshot(loaded = true))
-            } else {
-                historyRepository.observeHistory(sensorId).map { history ->
-                    RecordsSnapshot(history.toHistoryEvents().filter { it.nodeId == sensorId }, loaded = true)
-                }
-            }
-        }
-        .catch { exception ->
-            if (exception is CancellationException) throw exception
-            emit(RecordsSnapshot(loaded = true))
-        }
-
     /** Lo que ya tiene el celular, para la lista sin conexión. */
     private val cachedAlerts = historyRepository.observeCachedAlerts()
         .catch { exception ->
@@ -142,39 +100,23 @@ class HistoryViewModel @Inject constructor(
             emit(emptyList())
         }
 
-    private val base = combine(selection, deviceOptions, records, sync, connectivity) { stored, options, recordData, syncState, connected ->
-        val device = stored.sensorId?.let { id -> options.firstOrNull { it.id == id } }
+    private val base = combine(selection, deviceOptions, connectivity) { stored, options, connected ->
         HistoryState(
-            events = if (stored.eventType == null || stored.sensorId == null) {
-                emptyList()
-            } else {
-                filterHistoryEvents(
-                    events = recordData.events,
-                    sensorId = stored.sensorId,
-                    filters = HistoryEventFilters(stored.eventType, stored.dateFrom, stored.dateThrough),
-                )
-            },
             devices = options,
-            selectedDevice = device,
-            selectedEventType = stored.eventType,
+            selectedDevice = stored.sensorId?.let { id -> options.firstOrNull { it.id == id } },
             dateFrom = stored.dateFrom,
             dateThrough = stored.dateThrough,
             maxLevels = stored.maxLevels,
             alertEvents = stored.alertEvents,
             statuses = stored.statuses,
-            hasAdditionalFilters = stored.eventType != null || stored.toAlertSearchFilters().hasRefinements,
-            isLoading = !recordData.loaded || (syncState.refreshing && recordData.events.isEmpty()),
-            isRefreshing = syncState.refreshing,
+            hasAdditionalFilters = stored.toAlertSearchFilters().hasRefinements,
             isConnected = connected,
-            lastSyncedAt = syncState.lastSyncedAt,
-            failure = syncState.failure,
             listScrollIndex = stored.listScrollIndex,
             listScrollOffset = stored.listScrollOffset,
         )
     }
 
     val uiState: StateFlow<HistoryState> = combine(base, search, cachedAlerts, export) { state, searchState, cached, exportState ->
-        if (!state.showsAlerts) return@combine state.copy(export = exportState)
         if (!state.isConnected) {
             val filters = selection.value.toAlertSearchFilters()
             val local = cached.filter { filters.matches(it, COLOMBIA) }.sortedByDescending(Alert::startedAt)
@@ -206,28 +148,16 @@ class HistoryViewModel @Inject constructor(
         restoreSelectionFromNavigation()
         loadDevices()
         viewModelScope.launch {
-            combine(selection, connectivity) { stored, connected -> stored.toQueryKey() to connected }
+            combine(selection, connectivity) { stored, connected -> stored.toAlertSearchFilters() to connected }
                 .distinctUntilChanged()
-                .collect { (key, connected) ->
-                    when {
-                        !connected -> {
-                            searchJob?.cancel()
-                            refreshJob?.cancel()
-                            refreshingSensorId = null
-                            search.update { it.copy(loading = false, loadingMore = false) }
-                            sync.update {
-                                it.copy(
-                                    refreshing = false,
-                                    lastSyncedAt = selectionStore.lastSyncedAt(key.recordsSensorId),
-                                    failure = AlertFailure.NoConnection,
-                                )
-                            }
-                        }
-                        key.recordsSensorId != null -> refreshSensor(key.recordsSensorId)
-                        key.alertFilters != null -> startSearch(key.alertFilters)
-                        else -> sync.update { SyncState() }
+                .collect { (filters, connected) ->
+                    if (connected) {
+                        startSearch(filters)
+                        if (platformDevices.value.isEmpty()) loadDevices()
+                    } else {
+                        searchJob?.cancel()
+                        search.update { it.copy(loading = false, loadingMore = false) }
                     }
-                    if (connected && platformDevices.value.isEmpty()) loadDevices()
                 }
         }
     }
@@ -236,11 +166,6 @@ class HistoryViewModel @Inject constructor(
     fun selectDevice(sensorId: String?) {
         selectionStore.select(sensorId)
         savedStateHandle[SAVED_SENSOR_ID] = sensorId ?: ALL_DEVICES
-    }
-
-    fun setEventTypeFilter(eventType: EventType?) {
-        val stored = selection.value
-        selectionStore.updateFilters(eventType, stored.dateFrom, stored.dateThrough)
     }
 
     fun setDateRange(from: LocalDate?, through: LocalDate?) {
@@ -252,7 +177,7 @@ class HistoryViewModel @Inject constructor(
             end = start
             start = earlier
         }
-        selectionStore.updateFilters(selection.value.eventType, start, end)
+        selectionStore.updateDates(start, end)
     }
 
     fun toggleMaxLevel(level: AlertLevel) {
@@ -272,7 +197,7 @@ class HistoryViewModel @Inject constructor(
 
     /** Quita los filtros agregados y conserva el dispositivo elegido. */
     fun clearFilters() {
-        selectionStore.updateFilters(eventType = null, dateFrom = null, dateThrough = null)
+        selectionStore.updateDates(dateFrom = null, dateThrough = null)
         selectionStore.updateAlertFilters(emptySet(), emptySet(), emptySet())
     }
 
@@ -281,13 +206,8 @@ class HistoryViewModel @Inject constructor(
     }
 
     fun refresh() {
-        val stored = selection.value
         if (!connectivity.value) return
-        if (stored.eventType == null) {
-            startSearch(stored.toAlertSearchFilters())
-        } else {
-            stored.sensorId?.let { refreshSensor(it, force = true) }
-        }
+        startSearch(selection.value.toAlertSearchFilters())
         loadDevices(refresh = true)
     }
 
@@ -376,50 +296,6 @@ class HistoryViewModel @Inject constructor(
                 selectionStore.select(routeDeviceId)
             savedSensorId != null -> selectionStore.select(savedSensorId.takeUnless { it == ALL_DEVICES })
         }
-    }
-
-    private fun refreshSensor(sensorId: String, force: Boolean = false) {
-        if (!force && refreshingSensorId == sensorId && sync.value.refreshing) return
-        refreshJob?.cancel()
-        refreshingSensorId = sensorId
-        sync.update {
-            it.copy(
-                refreshing = true,
-                lastSyncedAt = selectionStore.lastSyncedAt(sensorId),
-                failure = null,
-            )
-        }
-        refreshJob = viewModelScope.launch {
-            val result = historyRepository.refresh(sensorId)
-            if (refreshingSensorId != sensorId) return@launch
-            refreshingSensorId = null
-            if (result is AlertResult.Success) selectionStore.recordSync(sensorId, Instant.now())
-            sync.update { previous ->
-                when (result) {
-                    is AlertResult.Success -> SyncState(
-                        refreshing = false,
-                        lastSyncedAt = selectionStore.lastSyncedAt(sensorId),
-                        failure = null,
-                    )
-                    is AlertResult.Failure -> previous.copy(refreshing = false, failure = result.failure)
-                }
-            }
-        }
-    }
-
-    /**
-     * Qué hay que pedir al servidor para lo elegido: la búsqueda de alertas o el historial del
-     * dispositivo para sus registros. El scroll no cuenta: moverse no vuelve a buscar.
-     */
-    private data class QueryKey(
-        val alertFilters: AlertSearchFilters?,
-        val recordsSensorId: String?,
-    )
-
-    private fun HistoryFilterSelection.toQueryKey(): QueryKey = if (eventType == null) {
-        QueryKey(alertFilters = toAlertSearchFilters(), recordsSensorId = null)
-    } else {
-        QueryKey(alertFilters = null, recordsSensorId = sensorId)
     }
 
     private companion object {

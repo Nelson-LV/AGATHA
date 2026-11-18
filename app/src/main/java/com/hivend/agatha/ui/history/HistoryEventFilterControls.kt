@@ -1,6 +1,5 @@
 package com.hivend.agatha.ui.history
 
-import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -10,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePickerDefaults
@@ -44,7 +42,6 @@ import com.hivend.agatha.R
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertSearchFilters
-import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.ui.components.labelRes
 import com.hivend.agatha.ui.components.shortLabelRes
@@ -54,22 +51,19 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Filtros del Historial: tipo de registro (menú) y fechas (selector de rango) y, para la lista de
- * alertas, nivel máximo, evento y estado con selección múltiple, como en la web. Son chips de
- * ancho natural que bajan de línea si no caben, así que nunca hay scroll horizontal ni texto
- * cortado. Sin tipo elegido la pantalla lista las alertas; por eso "Alertas" no es una opción.
+ * Filtros del Historial de alertas: fechas (selector de rango) y nivel máximo, evento y estado con
+ * selección múltiple, como en la web. Son chips de ancho natural que bajan de línea si no caben,
+ * así que nunca hay scroll horizontal ni texto cortado.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun HistoryEventFilterControls(
-    selectedEventType: EventType?,
     dateFrom: LocalDate?,
     dateThrough: LocalDate?,
     maxLevels: Set<AlertLevel>,
     alertEvents: Set<AlertEvent>,
     statuses: Set<ManagementStatus>,
     hasAdditionalFilters: Boolean,
-    onSelectEventType: (EventType?) -> Unit,
     onDateRangeSelected: (LocalDate?, LocalDate?) -> Unit,
     onToggleMaxLevel: (AlertLevel) -> Unit,
     onToggleAlertEvent: (AlertEvent) -> Unit,
@@ -83,11 +77,6 @@ fun HistoryEventFilterControls(
         modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        EventTypeFilter(
-            selectedEventType = selectedEventType,
-            onSelectEventType = onSelectEventType,
-            modifier = Modifier.align(Alignment.CenterVertically),
-        )
         FilterChip(
             selected = dateFrom != null || dateThrough != null,
             onClick = { showDatePicker = true },
@@ -95,32 +84,30 @@ fun HistoryEventFilterControls(
             trailingIcon = { DropdownArrow() },
             modifier = Modifier.align(Alignment.CenterVertically),
         )
-        if (selectedEventType == null) {
-            MultiSelectFilter(
-                title = stringResource(R.string.history_filter_max_level),
-                options = AlertSearchFilters.LEVEL_OPTIONS,
-                selected = maxLevels,
-                optionLabel = { stringResource(it.shortLabelRes()) },
-                onToggle = onToggleMaxLevel,
-                modifier = Modifier.align(Alignment.CenterVertically),
-            )
-            MultiSelectFilter(
-                title = stringResource(R.string.history_filter_event),
-                options = AlertSearchFilters.EVENT_OPTIONS,
-                selected = alertEvents,
-                optionLabel = { stringResource(it.labelRes()) },
-                onToggle = onToggleAlertEvent,
-                modifier = Modifier.align(Alignment.CenterVertically),
-            )
-            MultiSelectFilter(
-                title = stringResource(R.string.history_filter_status),
-                options = ManagementStatus.entries,
-                selected = statuses,
-                optionLabel = { stringResource(it.labelRes()) },
-                onToggle = onToggleStatus,
-                modifier = Modifier.align(Alignment.CenterVertically),
-            )
-        }
+        MultiSelectFilter(
+            title = stringResource(R.string.history_filter_max_level),
+            options = AlertSearchFilters.LEVEL_OPTIONS,
+            selected = maxLevels,
+            optionLabel = { stringResource(it.shortLabelRes()) },
+            onToggle = onToggleMaxLevel,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        MultiSelectFilter(
+            title = stringResource(R.string.history_filter_event),
+            options = AlertSearchFilters.EVENT_OPTIONS,
+            selected = alertEvents,
+            optionLabel = { stringResource(it.labelRes()) },
+            onToggle = onToggleAlertEvent,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
+        MultiSelectFilter(
+            title = stringResource(R.string.history_filter_status),
+            options = ManagementStatus.entries,
+            selected = statuses,
+            optionLabel = { stringResource(it.labelRes()) },
+            onToggle = onToggleStatus,
+            modifier = Modifier.align(Alignment.CenterVertically),
+        )
         if (hasAdditionalFilters) {
             IconButton(onClick = onClearFilters, modifier = Modifier.align(Alignment.CenterVertically)) {
                 Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.history_clear_filters))
@@ -179,41 +166,6 @@ private fun <T> MultiSelectFilter(
 }
 
 @Composable
-private fun EventTypeFilter(
-    selectedEventType: EventType?,
-    onSelectEventType: (EventType?) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Box(modifier = modifier) {
-        FilterChip(
-            selected = selectedEventType != null,
-            onClick = { expanded = true },
-            label = { Text(stringResource(eventTypeFilterLabelRes(selectedEventType)), maxLines = 1) },
-            trailingIcon = { DropdownArrow() },
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-            EVENT_TYPE_FILTER_OPTIONS.forEach { eventType ->
-                DropdownMenuItem(
-                    text = { Text(stringResource(eventTypeFilterLabelRes(eventType))) },
-                    onClick = {
-                        // Tocar el tipo elegido lo quita y vuelve a la lista de alertas.
-                        onSelectEventType(eventType.takeUnless { it == selectedEventType })
-                        expanded = false
-                    },
-                    trailingIcon = if (eventType == selectedEventType) {
-                        { Icon(Icons.Filled.Check, contentDescription = null) }
-                    } else {
-                        null
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
 private fun DropdownArrow() {
     Icon(
         Icons.Filled.ArrowDropDown,
@@ -236,15 +188,6 @@ private fun dateRangeLabel(from: LocalDate?, through: LocalDate?): String {
         through != null -> stringResource(R.string.history_filter_through, formatter.format(through))
         else -> stringResource(R.string.history_filter_dates)
     }
-}
-
-@StringRes
-private fun eventTypeFilterLabelRes(eventType: EventType?): Int = when (eventType) {
-    null -> R.string.history_filter_type
-    EventType.CLASSIFICATION -> R.string.history_filter_classifications
-    EventType.OBSERVATION -> R.string.history_filter_observations
-    EventType.MAINTENANCE -> R.string.history_filter_maintenance
-    else -> eventType.labelRes()
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -321,9 +264,3 @@ private class HistorySelectableDates(private val latestDate: LocalDate) : Select
 private fun LocalDate.toUtcMillis(): Long = atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
 
 private fun Long.toUtcLocalDate(): LocalDate = Instant.ofEpochMilli(this).atZone(ZoneOffset.UTC).toLocalDate()
-
-private val EVENT_TYPE_FILTER_OPTIONS = listOf(
-    EventType.CLASSIFICATION,
-    EventType.OBSERVATION,
-    EventType.MAINTENANCE,
-)

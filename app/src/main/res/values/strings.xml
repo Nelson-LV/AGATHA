@@ -371,9 +371,6 @@
     <string name="history_empty_30_days">No hay eventos en los últimos 30 días</string>
     <string name="history_event_node_pk">%1$s · PK %2$s</string>
     <string name="history_filter_all_nodes">Todos los nodos</string>
-    <string name="history_filter_type">Tipo</string>
-    <string name="history_filter_classifications">Clasificaciones</string>
-    <string name="history_filter_maintenance">Mantenimientos</string>
     <string name="history_clear_filters">Limpiar filtros</string>
     <string name="history_filter_dates">Fechas</string>
     <string name="history_filter_date_range">%1$s – %2$s</string>
@@ -424,17 +421,12 @@
     <string name="connectivity_connected_live">Conectado · Al día</string>
     <string name="history_alert_timestamp">%1$s · ALERTA</string>
     <string name="history_empty_alerts">No hay alertas históricas para este sensor.</string>
-    <string name="history_filter_observations">Observaciones</string>
-    <string name="history_event_timestamp">%1$s · %2$s</string>
     <string name="history_observation_title">Observación de campo</string>
     <string name="history_maintenance_completed">Completado</string>
     <string name="history_classification_event_tag_detail">%1$s · %2$s</string>
     <string name="history_classification_event_tag_other_detail">%1$s · %2$s · %3$s</string>
     <string name="history_alert_tag_detail">Etiqueta: %1$s</string>
     <string name="history_alert_tag_other_detail">Etiqueta: %1$s · %2$s</string>
-    <string name="history_open_alert_detail_action">Abrir detalle de alerta</string>
-    <string name="history_open_alert_detail_description">Abrir detalle de la alerta %1$s</string>
-    <string name="history_no_filter_results">Sin eventos para los filtros seleccionados.</string>
     <string name="history_device_selector">Dispositivo</string>
     <string name="history_all_devices">Todos los dispositivos</string>
     <string name="history_filter_max_level">Nivel máximo</string>
@@ -444,7 +436,6 @@
     <string name="history_export_chooser">Compartir historial de alertas</string>
     <string name="history_export_too_many">Hay más de 10.000 alertas. Ajusta los filtros para exportar.</string>
     <string name="history_export_needs_connection">Exportar necesita conexión.</string>
-    <string name="history_records_need_device">Elige un dispositivo para ver sus registros.</string>
     <string name="history_no_alert_results">Sin alertas para los filtros seleccionados.</string>
     <string name="history_empty_all_alerts">No hay alertas en el historial.</string>
     <string name="history_loading_more">Cargando más alertas…</string>

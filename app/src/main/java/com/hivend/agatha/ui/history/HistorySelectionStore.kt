@@ -2,9 +2,7 @@ package com.hivend.agatha.ui.history
 
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
-import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.ManagementStatus
-import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -13,12 +11,11 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
 /**
- * Lo elegido en el Historial. [sensorId] es el dispositivo ("MP-11556") o null para todos; los
- * filtros de nivel máximo, evento y estado solo aplican a la lista de alertas ([eventType] null).
+ * Lo elegido en el Historial de alertas. [sensorId] es el dispositivo ("MP-11556") o null para
+ * todos.
  */
 data class HistoryFilterSelection(
     val sensorId: String? = null,
-    val eventType: EventType? = null,
     val dateFrom: LocalDate? = null,
     val dateThrough: LocalDate? = null,
     val maxLevels: Set<AlertLevel> = emptySet(),
@@ -35,19 +32,11 @@ class HistorySelectionStore @Inject constructor() {
 
     val selection: StateFlow<HistoryFilterSelection> = mutableSelection.asStateFlow()
 
-    private val lastSyncedAtBySensor = MutableStateFlow<Map<String, Instant>>(emptyMap())
-
-    fun lastSyncedAt(sensorId: String?): Instant? = sensorId?.let { lastSyncedAtBySensor.value[it] }
-
-    fun recordSync(sensorId: String, at: Instant) {
-        lastSyncedAtBySensor.value = lastSyncedAtBySensor.value + (sensorId to at)
-    }
-
     /** Elige el dispositivo, o todos con null. Cambiar de dispositivo vuelve al inicio de la lista. */
     fun select(sensorId: String?) = change { it.copy(sensorId = sensorId) }
 
-    fun updateFilters(eventType: EventType?, dateFrom: LocalDate?, dateThrough: LocalDate?) = change {
-        it.copy(eventType = eventType, dateFrom = dateFrom, dateThrough = dateThrough)
+    fun updateDates(dateFrom: LocalDate?, dateThrough: LocalDate?) = change {
+        it.copy(dateFrom = dateFrom, dateThrough = dateThrough)
     }
 
     fun updateAlertFilters(

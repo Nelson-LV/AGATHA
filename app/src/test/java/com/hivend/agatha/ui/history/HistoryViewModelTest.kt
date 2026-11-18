@@ -5,7 +5,6 @@ import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
 import com.hivend.agatha.data.export.ExportFileStore
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertExportFile
 import com.hivend.agatha.domain.model.AlertFailure
@@ -15,9 +14,7 @@ import com.hivend.agatha.domain.model.AlertSearchFilters
 import com.hivend.agatha.domain.model.AlertSearchPage
 import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.DeviceTelemetry
-import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.ManagementStatus
-import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.TelemetryDevice
 import com.hivend.agatha.domain.model.TelemetryError
@@ -244,37 +241,6 @@ class HistoryViewModelTest {
             advanceUntilIdle()
             assertFalse(viewModel.uiState.value.canExport)
         }
-
-    @Test
-    fun `records need a device and come from its history`() = runTest(mainDispatcherRule.dispatcher) {
-        history.setHistory(
-            "MP-11556",
-            alert(
-                "ALR-000007",
-                11556,
-                classification = ClassificationRecord(
-                    AlertClassification.CONFIRMED,
-                    classifiedAt = Instant.parse("2026-09-27T01:00:00Z"),
-                    origin = Origin.Web,
-                ),
-            ),
-        )
-        val viewModel = viewModel()
-        collect(viewModel)
-        viewModel.setEventTypeFilter(EventType.CLASSIFICATION)
-        advanceUntilIdle()
-
-        assertTrue(viewModel.uiState.value.needsDeviceForRecords)
-        assertTrue(history.refreshCalls.isEmpty())
-
-        viewModel.selectDevice("MP-11556")
-        advanceUntilIdle()
-
-        val state = viewModel.uiState.value
-        assertFalse(state.needsDeviceForRecords)
-        assertEquals(listOf("MP-11556"), history.refreshCalls)
-        assertEquals(listOf(EventType.CLASSIFICATION), state.events.map { it.type })
-    }
 
     @Test
     fun `filters and device survive the view model being recreated`() = runTest(mainDispatcherRule.dispatcher) {
