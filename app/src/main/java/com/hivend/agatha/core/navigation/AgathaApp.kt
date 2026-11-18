@@ -105,6 +105,7 @@ fun AgathaApp(
             composable(BottomTab.Map.route) {
                 SensorMapScreen(
                     onViewHistory = { deviceId -> navController.navigateToHistory(deviceId) },
+                    onStartInspection = { alertId -> navController.navigate(AlertDetail.buildRoute(alertId)) },
                 )
             }
 

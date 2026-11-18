@@ -361,6 +361,7 @@
     <string name="map_communication_online">En línea</string>
     <string name="map_action_view_history">Ver historial</string>
     <string name="map_action_start_inspection">Iniciar inspección</string>
+    <string name="map_no_alert_to_inspect">Este dispositivo no tiene alertas sin clasificar.</string>
     <string name="map_loading">Cargando datos del mapa</string>
     <string name="map_route_unavailable">No se pudo cargar el trazado</string>
     <string name="map_value_not_available">No disponible</string>

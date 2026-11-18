@@ -336,6 +336,7 @@
     <string name="map_communication_online">Online</string>
     <string name="map_action_view_history">View history</string>
     <string name="map_action_start_inspection">Start inspection</string>
+    <string name="map_no_alert_to_inspect">This device has no unclassified alerts.</string>
     <string name="map_loading">Loading map data</string>
     <string name="map_route_unavailable">Unable to load the pipeline route</string>
     <string name="map_value_not_available">Not available</string>

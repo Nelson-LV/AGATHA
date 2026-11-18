@@ -77,6 +77,7 @@ import java.util.Locale
 fun SensorMapScreen(
     onViewHistory: (String) -> Unit,
     modifier: Modifier = Modifier,
+    /** Abre el detalle de la alerta (id) que se va a inspeccionar, como desde Alertas. */
     onStartInspection: (String) -> Unit = {},
     viewModel: MapViewModel = hiltViewModel(),
 ) {
@@ -163,7 +164,14 @@ fun SensorMapScreen(
                 node = node,
                 telemetryLoaded = state.telemetryLoaded,
                 onViewHistory = { onViewHistory(node.id) },
-                onStartInspection = { onStartInspection(node.id) },
+                inspectionAvailable = state.inspectionAlertId != null,
+                onStartInspection = {
+                    state.inspectionAlertId?.let { alertId ->
+                        // Al volver del detalle el mapa se ve sin la hoja abierta.
+                        viewModel.clearSelection()
+                        onStartInspection(alertId)
+                    }
+                },
             )
         }
     }
@@ -237,6 +245,7 @@ private fun NodeDetailsSheet(
     node: SensorNode,
     telemetryLoaded: Boolean,
     onViewHistory: () -> Unit,
+    inspectionAvailable: Boolean,
     onStartInspection: () -> Unit,
 ) {
     val configuration = LocalConfiguration.current
@@ -296,8 +305,16 @@ private fun NodeDetailsSheet(
         Button(onClick = onViewHistory, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.map_action_view_history))
         }
-        OutlinedButton(onClick = onStartInspection, modifier = Modifier.fillMaxWidth()) {
+        OutlinedButton(onClick = onStartInspection, enabled = inspectionAvailable, modifier = Modifier.fillMaxWidth()) {
             Text(stringResource(R.string.map_action_start_inspection))
+        }
+        if (!inspectionAvailable) {
+            Text(
+                stringResource(R.string.map_no_alert_to_inspect),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
     }
 }
