@@ -66,11 +66,28 @@ class RemoteAlertRepositoryTest {
             if (offline) throw IOException("no network")
         }
 
-        override suspend fun alerts(device: String?, page: Int?): AlertPageDto {
+        override suspend fun alerts(
+            device: String?,
+            page: Int?,
+            from: String?,
+            to: String?,
+            maxLevel: String?,
+            event: String?,
+            status: String?,
+        ): AlertPageDto {
             checkNetwork()
             val items = if (device == null) recent else recent.filter { it.device.id.toString() == device }
             return AlertPageDto(total = items.size, page = page ?: 1, pageSize = 10, items = items)
         }
+
+        override suspend fun export(
+            device: String?,
+            from: String?,
+            to: String?,
+            maxLevel: String?,
+            event: String?,
+            status: String?,
+        ): Response<ResponseBody> = error("Not used by these tests")
 
         override suspend fun pending(): AlertPendingDto {
             checkNetwork()

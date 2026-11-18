@@ -1,5 +1,6 @@
 package com.hivend.agatha.data.repository
 
+import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertResult
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.repository.AlertRepository
@@ -24,6 +25,8 @@ class AlertHistoryRepository @Inject constructor(
         alertRepository.observeAlerts().map { list -> list.filter { it.sensorId == deviceId } },
         alertRepository.observeDeviceInspections(deviceId),
     ) { alerts, inspections -> DeviceHistory(alerts, inspections) }
+
+    override fun observeCachedAlerts(): Flow<List<Alert>> = alertRepository.observeAlerts()
 
     override suspend fun refresh(deviceId: String): AlertResult<Unit> {
         val numericId = deviceId.substringAfterLast('-').toIntOrNull()

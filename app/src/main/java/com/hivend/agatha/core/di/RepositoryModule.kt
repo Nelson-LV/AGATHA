@@ -1,12 +1,16 @@
 package com.hivend.agatha.core.di
 
 import com.hivend.agatha.data.connectivity.AndroidConnectivityMonitor
+import com.hivend.agatha.data.export.CacheExportFileStore
+import com.hivend.agatha.data.export.ExportFileStore
 import com.hivend.agatha.data.repository.AlertHistoryRepository
 import com.hivend.agatha.data.repository.InMemorySensorNodeRepository
 import com.hivend.agatha.data.repository.RemoteAlertRepository
+import com.hivend.agatha.data.repository.RemoteAlertSearchRepository
 import com.hivend.agatha.data.repository.RemoteTelemetryRepository
 import com.hivend.agatha.data.repository.RoomSyncRepository
 import com.hivend.agatha.domain.repository.AlertRepository
+import com.hivend.agatha.domain.repository.AlertSearchRepository
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.repository.HistoryRepository
 import com.hivend.agatha.domain.repository.SensorNodeRepository
@@ -39,6 +43,14 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindHistoryRepository(impl: AlertHistoryRepository): HistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAlertSearchRepository(impl: RemoteAlertSearchRepository): AlertSearchRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindExportFileStore(impl: CacheExportFileStore): ExportFileStore
 
     @Binds
     @Singleton

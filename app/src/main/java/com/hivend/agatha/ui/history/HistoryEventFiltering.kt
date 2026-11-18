@@ -1,6 +1,6 @@
 package com.hivend.agatha.ui.history
 
-import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.AlertSearchFilters
 import com.hivend.agatha.domain.model.EventType
 import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.ui.components.COLOMBIA
@@ -19,30 +19,30 @@ internal data class HistoryEventFilters(
 /** Filters only the already-loaded sensor history; the inclusive end date is next day's midnight. */
 internal fun filterHistoryEvents(
     events: List<HistoryEvent>,
-    site: HistorySite?,
     sensorId: String?,
     filters: HistoryEventFilters,
     zone: ZoneId = COLOMBIA,
-): List<HistoryEvent> {
-    val siteSensorIds = HistorySiteCatalog.sensorIds(site)
+): List<HistoryEvent> = events.asSequence()
+    .filter { event -> sensorId == null || event.nodeId == sensorId }
+    .filter { event -> filters.eventType == null || event.type == filters.eventType }
+    .filter { event -> filters.matchesDate(event.timestamp, zone) }
+    .sortedByDescending(HistoryEvent::timestamp)
+    .toList()
 
-    return events.asSequence()
-        .filter { event -> site == null || event.nodeId in siteSensorIds }
-        .filter { event -> sensorId == null || event.nodeId == sensorId }
-        .filter { event -> filters.eventType == null || event.type == filters.eventType }
-        .filter { event -> filters.matchesDate(event.timestamp, zone) }
-        .sortedByDescending(HistoryEvent::timestamp)
-        .toList()
-}
+/**
+ * Los filtros de la lista de alertas como los pide la API. [sensorId] "MP-11556" es el
+ * `measuring_point_id` 11556; un id sin número no filtra por dispositivo.
+ */
+internal fun HistoryFilterSelection.toAlertSearchFilters(): AlertSearchFilters = AlertSearchFilters(
+    deviceId = sensorId?.let(::measuringPointId),
+    from = dateFrom,
+    to = dateThrough,
+    maxLevels = maxLevels,
+    events = alertEvents,
+    statuses = statuses,
+)
 
-/** Como `from`/`to` de `GET /api/alerts` (la búsqueda de la web): cuenta el inicio de la alerta. */
-internal fun filterHistoryAlerts(
-    alerts: List<Alert>,
-    filters: HistoryEventFilters,
-    zone: ZoneId = COLOMBIA,
-): List<Alert> = alerts
-    .filter { alert -> filters.matchesDate(alert.startedAt, zone) }
-    .sortedByDescending(Alert::startedAt)
+internal fun measuringPointId(sensorId: String): Int? = sensorId.substringAfterLast('-').toIntOrNull()
 
 private fun HistoryEventFilters.matchesDate(instant: Instant, zone: ZoneId): Boolean {
     val startInclusive = dateFrom?.atStartOfDay(zone)?.toInstant()

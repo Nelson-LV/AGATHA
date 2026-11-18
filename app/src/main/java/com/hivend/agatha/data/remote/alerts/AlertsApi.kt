@@ -9,6 +9,7 @@ import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
 import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 /**
  * API de gestión de alertas del backend de AGATHA (la misma de la web, sin autenticación).
@@ -18,12 +19,35 @@ import retrofit2.http.Query
  */
 interface AlertsApi {
 
-    /** Una página (10) de alertas, la más reciente primero. [device] = `measuring_point_id`. */
+    /**
+     * Una página (10) de alertas, la más reciente primero. [device] = `measuring_point_id`. Los
+     * demás filtros son los del Historial (ver [AlertSearchQuery]); null = no se filtra por ese.
+     */
     @GET("api/alerts")
     suspend fun alerts(
         @Query("device") device: String? = null,
         @Query("page") page: Int? = null,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null,
+        @Query("max_level") maxLevel: String? = null,
+        @Query("event") event: String? = null,
+        @Query("status") status: String? = null,
     ): AlertPageDto
+
+    /**
+     * Excel (.xlsx) con todas las alertas que cumplen los mismos filtros de [alerts], sin página.
+     * El cuerpo es binario; si falla, el cuerpo de error es el `{code, message}` de siempre.
+     */
+    @Streaming
+    @GET("api/alerts/export.xlsx")
+    suspend fun export(
+        @Query("device") device: String? = null,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null,
+        @Query("max_level") maxLevel: String? = null,
+        @Query("event") event: String? = null,
+        @Query("status") status: String? = null,
+    ): Response<ResponseBody>
 
     /** Alertas Sin clasificar. */
     @GET("api/alerts/pending")

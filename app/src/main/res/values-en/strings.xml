@@ -396,11 +396,6 @@
     <string name="history_evidence_title">Evidence attached</string>
     <string name="history_evidence_detail">Photos: %1$d</string>
     <string name="connectivity_connected_live">Online · Up to date</string>
-    <string name="history_site_guepsa">Güepsa – San José de Pare</string>
-    <string name="history_site_selector">Site</string>
-    <string name="history_site_unknown">Site not in catalog</string>
-    <string name="history_sensor_selector">History for</string>
-    <string name="history_no_sensor_selected">Select a sensor</string>
     <string name="history_alert_timestamp">%1$s · ALERT</string>
     <string name="history_empty_alerts">No alert history for this sensor.</string>
     <string name="history_filter_observations">Observations</string>
@@ -414,4 +409,21 @@
     <string name="history_open_alert_detail_action">Open alert details</string>
     <string name="history_open_alert_detail_description">Open details for alert %1$s</string>
     <string name="history_no_filter_results">No events match the selected filters.</string>
+    <string name="history_device_selector">Device</string>
+    <string name="history_all_devices">All devices</string>
+    <string name="history_filter_max_level">Max level</string>
+    <string name="history_filter_event">Event</string>
+    <string name="history_filter_status">Status</string>
+    <string name="history_export">Export</string>
+    <string name="history_export_chooser">Share alert history</string>
+    <string name="history_export_too_many">There are more than 10,000 alerts. Narrow the filters to export.</string>
+    <string name="history_export_needs_connection">Exporting needs a connection.</string>
+    <string name="history_records_need_device">Choose a device to see its records.</string>
+    <string name="history_no_alert_results">No alerts match the selected filters.</string>
+    <string name="history_empty_all_alerts">There are no alerts in the history.</string>
+    <string name="history_loading_more">Loading more alerts…</string>
+    <plurals name="history_alert_count">
+        <item quantity="one">%d alert</item>
+        <item quantity="other">%d alerts</item>
+    </plurals>
 </resources>

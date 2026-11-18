@@ -15,6 +15,9 @@ data class DeviceHistory(
 interface HistoryRepository {
     fun observeHistory(deviceId: String): Flow<DeviceHistory>
 
+    /** Todas las alertas que ya tiene el celular, de cualquier dispositivo: el historial sin conexión. */
+    fun observeCachedAlerts(): Flow<List<Alert>>
+
     /** Descarga las alertas del dispositivo ("MP-11556"); [observeHistory] se actualiza solo. */
     suspend fun refresh(deviceId: String): AlertResult<Unit>
 }

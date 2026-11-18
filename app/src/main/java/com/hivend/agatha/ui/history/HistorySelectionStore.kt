@@ -1,7 +1,9 @@
 package com.hivend.agatha.ui.history
 
-import com.hivend.agatha.core.navigation.DEFAULT_HISTORY_DEVICE_ID
+import com.hivend.agatha.domain.model.AlertEvent
+import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.EventType
+import com.hivend.agatha.domain.model.ManagementStatus
 import java.time.Instant
 import java.time.LocalDate
 import javax.inject.Inject
@@ -10,12 +12,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
+/**
+ * Lo elegido en el Historial. [sensorId] es el dispositivo ("MP-11556") o null para todos; los
+ * filtros de nivel máximo, evento y estado solo aplican a la lista de alertas ([eventType] null).
+ */
 data class HistoryFilterSelection(
-    val siteId: String?,
-    val sensorId: String?,
+    val sensorId: String? = null,
     val eventType: EventType? = null,
     val dateFrom: LocalDate? = null,
     val dateThrough: LocalDate? = null,
+    val maxLevels: Set<AlertLevel> = emptySet(),
+    val alertEvents: Set<AlertEvent> = emptySet(),
+    val statuses: Set<ManagementStatus> = emptySet(),
     val listScrollIndex: Int = 0,
     val listScrollOffset: Int = 0,
 )
@@ -23,13 +31,7 @@ data class HistoryFilterSelection(
 /** Keeps the last history filters while the user switches between bottom tabs. */
 @Singleton
 class HistorySelectionStore @Inject constructor() {
-    private val mutableSelection = MutableStateFlow(
-        HistoryFilterSelection(
-            siteId = HistorySiteCatalog.siteForSensor(DEFAULT_HISTORY_DEVICE_ID)?.id
-                ?: HistorySiteCatalog.GUEPSA.id,
-            sensorId = DEFAULT_HISTORY_DEVICE_ID,
-        ),
-    )
+    private val mutableSelection = MutableStateFlow(HistoryFilterSelection())
 
     val selection: StateFlow<HistoryFilterSelection> = mutableSelection.asStateFlow()
 
@@ -41,35 +43,30 @@ class HistorySelectionStore @Inject constructor() {
         lastSyncedAtBySensor.value = lastSyncedAtBySensor.value + (sensorId to at)
     }
 
-    fun select(siteId: String?, sensorId: String?) {
-        mutableSelection.value = mutableSelection.value.let { current ->
-            val changedSensor = current.sensorId != sensorId
-            current.copy(
-                siteId = siteId,
-                sensorId = sensorId,
-                listScrollIndex = if (changedSensor) 0 else current.listScrollIndex,
-                listScrollOffset = if (changedSensor) 0 else current.listScrollOffset,
-            )
-        }
+    /** Elige el dispositivo, o todos con null. Cambiar de dispositivo vuelve al inicio de la lista. */
+    fun select(sensorId: String?) = change { it.copy(sensorId = sensorId) }
+
+    fun updateFilters(eventType: EventType?, dateFrom: LocalDate?, dateThrough: LocalDate?) = change {
+        it.copy(eventType = eventType, dateFrom = dateFrom, dateThrough = dateThrough)
     }
 
-    fun updateFilters(eventType: EventType?, dateFrom: LocalDate?, dateThrough: LocalDate?) {
-        mutableSelection.value = mutableSelection.value.let { current ->
-            val changed = current.eventType != eventType || current.dateFrom != dateFrom || current.dateThrough != dateThrough
-            current.copy(
-                eventType = eventType,
-                dateFrom = dateFrom,
-                dateThrough = dateThrough,
-                listScrollIndex = if (changed) 0 else current.listScrollIndex,
-                listScrollOffset = if (changed) 0 else current.listScrollOffset,
-            )
-        }
-    }
+    fun updateAlertFilters(
+        maxLevels: Set<AlertLevel>,
+        alertEvents: Set<AlertEvent>,
+        statuses: Set<ManagementStatus>,
+    ) = change { it.copy(maxLevels = maxLevels, alertEvents = alertEvents, statuses = statuses) }
 
     fun updateListScrollPosition(index: Int, offset: Int) {
         mutableSelection.value = mutableSelection.value.copy(
             listScrollIndex = index.coerceAtLeast(0),
             listScrollOffset = offset.coerceAtLeast(0),
         )
+    }
+
+    /** Un filtro distinto es otra lista: se vuelve a la primera fila (y a la página 1). */
+    private fun change(transform: (HistoryFilterSelection) -> HistoryFilterSelection) {
+        val current = mutableSelection.value
+        val next = transform(current)
+        if (next != current) mutableSelection.value = next.copy(listScrollIndex = 0, listScrollOffset = 0)
     }
 }
