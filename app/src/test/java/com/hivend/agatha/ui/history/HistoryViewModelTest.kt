@@ -1,23 +1,35 @@
 package com.hivend.agatha.ui.history
 
 import androidx.lifecycle.SavedStateHandle
-import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
 import com.hivend.agatha.core.navigation.HISTORY_LAST_SELECTED_DEVICE_ID
+import com.hivend.agatha.data.export.ExportFileStore
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
+import com.hivend.agatha.domain.model.AlertExportFile
+import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertLevel
-import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.AlertResult
+import com.hivend.agatha.domain.model.AlertSearchFilters
+import com.hivend.agatha.domain.model.AlertSearchPage
+import com.hivend.agatha.domain.model.ClassificationRecord
+import com.hivend.agatha.domain.model.DeviceTelemetry
 import com.hivend.agatha.domain.model.EventType
-import com.hivend.agatha.domain.model.HistoryEvent
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.SensorNode
+import com.hivend.agatha.domain.model.TelemetryDevice
+import com.hivend.agatha.domain.model.TelemetryError
+import com.hivend.agatha.domain.model.TelemetryResult
+import com.hivend.agatha.domain.repository.AlertSearchRepository
+import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.domain.repository.DeviceHistory
 import com.hivend.agatha.domain.repository.HistoryRepository
 import com.hivend.agatha.domain.repository.SensorNodeRepository
+import com.hivend.agatha.domain.repository.TelemetryRepository
+import java.io.File
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
 import kotlinx.coroutines.Dispatchers
@@ -31,12 +43,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestDispatcher
+import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -49,321 +64,312 @@ class HistoryViewModelTest {
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
-    @Test
-    fun rootTabLoadsTheSavedSensorAndChangingSensorRefreshesItsHistory() =
-        runTest(mainDispatcherRule.dispatcher) {
-            val repository = FakeHistoryRepository().apply {
-                setHistory("MP-11556", alert("ALR-000007", 11556))
-                setHistory("MP-1189", alert("ALR-000008", 1189))
-            }
-            val sensorNodes = FakeSensorNodeRepository(
-                listOf(
-                    SensorNode("MP-11556", name = "Sensor MP-11556", pk = "PK34-470", municipality = "San José de Pare"),
-                    SensorNode("MP-1189", name = "Sensor MP-1189", pk = "PK22-300", municipality = "San José de Pare"),
-                ),
-            )
-            val selectionStore = HistorySelectionStore()
-            val viewModel = HistoryViewModel(
-                savedStateHandle = SavedStateHandle(
-                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-                ),
-                historyRepository = repository,
-                sensorNodeRepository = sensorNodes,
-                connectivityMonitor = FakeConnectivityMonitor(connected = true),
-                selectionStore = selectionStore,
-            )
-            val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.uiState.collect()
-            }
+    private val history = FakeHistoryRepository()
+    private val search = FakeAlertSearchRepository()
+    private val connectivity = FakeConnectivityMonitor(connected = true)
+    private val exportFiles = FakeExportFileStore()
+    private val store = HistorySelectionStore()
 
-            advanceUntilIdle()
-            assertEquals("MP-11556", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
-            assertTrue(repository.refreshCalls.contains("MP-11556"))
-
-            viewModel.selectSensor("MP-1189")
-            advanceUntilIdle()
-
-            assertEquals("MP-1189", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000008"), viewModel.uiState.value.alerts.map { it.id })
-            assertTrue(repository.refreshCalls.contains("MP-1189"))
-            assertEquals("MP-1189", selectionStore.selection.value.sensorId)
-            collection.cancel()
-
-            val reopenedViewModel = HistoryViewModel(
-                savedStateHandle = SavedStateHandle(
-                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-                ),
-                historyRepository = repository,
-                sensorNodeRepository = sensorNodes,
-                connectivityMonitor = FakeConnectivityMonitor(connected = true),
-                selectionStore = selectionStore,
-            )
-            val reopenedCollection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                reopenedViewModel.uiState.collect()
-            }
-            advanceUntilIdle()
-
-            assertEquals("MP-1189", reopenedViewModel.uiState.value.selectedSensor?.id)
-            reopenedCollection.cancel()
-        }
-
-    @Test
-    fun detailRoutePrefiltersTheRequestedSensor() = runTest(mainDispatcherRule.dispatcher) {
-        val repository = FakeHistoryRepository().apply {
-            setHistory("MP-1189", alert("ALR-000008", 1189))
-        }
-        val viewModel = HistoryViewModel(
-            savedStateHandle = SavedStateHandle(mapOf(BottomTab.History.ARG_DEVICE_ID to "MP-1189")),
-            historyRepository = repository,
-            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-            connectivityMonitor = FakeConnectivityMonitor(connected = true),
-            selectionStore = HistorySelectionStore(),
-        )
-        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect()
-        }
-
-        advanceUntilIdle()
-
-        assertEquals("MP-1189", viewModel.uiState.value.selectedSensor?.id)
-        assertEquals(HistorySiteCatalog.GUEPSA.id, viewModel.uiState.value.selectedSite?.id)
-        assertTrue(repository.refreshCalls.contains("MP-1189"))
-        collection.cancel()
-    }
-
-    @Test
-    fun offlineKeepsCachedAlertsAndShowsTheLastSuccessfulSyncTime() = runTest(mainDispatcherRule.dispatcher) {
-        val lastSync = Instant.parse("2026-10-30T15:00:00Z")
-        val repository = FakeHistoryRepository().apply {
-            setHistory("MP-11556", alert("ALR-000007", 11556))
-            refreshResult = AlertResult.Failure(com.hivend.agatha.domain.model.AlertFailure.NoConnection)
-        }
-        val selectionStore = HistorySelectionStore().apply {
-            recordSync("MP-11556", lastSync)
-        }
-        val viewModel = HistoryViewModel(
-            savedStateHandle = SavedStateHandle(
-                mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
+    private fun viewModel(routeDeviceId: String = HISTORY_LAST_SELECTED_DEVICE_ID) = HistoryViewModel(
+        savedStateHandle = SavedStateHandle(mapOf(BottomTab.History.ARG_DEVICE_ID to routeDeviceId)),
+        historyRepository = history,
+        searchRepository = search,
+        telemetryRepository = FakeTelemetryRepository(
+            listOf(
+                TelemetryDevice(11556, "Sensor MP-11556 PK34-470", lastConnection = null, lastBatteryLevel = null),
+                TelemetryDevice(1189, "Sensor MP-1189 PK22-300", lastConnection = null, lastBatteryLevel = null),
             ),
-            historyRepository = repository,
-            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-            connectivityMonitor = FakeConnectivityMonitor(connected = false),
-            selectionStore = selectionStore,
-        )
-        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect()
-        }
+        ),
+        sensorNodeRepository = FakeSensorNodeRepository(
+            listOf(SensorNode("MP-11556", name = "Sensor MP-11556", pk = "PK34-470", municipality = "San José de Pare")),
+        ),
+        connectivityMonitor = connectivity,
+        selectionStore = store,
+        exportFiles = exportFiles,
+    )
+
+    private fun TestScope.collect(viewModel: HistoryViewModel) =
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.uiState.collect() }
+
+    @Test
+    fun `the tab opens the history of every device with no filters`() = runTest(mainDispatcherRule.dispatcher) {
+        search.pages[1] = page(total = 2, alert("ALR-000002", 11556), alert("ALR-000001", 1189))
+        val viewModel = viewModel()
+        collect(viewModel)
 
         advanceUntilIdle()
 
-        assertTrue(!viewModel.uiState.value.isConnected)
-        assertEquals(lastSync, viewModel.uiState.value.lastSyncedAt)
-        assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
-        assertEquals(com.hivend.agatha.domain.model.AlertFailure.NoConnection, viewModel.uiState.value.failure)
-        collection.cancel()
+        val state = viewModel.uiState.value
+        assertNull(state.selectedDevice)
+        assertEquals(setOf("MP-11556", "MP-1189"), state.devices.map { it.id }.toSet())
+        assertEquals(listOf(AlertSearchFilters() to 1), search.searches)
+        assertEquals(listOf("ALR-000002", "ALR-000001"), state.alerts.map(Alert::id))
+        assertEquals(2, state.totalAlerts)
+        assertFalse(state.canLoadMore)
+        assertTrue(state.canExport)
     }
 
     @Test
-    fun changingEventAndDateFiltersIsLocalAndClearKeepsTheSensorSelection() =
+    fun `see history from a device searches only that device`() = runTest(mainDispatcherRule.dispatcher) {
+        val viewModel = viewModel(routeDeviceId = "MP-11556")
+        collect(viewModel)
+
+        advanceUntilIdle()
+
+        assertEquals("MP-11556", viewModel.uiState.value.selectedDevice?.id)
+        assertEquals("Sensor MP-11556 PK34-470", viewModel.uiState.value.selectedDevice?.label)
+        assertEquals(AlertSearchFilters(deviceId = 11556), search.searches.last().first)
+    }
+
+    @Test
+    fun `each filter change searches again from page 1 and clearing keeps the device`() =
         runTest(mainDispatcherRule.dispatcher) {
-            val repository = FakeHistoryRepository().apply {
-                setHistory("MP-11556", alert("ALR-000007", 11556))
-            }
-            val selectionStore = HistorySelectionStore()
-            val viewModel = HistoryViewModel(
-                savedStateHandle = SavedStateHandle(
-                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-                ),
-                historyRepository = repository,
-                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-                connectivityMonitor = FakeConnectivityMonitor(connected = true),
-                selectionStore = selectionStore,
+            val viewModel = viewModel()
+            collect(viewModel)
+            advanceUntilIdle()
+
+            viewModel.selectDevice("MP-1189")
+            viewModel.toggleMaxLevel(AlertLevel.RED)
+            viewModel.toggleMaxLevel(AlertLevel.ORANGE)
+            viewModel.toggleAlertEvent(AlertEvent.LEAK)
+            viewModel.toggleStatus(ManagementStatus.UNCLASSIFIED)
+            viewModel.setDateRange(LocalDate.parse("2026-09-15"), LocalDate.parse("2026-09-01"))
+            advanceUntilIdle()
+
+            val expected = AlertSearchFilters(
+                deviceId = 1189,
+                from = LocalDate.parse("2026-09-01"),
+                to = LocalDate.parse("2026-09-15"),
+                maxLevels = setOf(AlertLevel.RED, AlertLevel.ORANGE),
+                events = setOf(AlertEvent.LEAK),
+                statuses = setOf(ManagementStatus.UNCLASSIFIED),
             )
-            val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                viewModel.uiState.collect()
-            }
-            advanceUntilIdle()
-            val refreshCount = repository.refreshCalls.size
-
-            viewModel.setEventTypeFilter(EventType.INSPECTION)
-            viewModel.setDateRange(LocalDate.now(), LocalDate.now())
-            advanceUntilIdle()
-
-            assertEquals(refreshCount, repository.refreshCalls.size)
-            assertTrue(viewModel.uiState.value.events.isEmpty())
+            assertEquals(expected to 1, search.searches.last())
             assertTrue(viewModel.uiState.value.hasAdditionalFilters)
+
+            viewModel.toggleMaxLevel(AlertLevel.RED)
+            advanceUntilIdle()
+            assertEquals(setOf(AlertLevel.ORANGE), search.searches.last().first.maxLevels)
 
             viewModel.clearFilters()
             advanceUntilIdle()
-
-            assertEquals("MP-11556", viewModel.uiState.value.selectedSensor?.id)
-            assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
-            assertTrue(!viewModel.uiState.value.hasAdditionalFilters)
-            assertEquals(refreshCount, repository.refreshCalls.size)
-            collection.cancel()
+            assertEquals(AlertSearchFilters(deviceId = 1189) to 1, search.searches.last())
+            assertEquals("MP-1189", viewModel.uiState.value.selectedDevice?.id)
+            assertFalse(viewModel.uiState.value.hasAdditionalFilters)
         }
 
     @Test
-    fun observeHistoryUpdatesTheAlertRowAndAddsClassificationEvent() = runTest(mainDispatcherRule.dispatcher) {
-        val repository = FakeHistoryRepository().apply {
-            setHistory("MP-11556", alert("ALR-000007", 11556))
-        }
-        val viewModel = HistoryViewModel(
-            savedStateHandle = SavedStateHandle(
-                mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-            ),
-            historyRepository = repository,
-            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-            connectivityMonitor = FakeConnectivityMonitor(connected = false),
-            selectionStore = HistorySelectionStore(),
-        )
-        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect()
-        }
+    fun `reaching the end of the list loads the next page`() = runTest(mainDispatcherRule.dispatcher) {
+        search.pages[1] = page(total = 12, *(1..10).map { alert("ALR-%06d".format(it), 11556) }.toTypedArray())
+        search.pages[2] = page(total = 12, alert("ALR-000011", 11556), alert("ALR-000012", 11556), page = 2)
+        val viewModel = viewModel()
+        collect(viewModel)
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.canLoadMore)
+
+        viewModel.loadMore()
         advanceUntilIdle()
 
-        repository.setHistory(
+        assertEquals(12, viewModel.uiState.value.alerts.size)
+        assertEquals(2, search.searches.last().second)
+        assertFalse(viewModel.uiState.value.canLoadMore)
+
+        viewModel.loadMore()
+        advanceUntilIdle()
+        assertEquals(2, search.searches.size)
+    }
+
+    @Test
+    fun `offline the list shows the alerts already on the phone with the same filters`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            connectivity.set(false)
+            history.cached.value = listOf(
+                alert("ALR-000001", 11556, level = AlertLevel.RED),
+                alert("ALR-000002", 11556, level = AlertLevel.YELLOW),
+                alert("ALR-000003", 1189, level = AlertLevel.RED),
+            )
+            val viewModel = viewModel(routeDeviceId = "MP-11556")
+            collect(viewModel)
+            viewModel.toggleMaxLevel(AlertLevel.RED)
+
+            advanceUntilIdle()
+
+            val state = viewModel.uiState.value
+            assertTrue(search.searches.isEmpty())
+            assertTrue(state.showingLocalAlerts)
+            assertEquals(listOf("ALR-000001"), state.alerts.map(Alert::id))
+            assertEquals(1, state.totalAlerts)
+            assertFalse(state.canExport)
+            assertEquals(AlertFailure.NoConnection, state.failure)
+        }
+
+    @Test
+    fun `export saves the excel of the current filters and then goes back to idle`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            search.pages[1] = page(total = 1, alert("ALR-000001", 11556))
+            val viewModel = viewModel(routeDeviceId = "MP-11556")
+            collect(viewModel)
+            advanceUntilIdle()
+
+            viewModel.export()
+            advanceUntilIdle()
+
+            assertEquals(listOf(AlertSearchFilters(deviceId = 11556)), search.exports)
+            val ready = viewModel.uiState.value.export as HistoryExportState.Ready
+            assertEquals("alertas_20261118_1800.xlsx", ready.file.name)
+
+            viewModel.onExportHandled()
+            advanceUntilIdle()
+            assertEquals(HistoryExportState.Idle, viewModel.uiState.value.export)
+        }
+
+    @Test
+    fun `a rejected export shows the failure and an empty list cannot be exported`() =
+        runTest(mainDispatcherRule.dispatcher) {
+            search.pages[1] = page(total = 1, alert("ALR-000001", 11556))
+            search.exportResult = AlertResult.Failure(AlertFailure.Rejected("INVALID_INPUT", "Demasiadas alertas"))
+            val viewModel = viewModel()
+            collect(viewModel)
+            advanceUntilIdle()
+
+            viewModel.export()
+            advanceUntilIdle()
+            assertEquals(
+                HistoryExportState.Failed(AlertFailure.Rejected("INVALID_INPUT", "Demasiadas alertas")),
+                viewModel.uiState.value.export,
+            )
+
+            search.pages[1] = page(total = 0)
+            viewModel.toggleStatus(ManagementStatus.CLASSIFIED_WITH_TAG)
+            advanceUntilIdle()
+            assertFalse(viewModel.uiState.value.canExport)
+        }
+
+    @Test
+    fun `records need a device and come from its history`() = runTest(mainDispatcherRule.dispatcher) {
+        history.setHistory(
             "MP-11556",
-            alert("ALR-000007", 11556).copy(
+            alert(
+                "ALR-000007",
+                11556,
                 classification = ClassificationRecord(
-                    classification = AlertClassification.FALSE_ALARM,
-                    classifiedAt = Instant.parse("2026-10-30T15:10:00Z"),
-                    origin = Origin.MobileApp("CEL-TEST01"),
+                    AlertClassification.CONFIRMED,
+                    classifiedAt = Instant.parse("2026-09-27T01:00:00Z"),
+                    origin = Origin.Web,
                 ),
             ),
         )
-        advanceUntilIdle()
-
-        val alertRow = viewModel.uiState.value.alerts.single()
-        assertEquals(ManagementStatus.CLASSIFIED_WITHOUT_TAG, alertRow.managementStatus)
-        assertEquals(AlertClassification.FALSE_ALARM, alertRow.classification?.classification)
-        assertTrue(viewModel.uiState.value.events.isEmpty())
-
+        val viewModel = viewModel()
+        collect(viewModel)
         viewModel.setEventTypeFilter(EventType.CLASSIFICATION)
         advanceUntilIdle()
 
-        val classification = viewModel.uiState.value.events.single()
-        assertEquals(EventType.CLASSIFICATION, classification.type)
-        assertEquals(Instant.parse("2026-10-30T15:10:00Z"), classification.timestamp)
-        collection.cancel()
+        assertTrue(viewModel.uiState.value.needsDeviceForRecords)
+        assertTrue(history.refreshCalls.isEmpty())
+
+        viewModel.selectDevice("MP-11556")
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.needsDeviceForRecords)
+        assertEquals(listOf("MP-11556"), history.refreshCalls)
+        assertEquals(listOf(EventType.CLASSIFICATION), state.events.map { it.type })
     }
 
     @Test
-    fun dateFilterKeepsAlertsOlderThanOneMonth() = runTest(mainDispatcherRule.dispatcher) {
-        val started = alert("ALR-000007", 11556).startedAt.atZone(com.hivend.agatha.ui.components.COLOMBIA).toLocalDate()
-        val repository = FakeHistoryRepository().apply {
-            setHistory("MP-11556", alert("ALR-000007", 11556))
-        }
-        val viewModel = HistoryViewModel(
-            savedStateHandle = SavedStateHandle(
-                mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-            ),
-            historyRepository = repository,
-            sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-            connectivityMonitor = FakeConnectivityMonitor(connected = false),
-            selectionStore = HistorySelectionStore(),
-        )
-        val collection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-            viewModel.uiState.collect()
-        }
+    fun `filters and device survive the view model being recreated`() = runTest(mainDispatcherRule.dispatcher) {
+        val first = viewModel()
+        val firstCollection = collect(first)
+        first.selectDevice("MP-1189")
+        first.toggleAlertEvent(AlertEvent.LEAK)
+        first.updateListScrollPosition(index = 3, offset = 27)
+        advanceUntilIdle()
+        firstCollection.cancel()
+
+        val reopened = viewModel()
+        collect(reopened)
         advanceUntilIdle()
 
-        val from = LocalDate.now().minusYears(2)
-        viewModel.setDateRange(from, started)
-        advanceUntilIdle()
-
-        assertEquals(from, viewModel.uiState.value.dateFrom)
-        assertEquals(listOf("ALR-000007"), viewModel.uiState.value.alerts.map { it.id })
-
-        viewModel.setDateRange(from, started.minusDays(1))
-        advanceUntilIdle()
-
-        assertTrue(viewModel.uiState.value.alerts.isEmpty())
-        collection.cancel()
+        val state = reopened.uiState.value
+        assertEquals("MP-1189", state.selectedDevice?.id)
+        assertEquals(setOf(AlertEvent.LEAK), state.alertEvents)
+        assertEquals(3, state.listScrollIndex)
+        assertEquals(27, state.listScrollOffset)
     }
 
-    @Test
-    fun historyFiltersAndListPositionSurviveHistoryViewModelRecreation() =
-        runTest(mainDispatcherRule.dispatcher) {
-            val repository = FakeHistoryRepository().apply {
-                setHistory("MP-11556", alert("ALR-000007", 11556))
-            }
-            val selectionStore = HistorySelectionStore()
-            val firstViewModel = HistoryViewModel(
-                savedStateHandle = SavedStateHandle(
-                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-                ),
-                historyRepository = repository,
-                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-                connectivityMonitor = FakeConnectivityMonitor(connected = false),
-                selectionStore = selectionStore,
-            )
-            val firstCollection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                firstViewModel.uiState.collect()
-            }
-            advanceUntilIdle()
+    private fun page(total: Int, vararg alerts: Alert, page: Int = 1) =
+        AlertSearchPage(total = total, page = page, pageSize = 10, alerts = alerts.toList())
 
-            val from = LocalDate.now().minusDays(4)
-            val through = LocalDate.now().minusDays(1)
-            firstViewModel.setEventTypeFilter(EventType.CLASSIFICATION)
-            firstViewModel.setDateRange(from, through)
-            firstViewModel.updateListScrollPosition(index = 3, offset = 27)
-            advanceUntilIdle()
-            firstCollection.cancel()
-
-            val reopenedViewModel = HistoryViewModel(
-                savedStateHandle = SavedStateHandle(
-                    mapOf(BottomTab.History.ARG_DEVICE_ID to HISTORY_LAST_SELECTED_DEVICE_ID),
-                ),
-                historyRepository = repository,
-                sensorNodeRepository = FakeSensorNodeRepository(emptyList()),
-                connectivityMonitor = FakeConnectivityMonitor(connected = false),
-                selectionStore = selectionStore,
-            )
-            val reopenedCollection = backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
-                reopenedViewModel.uiState.collect()
-            }
-            advanceUntilIdle()
-
-            val state = reopenedViewModel.uiState.value
-            assertEquals(HistorySiteCatalog.GUEPSA.id, state.selectedSite?.id)
-            assertEquals("MP-11556", state.selectedSensor?.id)
-            assertEquals(EventType.CLASSIFICATION, state.selectedEventType)
-            assertEquals(from, state.dateFrom)
-            assertEquals(through, state.dateThrough)
-            assertEquals(3, state.listScrollIndex)
-            assertEquals(27, state.listScrollOffset)
-            reopenedCollection.cancel()
-        }
-
-    private fun alert(id: String, deviceId: Int) = Alert(
+    private fun alert(
+        id: String,
+        deviceId: Int,
+        level: AlertLevel = AlertLevel.YELLOW,
+        classification: ClassificationRecord? = null,
+    ) = Alert(
         id = id,
         deviceId = deviceId,
         pk = "PK34-470",
         event = AlertEvent.LEAK,
-        level = AlertLevel.YELLOW,
-        maxLevel = AlertLevel.YELLOW,
+        level = level,
+        maxLevel = level,
         startedAt = Instant.parse("2026-09-26T23:00:00Z"),
+        classification = classification,
     )
+
+    private class FakeAlertSearchRepository : AlertSearchRepository {
+        val pages = mutableMapOf<Int, AlertSearchPage>()
+        val searches = mutableListOf<Pair<AlertSearchFilters, Int>>()
+        val exports = mutableListOf<AlertSearchFilters>()
+        var exportResult: AlertResult<AlertExportFile> =
+            AlertResult.Success(AlertExportFile("alertas_20261118_1800.xlsx", byteArrayOf(1)))
+
+        override suspend fun search(filters: AlertSearchFilters, page: Int): AlertResult<AlertSearchPage> {
+            searches += filters to page
+            return AlertResult.Success(pages[page] ?: AlertSearchPage(total = 0, page = page, pageSize = 10, alerts = emptyList()))
+        }
+
+        override suspend fun export(filters: AlertSearchFilters): AlertResult<AlertExportFile> {
+            exports += filters
+            return exportResult
+        }
+    }
+
+    private class FakeExportFileStore : ExportFileStore {
+        override suspend fun save(file: AlertExportFile): File = File(file.fileName)
+    }
 
     private class FakeHistoryRepository : HistoryRepository {
         private val histories = mutableMapOf<String, MutableStateFlow<DeviceHistory>>()
+        val cached = MutableStateFlow<List<Alert>>(emptyList())
         val refreshCalls = mutableListOf<String>()
-        var refreshResult: AlertResult<Unit> = AlertResult.Success(Unit)
 
         fun setHistory(deviceId: String, alert: Alert) {
-            histories.getOrPut(deviceId) { MutableStateFlow(DeviceHistory()) }
-                .value = DeviceHistory(alerts = listOf(alert))
+            histories.getOrPut(deviceId) { MutableStateFlow(DeviceHistory()) }.value = DeviceHistory(alerts = listOf(alert))
         }
 
         override fun observeHistory(deviceId: String): Flow<DeviceHistory> =
             histories.getOrPut(deviceId) { MutableStateFlow(DeviceHistory()) }
 
+        override fun observeCachedAlerts(): Flow<List<Alert>> = cached
+
         override suspend fun refresh(deviceId: String): AlertResult<Unit> {
             refreshCalls += deviceId
-            return refreshResult
+            return AlertResult.Success(Unit)
         }
+    }
+
+    private class FakeTelemetryRepository(private val devices: List<TelemetryDevice>) : TelemetryRepository {
+        override suspend fun devices(refresh: Boolean): TelemetryResult<List<TelemetryDevice>> = TelemetryResult.Success(devices)
+
+        override suspend fun findDevice(nodeId: String): TelemetryResult<TelemetryDevice> =
+            devices.firstOrNull { it.nodeCode == nodeId }?.let { TelemetryResult.Success(it) }
+                ?: TelemetryResult.Failure(TelemetryError.DEVICE_NOT_FOUND)
+
+        override suspend fun recentTelemetry(
+            nodeId: String,
+            keys: Set<String>,
+            window: Duration,
+        ): TelemetryResult<DeviceTelemetry> = TelemetryResult.Failure(TelemetryError.SERVER)
     }
 
     private class FakeSensorNodeRepository(nodes: List<SensorNode>) : SensorNodeRepository {
@@ -377,6 +383,10 @@ class HistoryViewModelTest {
 
     private class FakeConnectivityMonitor(connected: Boolean) : ConnectivityMonitor {
         private val values = MutableStateFlow(connected)
+
+        fun set(connected: Boolean) {
+            values.value = connected
+        }
 
         override val isOnline: Flow<Boolean> = values.asStateFlow()
     }

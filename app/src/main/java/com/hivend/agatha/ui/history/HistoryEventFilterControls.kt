@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,6 +12,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePickerDefaults
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.DateRangePicker
@@ -41,17 +41,23 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.hivend.agatha.R
+import com.hivend.agatha.domain.model.AlertEvent
+import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.AlertSearchFilters
 import com.hivend.agatha.domain.model.EventType
+import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.shortLabelRes
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Filtros en una sola línea: tipo (menú) y fechas (selector de rango). Son chips de ancho
- * natural que bajan de línea si no caben, así que nunca hay scroll horizontal ni texto cortado.
- * Sin tipo elegido la pantalla lista las alertas; por eso "Alertas" no es una opción del menú.
+ * Filtros del Historial: tipo de registro (menú) y fechas (selector de rango) y, para la lista de
+ * alertas, nivel máximo, evento y estado con selección múltiple, como en la web. Son chips de
+ * ancho natural que bajan de línea si no caben, así que nunca hay scroll horizontal ni texto
+ * cortado. Sin tipo elegido la pantalla lista las alertas; por eso "Alertas" no es una opción.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -59,9 +65,15 @@ fun HistoryEventFilterControls(
     selectedEventType: EventType?,
     dateFrom: LocalDate?,
     dateThrough: LocalDate?,
+    maxLevels: Set<AlertLevel>,
+    alertEvents: Set<AlertEvent>,
+    statuses: Set<ManagementStatus>,
     hasAdditionalFilters: Boolean,
     onSelectEventType: (EventType?) -> Unit,
     onDateRangeSelected: (LocalDate?, LocalDate?) -> Unit,
+    onToggleMaxLevel: (AlertLevel) -> Unit,
+    onToggleAlertEvent: (AlertEvent) -> Unit,
+    onToggleStatus: (ManagementStatus) -> Unit,
     onClearFilters: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -76,21 +88,42 @@ fun HistoryEventFilterControls(
             onSelectEventType = onSelectEventType,
             modifier = Modifier.align(Alignment.CenterVertically),
         )
-        // La X va pegada al chip de fechas para que nunca baje sola a otra línea.
-        Row(
+        FilterChip(
+            selected = dateFrom != null || dateThrough != null,
+            onClick = { showDatePicker = true },
+            label = { Text(dateRangeLabel(dateFrom, dateThrough), maxLines = 1) },
+            trailingIcon = { DropdownArrow() },
             modifier = Modifier.align(Alignment.CenterVertically),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            FilterChip(
-                selected = dateFrom != null || dateThrough != null,
-                onClick = { showDatePicker = true },
-                label = { Text(dateRangeLabel(dateFrom, dateThrough), maxLines = 1) },
-                trailingIcon = { DropdownArrow() },
+        )
+        if (selectedEventType == null) {
+            MultiSelectFilter(
+                title = stringResource(R.string.history_filter_max_level),
+                options = AlertSearchFilters.LEVEL_OPTIONS,
+                selected = maxLevels,
+                optionLabel = { stringResource(it.shortLabelRes()) },
+                onToggle = onToggleMaxLevel,
+                modifier = Modifier.align(Alignment.CenterVertically),
             )
-            if (hasAdditionalFilters) {
-                IconButton(onClick = onClearFilters) {
-                    Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.history_clear_filters))
-                }
+            MultiSelectFilter(
+                title = stringResource(R.string.history_filter_event),
+                options = AlertSearchFilters.EVENT_OPTIONS,
+                selected = alertEvents,
+                optionLabel = { stringResource(it.labelRes()) },
+                onToggle = onToggleAlertEvent,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+            MultiSelectFilter(
+                title = stringResource(R.string.history_filter_status),
+                options = ManagementStatus.entries,
+                selected = statuses,
+                optionLabel = { stringResource(it.labelRes()) },
+                onToggle = onToggleStatus,
+                modifier = Modifier.align(Alignment.CenterVertically),
+            )
+        }
+        if (hasAdditionalFilters) {
+            IconButton(onClick = onClearFilters, modifier = Modifier.align(Alignment.CenterVertically)) {
+                Icon(Icons.Filled.Close, contentDescription = stringResource(R.string.history_clear_filters))
             }
         }
     }
@@ -102,6 +135,46 @@ fun HistoryEventFilterControls(
             onRangeSelected = onDateRangeSelected,
             onDismiss = { showDatePicker = false },
         )
+    }
+}
+
+/**
+ * Chip con menú de casillas: cada opción se marca o desmarca sin cerrar el menú, como la
+ * multiselección de la web. El chip dice la opción elegida o cuántas hay.
+ */
+@Composable
+private fun <T> MultiSelectFilter(
+    title: String,
+    options: List<T>,
+    selected: Set<T>,
+    optionLabel: @Composable (T) -> String,
+    onToggle: (T) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var expanded by remember { mutableStateOf(false) }
+    val label = when (selected.size) {
+        0 -> title
+        1 -> optionLabel(selected.first())
+        else -> stringResource(R.string.history_filter_count, title, selected.size)
+    }
+
+    Box(modifier = modifier) {
+        FilterChip(
+            selected = selected.isNotEmpty(),
+            onClick = { expanded = true },
+            label = { Text(label, maxLines = 1) },
+            trailingIcon = { DropdownArrow() },
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            options.forEach { option ->
+                val checked = option in selected
+                DropdownMenuItem(
+                    text = { Text(optionLabel(option)) },
+                    onClick = { onToggle(option) },
+                    leadingIcon = { Checkbox(checked = checked, onCheckedChange = null) },
+                )
+            }
+        }
     }
 }
 
