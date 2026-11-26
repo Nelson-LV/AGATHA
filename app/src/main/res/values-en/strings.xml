@@ -55,6 +55,7 @@
     <string name="alert_event_leak">Leak</string>
     <string name="alert_event_movement">Movement</string>
     <string name="alert_event_leak_and_movement">Leak and movement</string>
+    <string name="alert_event_unknown">Event</string>
 
     <!-- Classification and management status (RN-06) -->
     <string name="classification_confirmed">Confirmed</string>

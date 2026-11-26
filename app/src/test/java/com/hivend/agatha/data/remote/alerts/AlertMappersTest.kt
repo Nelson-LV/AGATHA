@@ -22,6 +22,7 @@ class AlertMappersTest {
     private val json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
+        coerceInputValues = true
     }
 
     private fun orFail(alert: Alert?): Alert = alert ?: throw AssertionError("The alert was skipped")
@@ -145,9 +146,41 @@ class AlertMappersTest {
     }
 
     @Test
-    fun `an alert with an unknown event or level is skipped instead of shown wrong`() {
-        assertNull(alert("""{"id":5,"code":"ALR-5","device":{"id":1},"event":"OTRO_EVENTO","started_at":"2026-10-01T10:00:00-05:00","max_level":"ROJO"}"""))
-        assertNull(alert("""{"id":6,"code":"ALR-6","device":{"id":1},"event":"FUGA","started_at":"2026-10-01T10:00:00-05:00","max_level":"MORADO"}"""))
+    fun `unknown events and levels are tolerated instead of dropping the alert`() {
+        val unknownEvent = orFail(alert("""{"id":5,"code":"ALR-5","device":{"id":1},"event":"OTRO_EVENTO","started_at":"2026-10-01T10:00:00-05:00","max_level":"ROJO"}"""))
+        assertEquals(AlertEvent.UNKNOWN, unknownEvent.event)
+        assertEquals(AlertLevel.RED, unknownEvent.level)
+
+        // max_level desconocido: cae al nivel actual.
+        val unknownMax = orFail(alert("""{"id":6,"code":"ALR-6","device":{"id":1},"event":"FUGA","started_at":"2026-10-01T10:00:00-05:00","in_progress":true,"current_level":"NARANJA","max_level":"MORADO"}"""))
+        assertEquals(AlertLevel.ORANGE, unknownMax.maxLevel)
+        assertEquals(AlertLevel.ORANGE, unknownMax.level)
+
+        // Ningún nivel conocido: el primero de alerta, sin romper.
+        val noLevel = orFail(alert("""{"id":7,"code":"ALR-7","device":{"id":1},"event":null,"started_at":"2026-10-01T10:00:00-05:00","max_level":"MORADO"}"""))
+        assertEquals(AlertLevel.YELLOW, noLevel.maxLevel)
+        assertEquals(AlertEvent.UNKNOWN, noLevel.event)
+    }
+
+    @Test
+    fun `an alert without any start date is skipped`() {
+        assertNull(alert("""{"id":8,"code":"ALR-8","device":{"id":1},"event":"FUGA","started_at":"ayer","max_level":"ROJO"}"""))
+    }
+
+    @Test
+    fun `the device name is kept as the backend sends it while the id still matches the map`() {
+        val alert = orFail(alert("""{"id":9,"code":"ALR-9","device":{"id":11556,"pk":"Sensor PK34-470"},"event":"FUGA","started_at":"2026-10-01T10:00:00-05:00","max_level":"ROJO"}"""))
+
+        assertEquals("Sensor PK34-470", alert.displayName)
+        assertEquals("PK34-470", alert.pk)
+        assertEquals("MP-11556", alert.sensorId)
+    }
+
+    @Test
+    fun `a null device name falls back to the measuring point`() {
+        val alert = orFail(alert("""{"id":9,"code":"ALR-9","device":{"id":11556,"pk":null},"event":"FUGA","started_at":"2026-10-01T10:00:00-05:00","max_level":"ROJO"}"""))
+
+        assertEquals("MP-11556", alert.displayName)
     }
 
     @Test

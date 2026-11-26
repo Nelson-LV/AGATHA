@@ -96,7 +96,8 @@ data class AlertPendingDto(
 @Serializable
 data class DeviceRefDto(
     val id: Int,
-    val pk: String = "",
+    /** Nombre del dispositivo ("Sensor PK34-470"): se muestra tal cual. */
+    val pk: String? = null,
 )
 
 /** Fila de la lista y detalle de una alerta: los campos de detalle solo vienen en `GET /{id}`. */
@@ -105,9 +106,9 @@ data class AlertDto(
     val id: Int,
     val code: String,
     val device: DeviceRefDto,
-    val event: String,
+    val event: String? = null,
     val state: String? = null,
-    @SerialName("started_at") val startedAt: String,
+    @SerialName("started_at") val startedAt: String? = null,
     @SerialName("ended_at") val endedAt: String? = null,
     @SerialName("in_progress") val inProgress: Boolean = false,
     @SerialName("duration_hours") val durationHours: Double? = null,

@@ -38,6 +38,8 @@ object NetworkModule {
     fun provideJson(): Json = Json {
         ignoreUnknownKeys = true
         explicitNulls = false
+        // Un null donde la app espera un valor con default usa el default en vez de fallar (guía §10).
+        coerceInputValues = true
     }
 
     @Provides

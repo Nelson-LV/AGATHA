@@ -3,6 +3,9 @@ package com.hivend.agatha.ui.components
 import androidx.annotation.StringRes
 import com.hivend.agatha.R
 import com.hivend.agatha.core.navigation.AgathaDestination.BottomTab
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.res.stringResource
+import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
@@ -53,6 +56,7 @@ fun AlertEvent.labelRes(): Int = when (this) {
     AlertEvent.LEAK -> R.string.alert_event_leak
     AlertEvent.MOVEMENT -> R.string.alert_event_movement
     AlertEvent.LEAK_AND_MOVEMENT -> R.string.alert_event_leak_and_movement
+    AlertEvent.UNKNOWN -> R.string.alert_event_unknown
 }
 
 @StringRes
@@ -190,3 +194,12 @@ fun telemetryVariableLabelRes(key: String): Int? = when (key) {
     "aceleracion" -> R.string.telemetry_variable_acceleration
     else -> null
 }
+
+/**
+ * "Disp. · PK" de una alerta con el nombre del backend tal cual ("Sensor PK34-470"). Si el nombre
+ * ya incluye el PK no se repite.
+ */
+@Composable
+fun Alert.deviceLocation(): String =
+    if (pk.isBlank() || displayName.replace(" ", "").contains(pk)) displayName
+    else stringResource(R.string.alert_list_location, displayName, pk)

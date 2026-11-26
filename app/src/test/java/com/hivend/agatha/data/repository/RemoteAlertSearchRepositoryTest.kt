@@ -97,8 +97,9 @@ class RemoteAlertSearchRepositoryTest {
         val page = (result as AlertResult.Success<AlertSearchPage>).value
         assertEquals(37, page.total)
         assertEquals(2, page.page)
-        // Un evento que la app no conoce se omite en vez de mostrarse mal.
-        assertEquals(listOf("ALR-000123"), page.alerts.map { it.id })
+        // Un evento que la app no conoce se muestra genérico en vez de perder la alerta (guía §10).
+        assertEquals(listOf("ALR-000123", "ALR-000124"), page.alerts.map { it.id })
+        assertEquals(com.hivend.agatha.domain.model.AlertEvent.UNKNOWN, page.alerts[1].event)
     }
 
     @Test

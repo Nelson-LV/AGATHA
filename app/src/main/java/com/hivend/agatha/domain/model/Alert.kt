@@ -35,6 +35,9 @@ enum class AlertEvent {
     LEAK,
     MOVEMENT,
     LEAK_AND_MOVEMENT,
+
+    /** Un evento que esta versión de la app no conoce (guía §10): se muestra genérico. */
+    UNKNOWN,
 }
 
 /** Un punto de la línea de tiempo de la alerta: el nivel que tomó y cuándo (RN-05). */
@@ -115,6 +118,8 @@ data class Alert(
     val deviceId: Int,
     val pk: String,
     val event: AlertEvent,
+    /** Nombre del dispositivo tal como lo envía el backend (`device.pk`, "Sensor PK34-470"). */
+    val deviceName: String = "",
     /** Nivel actual del indicador: lo que muestran la lista y el mapa (RN-05). Al terminar, el máximo. */
     val level: AlertLevel,
     /** Nivel máximo alcanzado: lo que muestra el historial (RN-05). */
@@ -138,6 +143,9 @@ data class Alert(
 
     /** Identificador del dispositivo como lo nombra la app y la telemetría: "MP-11556". */
     val sensorId: String get() = "MP-$deviceId"
+
+    /** Lo que se muestra como dispositivo: el nombre del backend tal cual, o [sensorId] si no vino. */
+    val displayName: String get() = deviceName.ifBlank { sensorId }
 
     /** Activa según el backend; sin ese dato, mientras no tenga fin. */
     val isOngoing: Boolean get() = server.state?.let { it == AlertState.ACTIVE } ?: (endedAt == null)

@@ -33,10 +33,11 @@ internal fun levelFromApi(value: String?): AlertLevel? = when (value) {
     else -> null
 }
 
-internal fun eventFromApi(value: String): AlertEvent? = when (value) {
+/** Un evento nuevo del backend no tumba la alerta: se muestra como evento genérico (guía §10). */
+internal fun eventFromApi(value: String?): AlertEvent = when (value) {
     "FUGA" -> AlertEvent.LEAK
     "MOVIMIENTO" -> AlertEvent.MOVEMENT
-    else -> null
+    else -> AlertEvent.UNKNOWN
 }
 
 internal fun stateFromApi(value: String?): AlertState? = when (value) {
@@ -101,19 +102,23 @@ internal fun pkFromDeviceName(name: String): String = PK_PATTERN.find(name)?.val
 private const val EMPTY_DETAIL = "—"
 
 /**
- * Convierte una fila de la lista o un detalle. null si la API trae un evento o nivel que la app
- * no conoce: es mejor omitir esa alerta que mostrarla mal.
+ * Convierte una fila de la lista o un detalle, tolerando valores que la app no conoce (guía §10):
+ * un evento desconocido queda genérico y un nivel desconocido cae al otro nivel informado (máximo
+ * o actual), luego al de los tramos y por último al primero de alerta (Amarillo). Solo se omite
+ * la alerta si no trae ninguna fecha de inicio.
  */
 internal fun AlertDto.toDomain(): Alert? {
-    val event = eventFromApi(event) ?: return null
-    val max = levelFromApi(maxLevel) ?: levelFromApi(currentLevel) ?: return null
-    val started = parseInstant(startedAt) ?: return null
+    val max = levelFromApi(maxLevel) ?: levelFromApi(currentLevel)
+        ?: levels.mapNotNull { levelFromApi(it.level) }.maxOrNull() ?: AlertLevel.YELLOW
+    val started = parseInstant(startedAt) ?: parseInstant(openedAt) ?: return null
     val classificationValue = classificationFromApi(classification)
+    val deviceName = device.pk.orEmpty().trim()
     return Alert(
         id = code,
         deviceId = device.id,
-        pk = pkFromDeviceName(device.pk),
-        event = event,
+        pk = pkFromDeviceName(deviceName),
+        event = eventFromApi(event),
+        deviceName = deviceName,
         level = levelFromApi(currentLevel) ?: max,
         maxLevel = max,
         levelTimeline = levels.mapNotNull { it.toDomain() },

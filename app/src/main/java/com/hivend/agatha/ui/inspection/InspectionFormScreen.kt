@@ -204,7 +204,7 @@ private fun ReportHeader(alert: Alert) {
     FormCard {
         Text(stringResource(R.string.inspection_title), color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.titleMedium)
         Text(
-            stringResource(R.string.inspection_device_subtitle, alert.sensorId, alert.pk),
+            stringResource(R.string.inspection_device_subtitle, alert.displayName, alert.pk),
             color = AgathaTheme.colors.textSecondary,
             style = MaterialTheme.typography.bodySmall,
         )

@@ -40,7 +40,7 @@ internal fun AlertLevel.toApiLevel(): String? = when (this) {
 internal fun AlertEvent.toApiEvent(): String? = when (this) {
     AlertEvent.LEAK -> "FUGA"
     AlertEvent.MOVEMENT -> "MOVIMIENTO"
-    AlertEvent.LEAK_AND_MOVEMENT -> null
+    AlertEvent.LEAK_AND_MOVEMENT, AlertEvent.UNKNOWN -> null
 }
 
 internal fun ManagementStatus.toApiStatus(): String = when (this) {

@@ -56,6 +56,7 @@ import com.hivend.agatha.ui.components.StatusChip
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.LevelChip
 import com.hivend.agatha.ui.components.labelRes
+import com.hivend.agatha.ui.components.deviceLocation
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
 import com.hivend.agatha.R
@@ -196,7 +197,7 @@ internal fun AlertCard(alert: Alert, onClick: () -> Unit) {
             Text(alert.id, style = MaterialTheme.typography.labelMedium, color = AgathaTheme.colors.textSecondary)
         }
         Text(
-            stringResource(R.string.alert_list_location, alert.sensorId, alert.pk),
+            alert.deviceLocation(),
             style = MaterialTheme.typography.bodyMedium,
             color = AgathaTheme.colors.textSecondary,
         )

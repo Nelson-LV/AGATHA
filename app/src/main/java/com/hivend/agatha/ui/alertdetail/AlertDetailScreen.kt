@@ -237,7 +237,7 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
         }
         DataGrid(
             listOf(
-                stringResource(R.string.alert_detail_device) to alert.sensorId,
+                stringResource(R.string.alert_detail_device) to alert.displayName,
                 stringResource(R.string.alert_detail_pk) to alert.pk,
                 stringResource(R.string.alert_detail_event) to stringResource(alert.event.labelRes()),
                 stringResource(R.string.alert_detail_start) to formatDateTime(alert.startedAt),
