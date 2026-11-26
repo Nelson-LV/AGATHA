@@ -1,7 +1,6 @@
 package com.hivend.agatha.push
 
 import com.hivend.agatha.data.remote.dashboard.parseRfc3339
-import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import java.time.Instant
@@ -36,15 +35,16 @@ data class AlertPush(
  * `alertId`, `level` (YELLOW/ORANGE/RED), `kind` (NEW/LEVEL_UP), `sensorId`, `pk`, `event`
  * (LEAK/MOVEMENT/LEAK_AND_MOVEMENT), `startedAt` (RFC 3339) y `classification`.
  *
- * Nunca hay push por un aviso gris (RN-02), por el nivel normal ni por una alerta clasificada
- * como Falsa alerta (HU-4.1): esos mensajes, o los que no traen id o nivel válidos, se descartan.
+ * Nunca hay push por un aviso gris (RN-02) ni por el nivel normal: esos mensajes, o los que no
+ * traen id o nivel válidos, se descartan. `classification` no descarta nada: el backend lo manda
+ * en una alerta **nueva** abierta después de una ya clasificada (`NEW_AFTER_CLASSIFIED`, guía
+ * §8.2), incluso si aquella fue Falsa alerta; la nueva sí se debe avisar.
  */
 object AlertPushParser {
 
     fun parse(data: Map<String, String>): AlertPush? {
         val alertId = data[KEY_ALERT_ID]?.trim()?.takeIf { it.isNotEmpty() } ?: return null
         val level = data[KEY_LEVEL].toEnumOrNull<AlertLevel>()?.takeIf { it.isAlert } ?: return null
-        if (data[KEY_CLASSIFICATION].toEnumOrNull<AlertClassification>() == AlertClassification.FALSE_ALARM) return null
         return AlertPush(
             alertId = alertId,
             level = level,
@@ -70,5 +70,4 @@ object AlertPushParser {
     private const val KEY_PK = "pk"
     private const val KEY_EVENT = "event"
     private const val KEY_STARTED_AT = "startedAt"
-    private const val KEY_CLASSIFICATION = "classification"
 }

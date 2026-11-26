@@ -52,7 +52,7 @@ PUT /api/devices/push-token
 | `pk` | no | abscisa sin el prefijo "PK" (p. ej. `12+350`) |
 | `event` | no | `LEAK` / `MOVEMENT` / `LEAK_AND_MOVEMENT` |
 | `startedAt` | no | inicio de la alerta, RFC 3339 (`2026-10-18T14:32:00-05:00`) |
-| `classification` | no | `CONFIRMED` / `FALSE_ALARM`; omitir si está Sin clasificar |
+| `classification` | no | `CONFIRMED` / `FALSE_ALARM`; viene en una alerta **nueva** abierta tras una ya clasificada (`NEW_AFTER_CLASSIFIED`). Es informativo: la app **no** descarta el push por este campo |
 
 Un mensaje sin `alertId` o sin `level` válido se descarta en la app.
 
@@ -68,9 +68,11 @@ Un mensaje sin `alertId` o sin `level` válido se descarta en la app.
 
 - **Sí:** al **generarse** una alerta (`kind=NEW`) y cada vez que **sube de nivel**
   (`kind=LEVEL_UP`, p. ej. Amarillo → Naranja), a todos los tokens registrados.
-- **Nunca:** por avisos **grises** (sin comunicación / indicador no calculable, RN-02), por
-  el nivel **normal** (Verde), ni por alertas clasificadas o suprimidas como **Falsa alerta**.
-  La app también los descarta si llegan, pero el backend no debería enviarlos.
+- **Nunca:** por avisos **grises** (sin comunicación / indicador no calculable, RN-02) ni por
+  el nivel **normal** (Verde). La app también los descarta si llegan (nivel no válido).
+- Una alerta **nueva** abierta después de una clasificada (`NEW_AFTER_CLASSIFIED`, guía
+  `MOBILE_ALERTS_API_GUIDE.md` §8.2) sí se avisa aunque traiga `classification=FALSE_ALARM`: esa
+  clasificación es de la alerta anterior. La app solo descarta por `alertId` o `level` inválidos.
 
 ## 5. Limpieza de tokens
 

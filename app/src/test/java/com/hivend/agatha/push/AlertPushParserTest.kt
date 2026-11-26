@@ -65,8 +65,18 @@ class AlertPushParserTest {
     }
 
     @Test
-    fun `alerts classified as false alarm never notify`() {
-        assertNull(AlertPushParser.parse(fullPayload + ("classification" to "FALSE_ALARM")))
+    fun `a new alert opened after a false alarm still notifies`() {
+        // NEW_AFTER_CLASSIFIED: la clasificación es la de la alerta anterior, no la de esta.
+        val push = AlertPushParser.parse(fullPayload + mapOf("kind" to "NEW", "classification" to "FALSE_ALARM"))
+
+        assertEquals("ALR-0012", push?.alertId)
+        assertEquals(AlertPushKind.NEW, push?.kind)
+        assertEquals(AlertLevel.RED, push?.level)
+    }
+
+    @Test
+    fun `a confirmed classification does not drop the push either`() {
+        assertEquals("ALR-0012", AlertPushParser.parse(fullPayload + ("classification" to "CONFIRMED"))?.alertId)
     }
 
     @Test
