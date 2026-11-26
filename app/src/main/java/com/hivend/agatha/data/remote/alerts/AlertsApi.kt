@@ -237,10 +237,13 @@ data class ActionBodyDto(
     val existing: ExistingClassificationDto? = null,
 )
 
+/** Lo que prevalece en un 409 de conflicto; en uno de etiqueta puede traer también la etiqueta. */
 @Serializable
 data class ExistingClassificationDto(
     val classification: String? = null,
     @SerialName("classified_at") val classifiedAt: String? = null,
     val origin: String? = null,
     @SerialName("device_identifier") val deviceIdentifier: String? = null,
+    val label: String? = null,
+    @SerialName("other_text") val otherText: String? = null,
 )

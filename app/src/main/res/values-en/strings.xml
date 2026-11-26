@@ -248,6 +248,10 @@
     <string name="sync_retry">Retry</string>
     <string name="sync_conflict_local">YOUR CHANGE (LOCAL)</string>
     <string name="sync_conflict_server">SERVER CHANGE</string>
+    <string name="conflict_title">Conflict on %1$s</string>
+    <string name="conflict_classification_description">Another operator classified this alert first. Their classification stands; yours was saved as an observation.</string>
+    <string name="conflict_tag_description">Another operator tagged this alert first. Their tag stands; yours was saved as an observation.</string>
+    <string name="conflict_server_unknown">See the alert detail</string>
     <string name="sync_understood">Got it</string>
     <string name="sync_now">Sync now</string>
     <string name="sync_last_success">Last successful sync: %1$s</string>

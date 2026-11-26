@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.hivend.agatha.R
 import com.hivend.agatha.core.device.DeviceOriginProvider
 import com.hivend.agatha.core.navigation.AgathaDestination
+import com.hivend.agatha.domain.model.ActionConflict
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.DetailFocus
 import com.hivend.agatha.domain.model.AlertClassification
@@ -58,6 +59,8 @@ data class AlertDetailUiState(
     val observationDraft: String = "",
     val savingObservation: Boolean = false,
     val classifying: Boolean = false,
+    /** Conflictos de la cola de esta alerta que el técnico aún no vio (RN-18). */
+    val conflicts: List<ActionConflict> = emptyList(),
 ) {
     val canAddObservation: Boolean get() = observationDraft.isNotBlank() && !savingObservation
 }
@@ -114,6 +117,8 @@ class AlertDetailViewModel @Inject constructor(
             pendingReportIds = pendingIds,
             classificationPendingSync = pendingSync,
         )
+    }.combine(alertRepository.observeConflicts(alertId)) { state, conflicts ->
+        state.copy(conflicts = conflicts)
     }.combine(local) { state, local ->
         state.copy(
             loading = local.loading,
@@ -143,6 +148,11 @@ class AlertDetailViewModel @Inject constructor(
     }
 
     /** Agrega la observación escrita (no se edita después). Si falla, el texto se conserva. */
+    /** "Entendido" en el aviso de conflicto: deja de mostrarse aquí y en Sincronización. */
+    fun acknowledgeConflicts() {
+        viewModelScope.launch { alertRepository.acknowledgeConflicts(alertId) }
+    }
+
     fun addObservation() {
         val draft = local.value.observationDraft.trim()
         if (draft.isEmpty() || local.value.savingObservation) return

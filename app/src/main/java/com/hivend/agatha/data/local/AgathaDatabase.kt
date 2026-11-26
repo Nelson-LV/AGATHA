@@ -6,6 +6,8 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import com.hivend.agatha.data.local.alert.AlertActionDao
 import com.hivend.agatha.data.local.alert.AlertActionEntity
+import com.hivend.agatha.data.local.alert.AlertConflictDao
+import com.hivend.agatha.data.local.alert.AlertConflictEntity
 import com.hivend.agatha.data.local.alert.InspectionPhotoEntity
 import com.hivend.agatha.data.local.alert.InspectionReportDao
 import com.hivend.agatha.data.local.alert.InspectionReportEntity
@@ -27,9 +29,10 @@ import com.hivend.agatha.data.local.sync.SyncQueueEntity
         AlertActionEntity::class,
         InspectionReportEntity::class,
         InspectionPhotoEntity::class,
+        AlertConflictEntity::class,
     ],
-    version = 3,
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    version = 4,
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4)],
 )
 @TypeConverters(Converters::class)
 abstract class AgathaDatabase : RoomDatabase() {
@@ -39,6 +42,8 @@ abstract class AgathaDatabase : RoomDatabase() {
     abstract fun alertActionDao(): AlertActionDao
 
     abstract fun inspectionReportDao(): InspectionReportDao
+
+    abstract fun alertConflictDao(): AlertConflictDao
 
     companion object {
         const val NAME = "agatha.db"

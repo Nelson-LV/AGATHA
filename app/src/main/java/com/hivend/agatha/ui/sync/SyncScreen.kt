@@ -41,11 +41,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.hivend.agatha.domain.model.SyncConflict
 import com.hivend.agatha.domain.model.PendingRecord
 import com.hivend.agatha.domain.model.SyncError
 import com.hivend.agatha.domain.model.SyncState
 import com.hivend.agatha.ui.components.AgathaHeader
+import com.hivend.agatha.ui.components.ConflictNotice
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.SitePill
@@ -117,7 +117,7 @@ fun SyncScreen(
                     }
 
                     current.conflict?.let { conflict ->
-                        item { ConflictCard(conflict = conflict, onUnderstood = { viewModel.confirmConflict(conflict.alertId) }) }
+                        item { ConflictNotice(conflict = conflict, onUnderstood = { viewModel.confirmConflict(conflict.alertId) }) }
                     }
 
                     item {
@@ -239,48 +239,6 @@ private fun SyncError.label(): String = when (this) {
     SyncError.NoConnection -> stringResource(R.string.sync_error_no_connection)
     SyncError.InvalidResponse -> stringResource(R.string.sync_error_invalid_response)
     is SyncError.Server -> stringResource(R.string.sync_error_server, httpCode)
-}
-
-@Composable
-private fun ConflictCard(conflict: SyncConflict, onUnderstood: () -> Unit) {
-    Column(
-        verticalArrangement = Arrangement.spacedBy(10.dp),
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(AgathaTheme.colors.conflictContainer, RoundedCornerShape(14.dp))
-            .border(1.3.dp, AgathaTheme.colors.conflictBorder, RoundedCornerShape(14.dp))
-            .padding(16.dp),
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-            Icon(Icons.Filled.Warning, contentDescription = null, tint = AgathaTheme.colors.conflict, modifier = Modifier.size(18.dp))
-            Text(conflict.conflictTitle.resolve(), color = AgathaTheme.colors.conflict, style = MaterialTheme.typography.titleSmall)
-        }
-        Text(conflict.description.resolve(), color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.bodyMedium)
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-            ConflictVersion(stringResource(R.string.sync_conflict_local), conflict.localChange.resolve(), Modifier.weight(1f))
-            ConflictVersion(stringResource(R.string.sync_conflict_server), conflict.serverChange.resolve(), Modifier.weight(1f))
-        }
-        OutlinedButton(
-            onClick = onUnderstood,
-            border = BorderStroke(1.2.dp, AgathaTheme.colors.conflictBorder),
-            colors = ButtonDefaults.outlinedButtonColors(contentColor = AgathaTheme.colors.conflict),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Text(stringResource(R.string.sync_understood))
-        }
-    }
-}
-
-@Composable
-private fun ConflictVersion(label: String, valor: String, modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .background(AgathaTheme.colors.surface, RoundedCornerShape(8.dp))
-            .padding(horizontal = 10.dp, vertical = 8.dp),
-    ) {
-        Text(label, color = AgathaTheme.colors.textSecondary, style = MaterialTheme.typography.labelSmall)
-        Text(valor, color = AgathaTheme.colors.textPrimary, style = MaterialTheme.typography.bodyMedium)
-    }
 }
 
 @Composable

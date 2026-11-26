@@ -1,5 +1,6 @@
 package com.hivend.agatha.domain.repository
 
+import com.hivend.agatha.domain.model.ActionConflict
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertResult
@@ -71,4 +72,10 @@ interface AlertRepository {
 
     /** Ids de reportes cuya etiqueta u observación aún no llegó a la API. */
     fun observePendingInspectionIds(): Flow<Set<String>>
+
+    /** Conflictos de la cola (RN-18) de esta alerta que el técnico aún no vio. */
+    fun observeConflicts(alertId: String): Flow<List<ActionConflict>>
+
+    /** Marca como vistos los conflictos de la alerta ("Entendido"). */
+    suspend fun acknowledgeConflicts(alertId: String)
 }

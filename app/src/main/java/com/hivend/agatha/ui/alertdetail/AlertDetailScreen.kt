@@ -76,6 +76,7 @@ import com.hivend.agatha.ui.components.BackTopBar
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.LocalOnline
 import com.hivend.agatha.ui.components.ClassificationChip
+import com.hivend.agatha.ui.components.ConflictNotice
 import com.hivend.agatha.ui.components.ManagementStatusChip
 import com.hivend.agatha.ui.components.LevelChip
 import com.hivend.agatha.ui.components.levelColor
@@ -140,7 +141,8 @@ fun AlertDetailScreen(
         if (focusTarget != null) {
             segmentFilter = null
             // El tramo es un ítem de la lista: primero se lleva a la vista y luego el mensaje dentro.
-            listState.scrollToItem(FIRST_SEGMENT_ITEM + focusTarget.segmentIndex)
+            val offset = if (uiState.conflicts.isEmpty()) 0 else 1
+            listState.scrollToItem(FIRST_SEGMENT_ITEM + offset + focusTarget.segmentIndex)
         }
     }
 
@@ -197,6 +199,9 @@ fun AlertDetailScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
+            uiState.conflicts.firstOrNull()?.let { conflict ->
+                item(key = "conflict") { ConflictNotice(conflict, onUnderstood = viewModel::acknowledgeConflicts) }
+            }
             item(key = "alert") {
                 AlertCard(
                     alert = alert,

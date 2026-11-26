@@ -1,6 +1,8 @@
 package com.hivend.agatha.data.repository
 
 import com.hivend.agatha.data.local.alert.AlertActionDao
+import com.hivend.agatha.data.local.alert.AlertConflictDao
+import com.hivend.agatha.data.local.alert.toDomain
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
 import com.hivend.agatha.data.sync.LastSyncStore
@@ -24,14 +26,24 @@ import kotlinx.coroutines.flow.combine
 class RoomSyncRepository @Inject constructor(
     private val queue: SyncQueueDao,
     private val alertActions: AlertActionDao,
+    private val conflicts: AlertConflictDao,
     private val scheduler: SyncScheduler,
     private val lastSync: LastSyncStore,
 ) : SyncRepository {
 
     override fun observeStatus(): Flow<SyncStatus> =
-        combine(queue.observeUnsynced(), alertActions.observeUnsynced(), lastSync.lastSuccessfulSync) { entries, actions, last ->
+        combine(
+            queue.observeUnsynced(),
+            alertActions.observeUnsynced(),
+            lastSync.lastSuccessfulSync,
+            conflicts.observeOpen(),
+        ) { entries, actions, last, open ->
             val alertIds = actions.associate { it.id to it.alertId }
-            SyncStatus(pending = entries.map { it.toDomain(alertIds[it.recordId]) }, conflict = null, lastSuccessfulSync = last)
+            SyncStatus(
+                pending = entries.map { it.toDomain(alertIds[it.recordId]) },
+                conflict = open.firstOrNull()?.toDomain(),
+                lastSuccessfulSync = last,
+            )
         }
 
     override suspend fun syncNow() = scheduler.syncNow()
@@ -46,8 +58,8 @@ class RoomSyncRepository @Inject constructor(
         scheduler.retryNow()
     }
 
-    // Los conflictos llegan con HU-7.4 (AGT-131); hasta entonces no hay ninguno que confirmar.
-    override suspend fun confirmConflict(alertId: String) = Unit
+    /** "Entendido" en el aviso de conflicto (HU-7.4): deja de mostrarse. */
+    override suspend fun confirmConflict(alertId: String) = conflicts.acknowledge(alertId)
 
     private fun SyncQueueEntity.toDomain(alertId: String?) = PendingRecord(
         id = id,

@@ -143,6 +143,16 @@ class RemoteAlertRepositoryTest {
             entries.update { it + actions.map { action -> action to false } }
         }
 
+        val conflicts = MutableStateFlow<List<com.hivend.agatha.domain.model.ActionConflict>>(emptyList())
+
+        override suspend fun saveConflict(conflict: com.hivend.agatha.domain.model.ActionConflict) =
+            conflicts.update { it + conflict }
+
+        override fun observeConflicts(): Flow<List<com.hivend.agatha.domain.model.ActionConflict>> = conflicts
+
+        override suspend fun acknowledgeConflicts(alertId: String) =
+            conflicts.update { list -> list.filterNot { it.alertId == alertId } }
+
         suspend fun drain(repo: RemoteAlertRepository) {
             entries.value.filterNot { it.second }.forEach { (action, _) ->
                 if (repo.sendQueued(action.id) is ApiResult.Success) {
@@ -542,5 +552,77 @@ class RemoteAlertRepositoryTest {
         val result = repo.addObservation("ALR-000001", "Texto", phone)
 
         assertEquals(AlertResult.Failure(AlertFailure.NoConnection), result)
+    }
+
+    @Test
+    fun `a queued classification that conflicts leaves the queue and is reported with what stands`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        val repo = repository(api)
+        repo.refreshAlerts()
+        api.offline = true
+        repo.classifyAlert("ALR-000001", AlertClassification.CONFIRMED, at, phone)
+        api.offline = false
+        api.classifyResponse = {
+            Response.error(
+                409,
+                body(
+                    """{"code":"CONFLICT","outcome":"SAVED_AS_CONFLICT_OBSERVATION",
+                        "existing":{"classification":"FALSA_ALERTA","classified_at":"2026-10-20T10:00:00-05:00","origin":"WEB"}}""",
+                ),
+            )
+        }
+
+        outbox.drain(repo)
+
+        assertFalse(repo.observeClassificationPendingSync("ALR-000001").first())
+        val conflict = repo.observeConflicts("ALR-000001").first().single()
+        assertEquals(SyncRecordType.CLASSIFICATION, conflict.type)
+        assertEquals(AlertClassification.CONFIRMED, conflict.localClassification)
+        assertEquals(AlertClassification.FALSE_ALARM, conflict.existing!!.classification)
+        assertEquals(Origin.Web, conflict.existing!!.origin)
+
+        repo.acknowledgeConflicts("ALR-000001")
+        assertTrue(repo.observeConflicts("ALR-000001").first().isEmpty())
+    }
+
+    @Test
+    fun `a queued tag that conflicts is reported with the tag that stands`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA")
+        val repo = repository(api)
+        repo.refreshAlerts()
+        api.labelResponse = {
+            Response.error(
+                409,
+                body(
+                    """{"code":"CONFLICT","outcome":"SAVED_AS_CONFLICT_OBSERVATION",
+                        "existing":{"classification":"CONFIRMADA","label":"MAQUINARIA_AJENA","origin":"WEB"}}""",
+                ),
+            )
+        }
+
+        repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, null))
+        outbox.drain(repo)
+
+        assertTrue(repo.observePendingInspectionIds().first().isEmpty())
+        val conflict = repo.observeConflicts("ALR-000001").first().single()
+        assertEquals(AlertTag.GROUND_MOVEMENT, conflict.localTag)
+        assertEquals(AlertTag.THIRD_PARTY_MACHINERY, conflict.existing!!.tag!!.tag)
+    }
+
+    @Test
+    fun `a tag rejected because the alert is not classified yet is not a conflict`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA")
+        val repo = repository(api)
+        repo.refreshAlerts()
+        api.labelResponse = { Response.error(409, body("""{"code":"CONFLICT","message":"La alerta aún no está clasificada"}""")) }
+
+        repo.registerInspection(report(AlertTag.GROUND_MOVEMENT, null))
+        outbox.drain(repo)
+
+        assertEquals(setOf("report-1"), repo.observePendingInspectionIds().first())
+        assertTrue(repo.observeConflicts("ALR-000001").first().isEmpty())
     }
 }

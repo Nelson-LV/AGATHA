@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.hivend.agatha.data.local.alert.AlertActionDao
+import com.hivend.agatha.data.local.alert.AlertConflictDao
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import dagger.Module
 import dagger.Provides
@@ -37,6 +38,9 @@ object DatabaseModule {
 
     @Provides
     fun provideAlertActionDao(database: AgathaDatabase): AlertActionDao = database.alertActionDao()
+
+    @Provides
+    fun provideAlertConflictDao(database: AgathaDatabase): AlertConflictDao = database.alertConflictDao()
 
     @Provides
     fun provideSyncQueueDao(database: AgathaDatabase): SyncQueueDao = database.syncQueueDao()

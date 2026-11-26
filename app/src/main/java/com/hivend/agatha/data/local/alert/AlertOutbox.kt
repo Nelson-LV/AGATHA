@@ -3,6 +3,7 @@ package com.hivend.agatha.data.local.alert
 import androidx.room.withTransaction
 import com.hivend.agatha.data.local.AgathaDatabase
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
+import com.hivend.agatha.domain.model.ActionConflict
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.SyncRecordType
 import com.hivend.agatha.data.sync.SyncScheduler
@@ -12,6 +13,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 
 /**
  * Lo que el celular guarda de las alertas (HU-7.2, RN-17): los envíos hasta que llegan a la API
@@ -34,6 +36,15 @@ interface AlertOutbox {
      * alerta si esta sigue en la cola. Pide un envío en cuanto haya red.
      */
     suspend fun enqueue(actions: List<AlertActionEntity>)
+
+    /** Guarda un conflicto de la cola (RN-18) para avisarlo hasta que el técnico lo vea. */
+    suspend fun saveConflict(conflict: ActionConflict)
+
+    /** Conflictos aún no vistos, el más reciente primero. */
+    fun observeConflicts(): Flow<List<ActionConflict>>
+
+    /** Marca como vistos los conflictos de [alertId]. */
+    suspend fun acknowledgeConflicts(alertId: String)
 }
 
 @Singleton
@@ -45,6 +56,14 @@ class RoomAlertOutbox @Inject constructor(
     private val actions get() = database.alertActionDao()
     private val queue get() = database.syncQueueDao()
     private val reports get() = database.inspectionReportDao()
+    private val conflicts get() = database.alertConflictDao()
+
+    override suspend fun saveConflict(conflict: ActionConflict) = conflicts.insert(conflict.toEntity())
+
+    override fun observeConflicts(): Flow<List<ActionConflict>> =
+        conflicts.observeOpen().map { list -> list.map { it.toDomain() } }
+
+    override suspend fun acknowledgeConflicts(alertId: String) = conflicts.acknowledge(alertId)
 
     override fun observeReports(): Flow<List<Inspection>> =
         combine(reports.observeReports(), reports.observePhotos()) { rows, photos ->

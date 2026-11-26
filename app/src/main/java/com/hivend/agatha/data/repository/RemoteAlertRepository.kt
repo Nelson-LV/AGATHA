@@ -14,6 +14,7 @@ import com.hivend.agatha.data.remote.alerts.ORIGIN_MOBILE_APP
 import com.hivend.agatha.data.remote.alerts.ObservationRequestDto
 import com.hivend.agatha.data.remote.alerts.toApi
 import com.hivend.agatha.data.remote.alerts.toDomain
+import com.hivend.agatha.domain.model.ActionConflict
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertFailure
@@ -337,16 +338,41 @@ class RemoteAlertRepository @Inject constructor(
 
     // ---- Cola de salida ------------------------------------------------------------------
 
+    override fun observeConflicts(alertId: String): Flow<List<ActionConflict>> =
+        outbox.observeConflicts().map { list -> list.filter { it.alertId == alertId } }
+
+    override suspend fun acknowledgeConflicts(alertId: String) = outbox.acknowledgeConflicts(alertId)
+
     /**
-     * Envía un registro de la cola (lo llaman los emisores de `data/sync`). Un 409 de conflicto
-     * (RN-18) cuenta como recibido: el servidor lo guardó como observación de conflicto. Si llega,
-     * vuelve a pedir el detalle de la alerta para mostrar lo que quedó en el servidor.
+     * Envía un registro de la cola (lo llaman los emisores de `data/sync`). Un 409
+     * SAVED_AS_CONFLICT_OBSERVATION (RN-18, guía §7.5) sale de la cola porque el servidor lo
+     * guardó como observación, pero se avisa: se guarda el conflicto con lo que prevalece
+     * (`existing`). Un 409 sin ese resultado (etiqueta antes de la clasificación) sigue siendo
+     * un error. Tras enviar vuelve a pedir el detalle para mostrar lo que quedó en el servidor.
      */
     suspend fun sendQueued(recordId: String): ApiResult<Unit> {
         val action = outbox.get(recordId) ?: return ApiResult.Success(Unit)
         return when (val posted = postAction(action)) {
-            is Posted.Ok, is Posted.SavedAsConflict -> {
+            is Posted.Ok -> {
                 loadAlert(action.alertId)
+                ApiResult.Success(Unit)
+            }
+            is Posted.SavedAsConflict -> {
+                loadAlert(action.alertId)
+                val existing = posted.body.existing?.toDomain()
+                    ?: alerts.value.find { it.id == action.alertId }?.classification
+                outbox.saveConflict(
+                    ActionConflict(
+                        id = action.id,
+                        alertId = action.alertId,
+                        type = action.type,
+                        localClassification = action.classification,
+                        localTag = action.tag,
+                        localTagDetail = action.tagOtherDetail,
+                        existing = existing,
+                        detectedAt = Instant.now(),
+                    ),
+                )
                 ApiResult.Success(Unit)
             }
             Posted.Transient -> ApiResult.Failure(ApiError.NoConnection)

@@ -230,5 +230,9 @@ private fun AlertDto.classificationRecord(value: AlertClassification): Classific
 
 internal fun ExistingClassificationDto.toDomain(): ClassificationRecord? {
     val value = classificationFromApi(classification) ?: return null
-    return ClassificationRecord(value, parseInstant(classifiedAt), originFromApi(origin, deviceIdentifier))
+    val origin = originFromApi(origin, deviceIdentifier)
+    val tag = label?.let { tagFromApi(value, it) }?.let { tag ->
+        TagRecord(tag, if (tag.requiresDetail) otherText?.takeIf { it.isNotBlank() } ?: EMPTY_DETAIL else null, null, origin)
+    }
+    return ClassificationRecord(value, parseInstant(classifiedAt), origin, tag)
 }

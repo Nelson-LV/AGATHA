@@ -32,20 +32,12 @@ data class PendingRecord(
     val error: SyncError?,
 )
 
-/** Conflicto detectado cuando la misma alerta cambió en la app y en la plataforma web. */
-data class SyncConflict(
-    val alertId: String,
-    val conflictTitle: LocalizedText,
-    val description: LocalizedText,
-    val localChange: LocalizedText,
-    val serverChange: LocalizedText,
-)
-
 /** Estado agregado de la bandeja de sincronización, consumido por [com.hivend.agatha.ui.sync.SyncScreen]. */
 data class SyncStatus(
     /** Registros sin sincronizar, en orden de registro. */
     val pending: List<PendingRecord>,
-    val conflict: SyncConflict?,
+    /** El conflicto más reciente que el técnico aún no vio (RN-18). */
+    val conflict: ActionConflict?,
     /** Última vez que el envío terminó sin nada por reintentar; null si nunca. */
     val lastSuccessfulSync: Instant?,
 ) {

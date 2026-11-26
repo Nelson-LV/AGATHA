@@ -263,6 +263,10 @@
     <string name="sync_retry">Reintentar</string>
     <string name="sync_conflict_local">TU CAMBIO (LOCAL)</string>
     <string name="sync_conflict_server">CAMBIO DEL SERVIDOR</string>
+    <string name="conflict_title">Conflicto en %1$s</string>
+    <string name="conflict_classification_description">Otro operador clasificó esta alerta antes. Prevalece su clasificación; la tuya quedó guardada como observación.</string>
+    <string name="conflict_tag_description">Otro operador etiquetó esta alerta antes. Prevalece su etiqueta; la tuya quedó guardada como observación.</string>
+    <string name="conflict_server_unknown">Ver el detalle de la alerta</string>
     <string name="sync_understood">Entendido</string>
     <string name="sync_now">Sincronizar ahora</string>
     <string name="sync_last_success">Última sincronización correcta: %1$s</string>
