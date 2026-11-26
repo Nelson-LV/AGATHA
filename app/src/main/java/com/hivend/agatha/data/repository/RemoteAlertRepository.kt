@@ -2,6 +2,7 @@ package com.hivend.agatha.data.repository
 
 import com.hivend.agatha.data.local.alert.AlertActionEntity
 import com.hivend.agatha.data.local.alert.AlertOutbox
+import com.hivend.agatha.data.local.cache.AlertCache
 import com.hivend.agatha.data.remote.ApiError
 import com.hivend.agatha.data.remote.ApiErrorBody
 import com.hivend.agatha.data.remote.ApiResult
@@ -38,10 +39,14 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
@@ -66,6 +71,7 @@ class RemoteAlertRepository @Inject constructor(
     private val api: AlertsApi,
     private val json: Json,
     private val outbox: AlertOutbox,
+    private val cache: AlertCache = AlertCache.None,
 ) : AlertRepository {
 
     private val alerts = MutableStateFlow<List<Alert>>(emptyList())
@@ -79,8 +85,53 @@ class RemoteAlertRepository @Inject constructor(
     /** Ids que trajo la última lista, para retirar de la caché las que ya no aplican. */
     private var lastListIds: Set<String> = emptySet()
 
-    override fun observeAlerts(): Flow<List<Alert>> =
-        combine(alerts, unsynced) { list, pending -> list.map { overlayPending(it, pending) } }
+    override fun observeAlerts(): Flow<List<Alert>> = flow {
+        restoreFromCache()
+        emitAll(combine(alerts, unsynced) { list, pending -> list.map { overlayPending(it, pending) } })
+    }
+
+    override fun observeLastUpdate(): Flow<Instant?> = cache.observeUpdatedAt()
+
+    private val restoreLock = Mutex()
+    private var restored = false
+
+    /**
+     * Al abrir la app sin conexión no hay nada en memoria: se muestra lo último que se descargó
+     * (Sprint 7). Pasa una sola vez; lo que ya llegó del servidor en esta sesión no se pisa.
+     */
+    private suspend fun restoreFromCache() = restoreLock.withLock {
+        if (restored) return@withLock
+        restored = true
+        val cached = try {
+            cache.loadAlerts()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            return@withLock
+        }
+        val saved = cached.mapNotNull { entry ->
+            val detail = entry.detail?.toDomain()
+            val row = entry.row?.toDomain()
+            if (detail != null && row != null) mergeRow(detail, row) else detail ?: row
+        }
+        if (saved.isEmpty()) return@withLock
+        alerts.update { current ->
+            if (current.isEmpty()) lastListIds = cached.filter { it.inList }.mapNotNull { (it.row ?: it.detail)?.code }.toSet()
+            val known = current.map { it.id }.toSet()
+            (current + saved.filterNot { it.id in known }).sortedByDescending { it.startedAt }
+        }
+    }
+
+    /** Guardar en la caché no debe tumbar una descarga que sí llegó. */
+    private suspend fun saveToCache(block: suspend AlertCache.() -> Unit) {
+        try {
+            cache.block()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // La caché es una ayuda para abrir sin red; si falla, la próxima descarga la rehace.
+        }
+    }
 
     override fun observeAlert(alertId: String): Flow<Alert?> =
         observeAlerts().map { list -> list.find { it.id == alertId } }
@@ -100,7 +151,9 @@ class RemoteAlertRepository @Inject constructor(
             Triple(pending.await(), recent.await(), active.await())
         }
         unclassifiedTotal.value = pending.total
-        val rows = (pending.items + recent + active).distinctBy { it.id }.mapNotNull { it.toDomain() }
+        val dtos = (pending.items + recent + active).distinctBy { it.id }
+        saveToCache { saveList(dtos, Instant.now()) }
+        val rows = dtos.distinctBy { it.id }.mapNotNull { it.toDomain() }
         val ids = rows.map { it.id }.toSet()
         alerts.update { current -> current.filterNot { it.id in lastListIds && it.id !in ids } }
         lastListIds = ids
@@ -109,7 +162,9 @@ class RemoteAlertRepository @Inject constructor(
 
     override suspend fun loadAlert(alertId: String): AlertResult<Unit> {
         val result = fetch {
-            val alert = api.alert(alertId).toDomain() ?: throw SerializationException("Unsupported alert $alertId")
+            val dto = api.alert(alertId)
+            val alert = dto.toDomain() ?: throw SerializationException("Unsupported alert $alertId")
+            saveToCache { saveDetail(dto) }
             alerts.update { current ->
                 val cached = current.firstOrNull { it.id == alert.id }
                 replace(current, alert.copy(classification = mergeClassification(cached?.classification, alert.classification)))
@@ -143,7 +198,9 @@ class RemoteAlertRepository @Inject constructor(
     override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> {
         var rows: List<Alert> = emptyList()
         var listed = fetch {
-            rows = api.deviceAlerts(deviceId, from = DEVICE_HISTORY_FROM).rows().mapNotNull(AlertDto::toDomain)
+            val dtos = api.deviceAlerts(deviceId, from = DEVICE_HISTORY_FROM).rows()
+            saveToCache { saveRows(dtos) }
+            rows = dtos.mapNotNull(AlertDto::toDomain)
             upsertRows(rows)
         }
         if (listed == AlertResult.Failure(AlertFailure.NotFound)) listed = fetch { rows = pagedDeviceRows(deviceId) }

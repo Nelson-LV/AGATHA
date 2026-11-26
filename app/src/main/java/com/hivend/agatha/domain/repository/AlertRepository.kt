@@ -29,6 +29,12 @@ interface AlertRepository {
      */
     fun observeUnclassifiedTotal(): Flow<Int?>
 
+    /**
+     * Hora de la última lista descargada bien, también de una sesión anterior (caché sin
+     * conexión). Es la fecha de "Sin conexión · datos al …"; null si nunca se descargó.
+     */
+    fun observeLastUpdate(): Flow<Instant?>
+
     /** Descarga la lista de alertas del celular (Sin clasificar y activas) y reenvía lo pendiente. */
     suspend fun refreshAlerts(): AlertResult<Unit>
 

@@ -25,6 +25,7 @@
     <string name="connectivity_online">Online</string>
     <string name="connectivity_connected_synced">Online · Synced %1$s</string>
     <string name="connectivity_offline_local_data">Offline · showing local data</string>
+    <string name="connectivity_offline_data_at">Offline · data as of %1$s</string>
     <string name="connectivity_offline_saved_locally">Offline · saved on this device</string>
     <plurals name="connectivity_offline_pending">
         <item quantity="one">Offline · %d item waiting to sync</item>

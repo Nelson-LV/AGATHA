@@ -81,6 +81,8 @@ fun DeviceListScreen(
         ConnectivityBar(
             connected = !offline,
             message = when {
+                offline && state.updatedAt != null ->
+                    stringResource(R.string.connectivity_offline_data_at, formatDateTime(state.updatedAt!!))
                 offline -> stringResource(R.string.devices_offline)
                 state.updatedAt != null -> stringResource(R.string.devices_updated_at, formatDateTime(state.updatedAt!!))
                 else -> stringResource(R.string.telemetry_loading)

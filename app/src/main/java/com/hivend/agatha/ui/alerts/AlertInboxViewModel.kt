@@ -27,6 +27,8 @@ data class AlertInboxUiState(
     val failure: AlertFailure? = null,
     /** Pendientes de clasificar según el servidor (puede superar las que trae la lista). */
     val unclassifiedTotal: Int? = null,
+    /** Hora de los datos guardados en el celular (también de una sesión anterior), para "datos al …". */
+    val cachedAt: Instant? = null,
 )
 
 /**
@@ -50,9 +52,10 @@ class AlertInboxViewModel @Inject constructor(
     val uiState: StateFlow<AlertInboxUiState> = combine(
         alertRepository.observeAlerts(),
         alertRepository.observeUnclassifiedTotal(),
+        alertRepository.observeLastUpdate(),
         sync,
-    ) { alerts, unclassifiedTotal, sync ->
-        AlertInboxUiState(alerts.forAlertList(), sync.refreshing, sync.lastSyncedAt, sync.failure, unclassifiedTotal)
+    ) { alerts, unclassifiedTotal, cachedAt, sync ->
+        AlertInboxUiState(alerts.forAlertList(), sync.refreshing, sync.lastSyncedAt, sync.failure, unclassifiedTotal, cachedAt)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertInboxUiState())
 
     fun refresh() {

@@ -82,6 +82,12 @@ class DeviceListViewModel @Inject constructor(
                     is TelemetryResult.Failure -> state.copy(loading = false, refreshing = false, error = result.error)
                 }
             }
+            // Abierta sin conexión (Sprint 7): la última lista guardada, con su hora en "datos al …".
+            if (result is TelemetryResult.Failure && _uiState.value.devices.isEmpty()) {
+                repository.cachedDevices()?.takeIf { it.devices.isNotEmpty() }?.let { cached ->
+                    _uiState.update { it.copy(devices = cached.devices, updatedAt = cached.savedAt) }
+                }
+            }
         }
     }
 

@@ -88,7 +88,9 @@ fun AlertInboxScreen(
         ConnectivityBar(
             connected = online && failure == null,
             message = when {
-                !online || failure != null -> stringResource(R.string.connectivity_offline_local_data)
+                !online || failure != null -> state.cachedAt
+                    ?.let { stringResource(R.string.connectivity_offline_data_at, formatDateTime(it)) }
+                    ?: stringResource(R.string.connectivity_offline_local_data)
                 lastSyncedAt == null -> stringResource(R.string.connectivity_syncing)
                 else -> stringResource(
                     R.string.connectivity_connected_synced,

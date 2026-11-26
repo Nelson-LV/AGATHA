@@ -163,15 +163,16 @@ fun AlertDetailScreen(
         val online = LocalOnline.current
         // Una alerta que no existe es una respuesta del servidor, no un problema de conexión.
         val unreachable = uiState.loadFailure != null && uiState.loadFailure != AlertFailure.NotFound
+        val cachedAt = uiState.cachedAt
         ConnectivityBar(
             connected = online && !unreachable,
-            message = stringResource(
-                when {
-                    !online || unreachable -> R.string.connectivity_offline_local_data
-                    uiState.loading -> R.string.connectivity_syncing
-                    else -> R.string.connectivity_connected_live
-                },
-            ),
+            message = when {
+                (!online || unreachable) && cachedAt != null ->
+                    stringResource(R.string.connectivity_offline_data_at, formatDateTime(cachedAt))
+                !online || unreachable -> stringResource(R.string.connectivity_offline_local_data)
+                uiState.loading -> stringResource(R.string.connectivity_syncing)
+                else -> stringResource(R.string.connectivity_connected_live)
+            },
         )
         if (uiState.loading) LinearProgressIndicator(modifier = Modifier.fillMaxWidth(), color = AgathaTheme.colors.brand)
 

@@ -61,6 +61,8 @@ data class AlertDetailUiState(
     val classifying: Boolean = false,
     /** Conflictos de la cola de esta alerta que el técnico aún no vio (RN-18). */
     val conflicts: List<ActionConflict> = emptyList(),
+    /** Hora de los datos guardados en el celular, para "Sin conexión · datos al …". */
+    val cachedAt: java.time.Instant? = null,
 ) {
     val canAddObservation: Boolean get() = observationDraft.isNotBlank() && !savingObservation
 }
@@ -119,6 +121,8 @@ class AlertDetailViewModel @Inject constructor(
         )
     }.combine(alertRepository.observeConflicts(alertId)) { state, conflicts ->
         state.copy(conflicts = conflicts)
+    }.combine(alertRepository.observeLastUpdate()) { state, cachedAt ->
+        state.copy(cachedAt = cachedAt)
     }.combine(local) { state, local ->
         state.copy(
             loading = local.loading,

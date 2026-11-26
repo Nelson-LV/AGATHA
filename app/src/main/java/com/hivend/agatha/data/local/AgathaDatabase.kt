@@ -11,6 +11,10 @@ import com.hivend.agatha.data.local.alert.AlertConflictEntity
 import com.hivend.agatha.data.local.alert.InspectionPhotoEntity
 import com.hivend.agatha.data.local.alert.InspectionReportDao
 import com.hivend.agatha.data.local.alert.InspectionReportEntity
+import com.hivend.agatha.data.local.cache.CacheInfoEntity
+import com.hivend.agatha.data.local.cache.CachedAlertEntity
+import com.hivend.agatha.data.local.cache.CachedDeviceEntity
+import com.hivend.agatha.data.local.cache.OfflineCacheDao
 import com.hivend.agatha.data.local.sync.SyncQueueDao
 import com.hivend.agatha.data.local.sync.SyncQueueEntity
 
@@ -30,9 +34,16 @@ import com.hivend.agatha.data.local.sync.SyncQueueEntity
         InspectionReportEntity::class,
         InspectionPhotoEntity::class,
         AlertConflictEntity::class,
+        CachedAlertEntity::class,
+        CachedDeviceEntity::class,
+        CacheInfoEntity::class,
     ],
-    version = 4,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 3, to = 4)],
+    version = 5,
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
+    ],
 )
 @TypeConverters(Converters::class)
 abstract class AgathaDatabase : RoomDatabase() {
@@ -44,6 +55,8 @@ abstract class AgathaDatabase : RoomDatabase() {
     abstract fun inspectionReportDao(): InspectionReportDao
 
     abstract fun alertConflictDao(): AlertConflictDao
+
+    abstract fun offlineCacheDao(): OfflineCacheDao
 
     companion object {
         const val NAME = "agatha.db"

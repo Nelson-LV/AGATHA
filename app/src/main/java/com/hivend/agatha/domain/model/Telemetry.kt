@@ -51,6 +51,9 @@ data class TelemetryDevice(
     }
 }
 
+/** Dispositivos guardados en el celular para abrir sin conexión, con la hora en que se descargaron. */
+data class CachedDevices(val devices: List<TelemetryDevice>, val savedAt: Instant)
+
 /** De dónde sale la serie: lectura directa del sensor o cálculo del backend. */
 enum class TelemetrySource {
     MEASUREMENT,

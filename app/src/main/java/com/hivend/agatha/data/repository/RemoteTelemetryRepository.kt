@@ -1,7 +1,9 @@
 package com.hivend.agatha.data.repository
 
+import com.hivend.agatha.data.local.cache.DeviceCache
 import com.hivend.agatha.data.remote.dashboard.DashboardApi
 import com.hivend.agatha.data.remote.dashboard.toDomain
+import com.hivend.agatha.domain.model.CachedDevices
 import com.hivend.agatha.domain.model.DeviceTelemetry
 import com.hivend.agatha.domain.model.TelemetryDevice
 import com.hivend.agatha.domain.model.TelemetryError
@@ -27,6 +29,7 @@ import retrofit2.HttpException
 @Singleton
 class RemoteTelemetryRepository @Inject constructor(
     private val api: DashboardApi,
+    private val cache: DeviceCache = DeviceCache.None,
 ) : TelemetryRepository {
 
     /** Reloj inyectable para las pruebas. */
@@ -38,6 +41,8 @@ class RemoteTelemetryRepository @Inject constructor(
 
     override suspend fun devices(refresh: Boolean): TelemetryResult<List<TelemetryDevice>> =
         call { TelemetryResult.Success(loadDevices(refresh).sortedBy { it.nodeCode }) }
+
+    override suspend fun cachedDevices(): CachedDevices? = runCatching { cache.loadDevices() }.getOrNull()
 
     override suspend fun findDevice(nodeId: String): TelemetryResult<TelemetryDevice> =
         call {
@@ -78,6 +83,8 @@ class RemoteTelemetryRepository @Inject constructor(
         api.devices().map { it.toDomain() }.also {
             cachedDevices = it
             cachedAt = now()
+            // Para abrir sin conexión (Sprint 7): una falla al guardar no impide mostrar la lista.
+            runCatching { cache.saveDevices(it, cachedAt) }
         }
     }
 

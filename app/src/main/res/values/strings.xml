@@ -35,6 +35,7 @@
     <string name="connectivity_online">Conectado</string>
     <string name="connectivity_connected_synced">Conectado · Sincronizado %1$s</string>
     <string name="connectivity_offline_local_data">Sin conexión · mostrando datos locales</string>
+    <string name="connectivity_offline_data_at">Sin conexión · datos al %1$s</string>
     <string name="connectivity_offline_saved_locally">Sin conexión · se guarda localmente</string>
     <plurals name="connectivity_offline_pending">
         <item quantity="one">Sin conexión · %d pendiente por sincronizar</item>

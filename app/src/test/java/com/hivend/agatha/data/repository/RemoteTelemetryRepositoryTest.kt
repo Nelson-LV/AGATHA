@@ -81,4 +81,26 @@ class RemoteTelemetryRepositoryTest {
         repository.devices(refresh = true)
         assertEquals(2, api.devicesCalls)
     }
+
+    private class MemoryDeviceCache : com.hivend.agatha.data.local.cache.DeviceCache {
+        var saved: com.hivend.agatha.domain.model.CachedDevices? = null
+        override suspend fun loadDevices() = saved
+        override suspend fun saveDevices(devices: List<com.hivend.agatha.domain.model.TelemetryDevice>, at: Instant) {
+            saved = com.hivend.agatha.domain.model.CachedDevices(devices, at)
+        }
+    }
+
+    @Test
+    fun `the downloaded devices are kept for opening the app offline`() = runBlocking {
+        val cache = MemoryDeviceCache()
+        RemoteTelemetryRepository(FakeApi(), cache).also { it.now = { now } }.devices(refresh = true)
+
+        val offline = RemoteTelemetryRepository(FakeApi(failWith = IOException("no network")), cache)
+        val cached = offline.cachedDevices()!!
+
+        assertEquals(TelemetryResult.Failure(TelemetryError.NO_CONNECTION), offline.devices(refresh = true))
+        assertEquals(now, cached.savedAt)
+        assertEquals(listOf("Sensor MP-11556 PK34-470"), cached.devices.map { it.name })
+        assertEquals(100.0, cached.devices.single().lastBatteryLevel!!, 1e-9)
+    }
 }

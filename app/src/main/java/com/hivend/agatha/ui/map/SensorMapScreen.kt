@@ -60,6 +60,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import com.hivend.agatha.R
+import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.domain.model.SensorNode
 import com.hivend.agatha.domain.model.SensorNodeStatus
 import com.hivend.agatha.ui.components.AgathaHeader
@@ -95,8 +96,13 @@ fun SensorMapScreen(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(stringResource(R.string.map_title), style = MaterialTheme.typography.titleMedium)
+            val cachedAt = state.cachedAt
             Text(
-                stringResource(if (state.isOffline) R.string.map_status_offline else R.string.map_status_online),
+                when {
+                    state.isOffline && cachedAt != null ->
+                        stringResource(R.string.connectivity_offline_data_at, formatDateTime(cachedAt))
+                    else -> stringResource(if (state.isOffline) R.string.map_status_offline else R.string.map_status_online)
+                },
                 color = if (state.isOffline) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary,
                 style = MaterialTheme.typography.labelLarge,
                 fontWeight = FontWeight.SemiBold,

@@ -209,7 +209,39 @@ class RemoteAlertRepositoryTest {
 
     private val outbox = FakeOutbox()
 
-    private fun repository(api: FakeApi) = RemoteAlertRepository(api, json, outbox)
+    /** La caché de Room en memoria, guardando el JSON como lo hace RoomOfflineCache. */
+    private class MemoryAlertCache(private val json: Json) : com.hivend.agatha.data.local.cache.AlertCache {
+        private val rows = mutableMapOf<String, Triple<String?, String?, Boolean>>()
+        val updatedAt = MutableStateFlow<Instant?>(null)
+
+        override suspend fun loadAlerts() = rows.values.map { (row, detail, inList) ->
+            com.hivend.agatha.data.local.cache.CachedAlert(row?.let(::decode), detail?.let(::decode), inList)
+        }
+
+        override suspend fun saveList(rows: List<AlertDto>, at: Instant) {
+            val ids = rows.map { it.code }.toSet()
+            this.rows.entries.removeAll { it.value.third && it.key !in ids }
+            this.rows.replaceAll { _, v -> v.copy(third = false) }
+            rows.forEach { this.rows[it.code] = Triple(encode(it), this.rows[it.code]?.second, true) }
+            updatedAt.value = at
+        }
+
+        override suspend fun saveRows(rows: List<AlertDto>) =
+            rows.forEach { this.rows[it.code] = Triple(encode(it), this.rows[it.code]?.second, this.rows[it.code]?.third == true) }
+
+        override suspend fun saveDetail(detail: AlertDto) {
+            rows[detail.code] = Triple(null, encode(detail), rows[detail.code]?.third == true)
+        }
+
+        override fun observeUpdatedAt(): Flow<Instant?> = updatedAt
+
+        private fun encode(dto: AlertDto) = json.encodeToString(AlertDto.serializer(), dto)
+        private fun decode(text: String) = json.decodeFromString(AlertDto.serializer(), text)
+    }
+
+    private val cache = MemoryAlertCache(json)
+
+    private fun repository(api: FakeApi) = RemoteAlertRepository(api, json, outbox, cache)
 
     @Test
     fun `the list merges unclassified and recent alerts without duplicates, newest first`() = runBlocking {
@@ -713,5 +745,48 @@ class RemoteAlertRepositoryTest {
 
         assertTrue(repo.refreshAlerts() is AlertResult.Success)
         assertEquals(listOf("ALR-000001"), repo.observeAlerts().first().map { it.id })
+    }
+
+    @Test
+    fun `reopening the app offline shows the last alerts with their detail and the download time`() = runBlocking {
+        val api = FakeApi()
+        api.recent += listOf(dto(1), dto(2))
+        api.details["ALR-000001"] = dto(1).copy(
+            levels = listOf(
+                com.hivend.agatha.data.remote.alerts.LevelDto(
+                    seq = 1, openedBy = "OPEN", level = "NARANJA", startedAt = "2026-10-20T10:01:00-05:00",
+                    messages = listOf(com.hivend.agatha.data.remote.alerts.LevelMessageDto(id = 7, kind = "NOTIFICACION", title = "Alerta nueva", body = "Ruido")),
+                ),
+            ),
+            observations = listOf(ObservationDto(id = 9, text = "Revisado", recordedAt = "2026-10-20T13:05:00-05:00")),
+        )
+        val online = repository(api)
+        online.refreshAlerts()
+        online.loadAlert("ALR-000001")
+
+        // Otra sesión: la app se abre sin red.
+        val offlineApi = FakeApi().apply { offline = true }
+        val reopened = repository(offlineApi)
+        assertEquals(AlertResult.Failure(AlertFailure.NoConnection), reopened.refreshAlerts())
+
+        val shown = reopened.observeAlerts().first()
+        assertEquals(listOf("ALR-000002", "ALR-000001"), shown.map { it.id })
+        val detail = shown.single { it.id == "ALR-000001" }
+        assertEquals("Alerta nueva", detail.levelSegments.single().messages.single().title)
+        assertEquals("Revisado", detail.observations.single().text)
+        assertTrue(reopened.observeLastUpdate().first() != null)
+    }
+
+    @Test
+    fun `a new list replaces the cached one`() = runBlocking {
+        val api = FakeApi()
+        api.recent += listOf(dto(1), dto(2))
+        repository(api).refreshAlerts()
+        api.recent.removeAt(0)
+        repository(api).refreshAlerts()
+
+        val reopened = repository(FakeApi().apply { offline = true })
+
+        assertEquals(listOf("ALR-000002"), reopened.observeAlerts().first().map { it.id })
     }
 }

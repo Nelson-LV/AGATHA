@@ -52,6 +52,8 @@ data class MapState(
     val inspectionAlertId: String? = null,
     /** Nodos con una alerta que el backend marca `blinking` (ACTIVA + ROJO + Sin clasificar). */
     val blinkingNodeIds: Set<String> = emptySet(),
+    /** Sin conexión con dispositivos guardados: la hora en que se descargaron. */
+    val cachedAt: Instant? = null,
 )
 
 /**
@@ -125,6 +127,7 @@ class MapViewModel @Inject constructor(
 
     /** Dispositivos reales de la plataforma; null mientras no haya llegado ninguna respuesta. */
     private val telemetryDevices = MutableStateFlow<List<TelemetryDevice>?>(null)
+    private val devicesCachedAt = MutableStateFlow<Instant?>(null)
 
     /** Alertas de la plataforma: dan el color de cada punto y la alerta que abre "Iniciar inspección". */
     private val alerts = alertRepository.observeAlerts()
@@ -191,8 +194,15 @@ class MapViewModel @Inject constructor(
         )
     }
 
-    val uiState: StateFlow<MapState> = combine(mapContent, connected, telemetryDevices, alerts) { content, isConnected, devices, alertList ->
+    val uiState: StateFlow<MapState> = combine(
+        mapContent,
+        connected,
+        telemetryDevices,
+        alerts,
+        devicesCachedAt,
+    ) { content, isConnected, devices, alertList, cachedAt ->
         content.copy(
+            cachedAt = cachedAt,
             isOffline = !isConnected,
             telemetryLoaded = devices != null,
             inspectionAlertId = content.selectedNode?.let { alertList.latestUnclassifiedFor(it.id)?.id },
@@ -211,7 +221,16 @@ class MapViewModel @Inject constructor(
     fun refreshPlatformState() {
         viewModelScope.launch {
             val result = telemetryRepository.devices(refresh = true)
-            if (result is TelemetryResult.Success) telemetryDevices.value = result.data
+            if (result is TelemetryResult.Success) {
+                telemetryDevices.value = result.data
+                devicesCachedAt.value = null
+            } else if (telemetryDevices.value == null) {
+                // Abierto sin conexión: batería y última conexión de la última descarga guardada.
+                telemetryRepository.cachedDevices()?.let { cached ->
+                    telemetryDevices.value = cached.devices
+                    devicesCachedAt.value = cached.savedAt
+                }
+            }
         }
         viewModelScope.launch { alertRepository.refreshAlerts() }
     }

@@ -17,6 +17,9 @@ import com.hivend.agatha.domain.repository.SensorNodeRepository
 import com.hivend.agatha.domain.repository.SyncRepository
 import com.hivend.agatha.domain.repository.TelemetryRepository
 import dagger.Binds
+import com.hivend.agatha.data.local.cache.AlertCache
+import com.hivend.agatha.data.local.cache.DeviceCache
+import com.hivend.agatha.data.local.cache.RoomOfflineCache
 import dagger.Module
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
@@ -59,6 +62,14 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindTelemetryRepository(impl: RemoteTelemetryRepository): TelemetryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAlertCache(impl: RoomOfflineCache): AlertCache
+
+    @Binds
+    @Singleton
+    abstract fun bindDeviceCache(impl: RoomOfflineCache): DeviceCache
 
     @Binds
     @Singleton
