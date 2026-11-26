@@ -134,6 +134,19 @@
     <string name="alert_detail_no_reports">Todavía no hay reportes de inspección para esta alerta.</string>
     <string name="alert_detail_pending_sync">Pendiente de sincronizar</string>
     <string name="alert_detail_report_maintenance">Mantenimiento: %1$s</string>
+    <string name="alert_detail_messages_title">Mensajes por nivel</string>
+    <string name="alert_detail_messages_empty">Aún no hay mensajes de esta alerta.</string>
+    <string name="alert_detail_messages_filter_all">Todos</string>
+    <string name="alert_detail_messages_filter_empty">No hay tramos de este nivel.</string>
+    <string name="alert_detail_segment_range" translatable="false">%1$s – %2$s</string>
+    <string name="alert_detail_segment_now">ahora</string>
+    <string name="alert_detail_segment_opened">abrió</string>
+    <string name="alert_detail_segment_up">subió</string>
+    <string name="alert_detail_segment_down">bajó</string>
+    <string name="alert_detail_segment_reactivated">se reactivó</string>
+    <string name="alert_detail_segment_unknown_level">Nivel</string>
+    <string name="alert_detail_message_expand">Ver resumen</string>
+    <string name="alert_detail_message_collapse">Ocultar resumen</string>
     <string name="alert_detail_add_label">Agregar etiqueta</string>
     <string name="alert_detail_duration">Duración</string>
     <plurals name="alert_detail_duration_hours">

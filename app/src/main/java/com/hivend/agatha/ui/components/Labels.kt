@@ -12,6 +12,7 @@ import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.Origin
+import com.hivend.agatha.domain.model.SegmentOpening
 import com.hivend.agatha.domain.model.SensorType
 import com.hivend.agatha.domain.model.MaintenanceType
 import com.hivend.agatha.domain.model.EventType
@@ -203,3 +204,13 @@ fun telemetryVariableLabelRes(key: String): Int? = when (key) {
 fun Alert.deviceLocation(): String =
     if (pk.isBlank() || displayName.replace(" ", "").contains(pk)) displayName
     else stringResource(R.string.alert_list_location, displayName, pk)
+
+/** Cómo empezó un tramo de nivel (guía §6.1); null si el backend manda un valor desconocido. */
+@StringRes
+fun SegmentOpening.labelRes(): Int? = when (this) {
+    SegmentOpening.OPEN -> R.string.alert_detail_segment_opened
+    SegmentOpening.UP -> R.string.alert_detail_segment_up
+    SegmentOpening.DOWN -> R.string.alert_detail_segment_down
+    SegmentOpening.REACTIVATION -> R.string.alert_detail_segment_reactivated
+    SegmentOpening.UNKNOWN -> null
+}

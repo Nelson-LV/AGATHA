@@ -126,6 +126,8 @@ data class Alert(
     val maxLevel: AlertLevel,
     /** Niveles que tomó la alerta, en orden cronológico (RN-05). Vacía hasta cargar el detalle. */
     val levelTimeline: List<LevelChange> = emptyList(),
+    /** Tramos de color con sus mensajes, por `seq` (guía §5.4). Vacía hasta cargar el detalle. */
+    val levelSegments: List<LevelSegment> = emptyList(),
     val startedAt: Instant,
     /** Fin que informa el backend; null = "En curso". La app nunca lo inventa. */
     val endedAt: Instant? = null,

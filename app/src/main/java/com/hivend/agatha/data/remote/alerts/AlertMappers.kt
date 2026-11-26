@@ -4,6 +4,10 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.AlertMessage
+import com.hivend.agatha.domain.model.LevelSegment
+import com.hivend.agatha.domain.model.MessageKind
+import com.hivend.agatha.domain.model.SegmentOpening
 import com.hivend.agatha.domain.model.AlertObservation
 import com.hivend.agatha.domain.model.AlertServerState
 import com.hivend.agatha.domain.model.AlertState
@@ -121,7 +125,8 @@ internal fun AlertDto.toDomain(): Alert? {
         deviceName = deviceName,
         level = levelFromApi(currentLevel) ?: max,
         maxLevel = max,
-        levelTimeline = levels.mapNotNull { it.toDomain() },
+        levelTimeline = levels.sortedBy { it.seq }.mapNotNull { it.toDomain() },
+        levelSegments = levels.mapNotNull { it.toSegment() }.sortedBy { it.seq },
         startedAt = started,
         endedAt = if (inProgress) null else parseInstant(endedAt),
         indicatorValue = lastIndicatorValue,
@@ -142,6 +147,48 @@ private fun AlertDto.serverState() = AlertServerState(
     openingIndicatorValue = openingIndicatorValue,
     maxIndicatorValue = maxIndicatorValue,
     lastEvaluatedAt = parseInstant(lastEvaluatedAt),
+)
+
+internal fun openingFromApi(value: String?): SegmentOpening = when (value) {
+    "OPEN" -> SegmentOpening.OPEN
+    "UP" -> SegmentOpening.UP
+    "DOWN" -> SegmentOpening.DOWN
+    "REACTIVATION" -> SegmentOpening.REACTIVATION
+    else -> SegmentOpening.UNKNOWN
+}
+
+internal fun messageKindFromApi(value: String?): MessageKind = when (value) {
+    "NOTIFICACION" -> MessageKind.NOTIFICATION
+    "ACTUALIZACION" -> MessageKind.UPDATE
+    "RESUMEN" -> MessageKind.SUMMARY
+    "FIN" -> MessageKind.END
+    "GESTION" -> MessageKind.MANAGEMENT
+    else -> MessageKind.UNKNOWN
+}
+
+/** Un tramo sin fecha de inicio válida no se puede ubicar en la línea de tiempo: se omite. */
+private fun LevelDto.toSegment(): LevelSegment? {
+    val start = parseInstant(startedAt) ?: return null
+    return LevelSegment(
+        seq = seq,
+        openedBy = openingFromApi(openedBy),
+        level = levelFromApi(level),
+        startedAt = start,
+        endedAt = parseInstant(endedAt),
+        // Por `at` ascendente; un mensaje sin fecha queda al final, en el orden en que llegó.
+        messages = messages.map { it.toDomain() }.sortedWith(compareBy(nullsLast()) { it.at }),
+    )
+}
+
+private fun LevelMessageDto.toDomain() = AlertMessage(
+    id = id,
+    at = parseInstant(at),
+    kind = messageKindFromApi(kind),
+    code = code,
+    level = levelFromApi(level),
+    title = title.orEmpty(),
+    body = body.orEmpty(),
+    indicatorValue = indicatorValue,
 )
 
 private fun LevelDto.toDomain(): LevelChange? {

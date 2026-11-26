@@ -7,6 +7,9 @@ import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertState
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ManagementAction
+import com.hivend.agatha.domain.model.MessageKind
+import com.hivend.agatha.domain.model.SegmentOpening
+import com.hivend.agatha.domain.model.filteredByLevel
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.ObservationKind
 import com.hivend.agatha.domain.model.Origin
@@ -191,5 +194,68 @@ class AlertMappersTest {
         assertEquals(AlertTag.OTHER_CONFIRMED, tagFromApi(AlertClassification.CONFIRMED, "OTRO"))
         assertEquals(AlertTag.OTHER_FALSE_ALARM, tagFromApi(AlertClassification.FALSE_ALARM, "OTRO"))
         assertNull(tagFromApi(AlertClassification.CONFIRMED, "CLIMA_EXTREMO"))
+    }
+
+    /** Amarillo → Naranja → Amarillo: el mismo color se repite en tramos separados (guía §5.4). */
+    private val segmentsDetail = """
+        {"id":142,"code":"ALR-000142","device":{"id":11556,"pk":"Sensor PK34-470"},"event":"FUGA","state":"ACTIVA",
+         "started_at":"2026-11-20T08:00:00-05:00","in_progress":true,"current_level":"AMARILLO","max_level":"NARANJA",
+         "levels":[
+          {"seq":3,"opened_by":"DOWN","level":"AMARILLO","started_at":"2026-11-20T18:00:00-05:00","ended_at":null,
+           "messages":[{"id":9020,"at":"2026-11-20T18:00:00-05:00","kind":"ACTUALIZACION","code":"DOWNGRADE","level":"AMARILLO",
+             "title":"La alerta bajó a nivel Amarillo","body":"Línea 1\nLínea 2"}]},
+          {"seq":1,"opened_by":"OPEN","level":"AMARILLO","started_at":"2026-11-20T08:00:00-05:00","ended_at":"2026-11-20T14:00:00-05:00",
+           "messages":[
+             {"id":9007,"at":"2026-11-20T12:00:00-05:00","kind":"ACTUALIZACION","code":"COUNTDOWN","level":"AMARILLO","indicator_value":0.21,"title":"Puede subir","body":"b"},
+             {"id":9001,"at":"2026-11-20T08:00:00-05:00","kind":"NOTIFICACION","code":"OPEN","level":"AMARILLO","indicator_value":0.18,"title":"Alerta nueva","body":"a"}]},
+          {"seq":2,"opened_by":"TELEPORT","level":"NARANJA","started_at":"2026-11-20T14:00:00-05:00","ended_at":"2026-11-20T18:00:00-05:00",
+           "messages":[{"id":9010,"at":"2026-11-20T14:00:00-05:00","kind":"NUEVO_TIPO","code":"CODIGO_FUTURO","level":"NARANJA","title":"Subió","body":null},
+             {"id":9011,"at":"2026-11-20T15:00:00-05:00","kind":"GESTION","code":"CLASSIFIED","level":"NARANJA","indicator_value":null,"title":"Alerta clasificada","body":""}]}
+         ]}
+    """.trimIndent()
+
+    @Test
+    fun `maps the level segments in seq order with their messages by time`() {
+        val segments = orFail(alert(segmentsDetail)).levelSegments
+
+        assertEquals(listOf(1, 2, 3), segments.map { it.seq })
+        assertEquals(listOf(AlertLevel.YELLOW, AlertLevel.ORANGE, AlertLevel.YELLOW), segments.map { it.level })
+        assertEquals(listOf(SegmentOpening.OPEN, SegmentOpening.UNKNOWN, SegmentOpening.DOWN), segments.map { it.openedBy })
+        assertEquals(listOf(9001L, 9007L), segments[0].messages.map { it.id })
+        assertEquals(MessageKind.NOTIFICATION, segments[0].messages[0].kind)
+        assertEquals(0.18, segments[0].messages[0].indicatorValue!!, 1e-9)
+        assertEquals(true, segments[2].isCurrent)
+        assertEquals(false, segments[0].isCurrent)
+        // El cuerpo llega sin modificar, con sus saltos de línea.
+        assertEquals("Línea 1\nLínea 2", segments[2].messages.single().body)
+    }
+
+    @Test
+    fun `unknown message kinds and codes are kept with the default style`() {
+        val orange = orFail(alert(segmentsDetail)).levelSegments[1]
+
+        assertEquals(MessageKind.UNKNOWN, orange.messages[0].kind)
+        assertEquals("CODIGO_FUTURO", orange.messages[0].code)
+        assertEquals("", orange.messages[0].body)
+        assertEquals(MessageKind.MANAGEMENT, orange.messages[1].kind)
+        assertNull(orange.messages[1].indicatorValue)
+    }
+
+    @Test
+    fun `the color filter keeps every segment of that color without grouping them`() {
+        val segments = orFail(alert(segmentsDetail)).levelSegments
+
+        assertEquals(listOf(1, 3), segments.filteredByLevel(AlertLevel.YELLOW).map { it.seq })
+        assertEquals(listOf(2), segments.filteredByLevel(AlertLevel.ORANGE).map { it.seq })
+        assertTrue(segments.filteredByLevel(AlertLevel.RED).isEmpty())
+        assertEquals(listOf(1, 2, 3), segments.filteredByLevel(null).map { it.seq })
+    }
+
+    @Test
+    fun `a segment with an unknown level is kept without a level and without crashing`() {
+        val alert = orFail(alert(segmentsDetail.replace("\"level\":\"NARANJA\",\"started_at\"", "\"level\":\"MORADO\",\"started_at\"")))
+
+        assertNull(alert.levelSegments[1].level)
+        assertEquals(3, alert.levelSegments.size)
     }
 }

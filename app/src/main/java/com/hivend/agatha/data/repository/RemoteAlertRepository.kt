@@ -150,6 +150,7 @@ class RemoteAlertRepository @Inject constructor(
         if (old == null) return row
         return row.copy(
             levelTimeline = old.levelTimeline,
+            levelSegments = old.levelSegments,
             observations = old.observations,
             indicatorValue = old.indicatorValue,
             classification = mergeClassification(old.classification, row.classification),

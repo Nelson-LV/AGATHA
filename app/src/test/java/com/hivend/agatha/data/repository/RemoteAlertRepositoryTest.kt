@@ -218,7 +218,9 @@ class RemoteAlertRepositoryTest {
         val api = FakeApi()
         api.recent += dto(1)
         api.details["ALR-000001"] = dto(1).copy(
-            levels = listOf(com.hivend.agatha.data.remote.alerts.LevelDto(1, "NARANJA", "2026-10-20T10:01:00-05:00")),
+            levels = listOf(
+                com.hivend.agatha.data.remote.alerts.LevelDto(seq = 1, openedBy = "OPEN", level = "NARANJA", startedAt = "2026-10-20T10:01:00-05:00"),
+            ),
         )
         val repo = repository(api)
         repo.refreshAlerts()
@@ -227,6 +229,7 @@ class RemoteAlertRepositoryTest {
         repo.refreshAlerts()
 
         assertEquals(1, repo.observeAlert("ALR-000001").first()!!.levelTimeline.size)
+        assertEquals(1, repo.observeAlert("ALR-000001").first()!!.levelSegments.size)
     }
 
     @Test

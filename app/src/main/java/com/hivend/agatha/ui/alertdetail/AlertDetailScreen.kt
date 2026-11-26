@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import com.hivend.agatha.domain.model.filteredByLevel
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -124,6 +126,8 @@ fun AlertDetailScreen(
     }
     /** Clasificación elegida que espera confirmación: no se puede cambiar después (RN-06). */
     var pendingChoice by remember { mutableStateOf<AlertClassification?>(null) }
+    /** Filtro por color de los tramos (guía §6.1); null = Todos. */
+    var segmentFilter by rememberSaveable { mutableStateOf<AlertLevel?>(null) }
 
     pendingChoice?.let { choice ->
         ClassifyDialog(
@@ -183,6 +187,30 @@ fun AlertDetailScreen(
                     onClassify = { pendingChoice = it },
                     onNewReport = { onRegisterInspection(alert.id) },
                 )
+            }
+            // Tramos de color con sus mensajes (guía §5.4, §6): un bloque por tramo, en orden de seq.
+            item(key = "segments-header") {
+                Column(modifier = Modifier.fillMaxWidth().agathaCard().padding(14.dp)) {
+                    LevelSegmentsHeader(
+                        selected = segmentFilter,
+                        onSelect = { segmentFilter = it },
+                        empty = alert.levelSegments.isEmpty(),
+                    )
+                }
+            }
+            val shownSegments = alert.levelSegments.filteredByLevel(segmentFilter)
+            if (shownSegments.isEmpty() && alert.levelSegments.isNotEmpty()) {
+                item(key = "segments-filter-empty") {
+                    Text(
+                        stringResource(R.string.alert_detail_messages_filter_empty),
+                        color = AgathaTheme.colors.textSecondary,
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(horizontal = 4.dp),
+                    )
+                }
+            }
+            itemsIndexed(shownSegments, key = { index, segment -> "segment-$index-${segment.seq}" }) { _, segment ->
+                LevelSegmentBlock(segment)
             }
             item {
                 ClassificationCard(

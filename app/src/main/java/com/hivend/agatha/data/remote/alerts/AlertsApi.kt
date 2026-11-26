@@ -164,20 +164,28 @@ data class ObservationDto(
     @SerialName("received_at") val receivedAt: String? = null,
 )
 
+/** Tramo de un color de la alerta (guía §5.4). */
 @Serializable
 data class LevelDto(
     val seq: Int = 0,
-    val level: String,
-    @SerialName("started_at") val startedAt: String,
+    @SerialName("opened_by") val openedBy: String? = null,
+    val level: String? = null,
+    @SerialName("started_at") val startedAt: String? = null,
     @SerialName("ended_at") val endedAt: String? = null,
     val messages: List<LevelMessageDto> = emptyList(),
 )
 
+/** Mensaje de un tramo: [title] y [body] vienen redactados por el backend y se muestran tal cual. */
 @Serializable
 data class LevelMessageDto(
     val id: Long = 0,
     val at: String? = null,
+    val kind: String? = null,
+    val code: String? = null,
+    val level: String? = null,
     @SerialName("indicator_value") val indicatorValue: Double? = null,
+    val title: String? = null,
+    val body: String? = null,
 )
 
 // Los cuerpos de envío no llevan valores por defecto: kotlinx.serialization los omitiría y el
