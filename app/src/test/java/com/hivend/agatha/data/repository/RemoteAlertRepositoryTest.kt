@@ -417,6 +417,41 @@ class RemoteAlertRepositoryTest {
     }
 
     @Test
+    fun `a queued observation is sent with its record id so a retry does not duplicate it`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1, classification = "CONFIRMADA")
+        val repo = repository(api)
+        repo.refreshAlerts()
+
+        repo.registerInspection(report(null, "Cuadrilla en el sitio"))
+        val queued = outbox.all.single { it.type == SyncRecordType.OBSERVATION }
+        repo.sendQueued(queued.id)
+        repo.sendQueued(queued.id)
+
+        assertEquals(2, api.observationCalls.size)
+        api.observationCalls.forEach { sent ->
+            assertEquals(queued.id, sent.clientRecordId)
+            assertEquals(at.toString(), sent.recordedAt)
+            assertEquals("CEL-TEST01", sent.deviceIdentifier)
+            assertEquals("APP_MOVIL", sent.origin)
+        }
+    }
+
+    @Test
+    fun `an online observation carries a record id, the time and the phone`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        val repo = repository(api)
+
+        repo.addObservation("ALR-000001", "Texto", phone)
+
+        val sent = api.observationCalls.single()
+        assertEquals("CEL-TEST01", sent.deviceIdentifier)
+        assertTrue(runCatching { java.util.UUID.fromString(sent.clientRecordId) }.isSuccess)
+        assertTrue(runCatching { java.time.OffsetDateTime.parse(sent.recordedAt) }.isSuccess)
+    }
+
+    @Test
     fun `a tag sent before the classification arrives stays pending and goes out later`() = runBlocking {
         val api = FakeApi()
         api.recent += dto(1, classification = "CONFIRMADA")

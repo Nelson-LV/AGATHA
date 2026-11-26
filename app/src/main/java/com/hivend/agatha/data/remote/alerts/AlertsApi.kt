@@ -185,11 +185,17 @@ data class LabelRequestDto(
     @SerialName("recorded_at") val recordedAt: String?,
 )
 
+/**
+ * Observación (guía §7.4). Con [clientRecordId] el servidor descarta un reintento del mismo
+ * registro (responde 200 ALREADY_RECEIVED), así una observación de la cola no se duplica.
+ */
 @Serializable
 data class ObservationRequestDto(
     val text: String,
     val origin: String,
-    @SerialName("device_identifier") val deviceIdentifier: String?,
+    @SerialName("device_identifier") val deviceIdentifier: String,
+    @SerialName("client_record_id") val clientRecordId: String,
+    @SerialName("recorded_at") val recordedAt: String?,
 )
 
 /**

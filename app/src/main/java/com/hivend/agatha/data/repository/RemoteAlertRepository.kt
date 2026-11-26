@@ -216,7 +216,15 @@ class RemoteAlertRepository @Inject constructor(
     // ---- Observaciones -------------------------------------------------------------------
 
     override suspend fun addObservation(alertId: String, text: String, origin: Origin): AlertResult<Unit> {
-        val posted = post { api.observe(alertId, ObservationRequestDto(text, ORIGIN_MOBILE_APP, origin.deviceIdOrNull())) }
+        // Un client_record_id por observación: si la respuesta se pierde y se reenvía, no se duplica.
+        val request = ObservationRequestDto(
+            text = text,
+            origin = ORIGIN_MOBILE_APP,
+            deviceIdentifier = origin.deviceIdOrNull().orEmpty(),
+            clientRecordId = UUID.randomUUID().toString(),
+            recordedAt = Instant.now().toString(),
+        )
+        val posted = post { api.observe(alertId, request) }
         return when (posted) {
             is Posted.Ok, is Posted.SavedAsConflict -> {
                 loadAlert(alertId)
@@ -375,7 +383,13 @@ class RemoteAlertRepository @Inject constructor(
         SyncRecordType.OBSERVATION -> post {
             api.observe(
                 action.alertId,
-                ObservationRequestDto(checkNotNull(action.text), ORIGIN_MOBILE_APP, action.deviceIdentifier.ifEmpty { null }),
+                ObservationRequestDto(
+                    text = checkNotNull(action.text),
+                    origin = ORIGIN_MOBILE_APP,
+                    deviceIdentifier = action.deviceIdentifier,
+                    clientRecordId = action.id,
+                    recordedAt = action.recordedAt.toString(),
+                ),
             )
         }
         SyncRecordType.PHOTO -> error("${action.type} is not an alert action")

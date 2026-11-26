@@ -25,7 +25,8 @@ data class SyncRun(val sent: Int, val retryLater: Boolean)
  * - una entrada en Error solo vuelve a salir con el reintento manual (HU-7.3).
  *
  * Es @Singleton y procesa una pasada a la vez: WorkManager puede correr el envío inmediato y el
- * periódico al mismo tiempo, y una observación (que la API no deduplica) llegaba dos veces.
+ * periódico al mismo tiempo. Todos los envíos llevan `client_record_id` y el servidor descarta los
+ * repetidos (guía §7.1), pero procesar una sola pasada evita además pedidos inútiles.
  */
 @Singleton
 class SyncQueueProcessor @Inject constructor(
