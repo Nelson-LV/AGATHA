@@ -40,6 +40,20 @@ fun releaseSecret(name: String): String? =
     localProperties.getProperty(name)?.trim()?.takeIf { it.isNotEmpty() }
         ?: System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() }
 val releaseStoreFile: String? = releaseSecret("RELEASE_STORE_FILE")
+val releaseSigningSecrets =
+    listOf("RELEASE_STORE_FILE", "RELEASE_STORE_PASSWORD", "RELEASE_KEY_ALIAS", "RELEASE_KEY_PASSWORD")
+
+// Un APK/AAB de release o QA sin la llave de release no sirve: Google Play lo rechaza y en el
+// celular no actualiza la versión instalada. Si se pide uno sin la firma configurada, el build
+// falla de entrada en vez de entregar un artefacto sin firmar. lint/test de release no lo piden.
+val signedVariantTask = Regex("""(^|:)(assemble|bundle|appDistributionUpload)(Release|Qa)$""")
+val missingSigningSecrets = releaseSigningSecrets.filter { releaseSecret(it) == null }
+if (missingSigningSecrets.isNotEmpty() && gradle.startParameter.taskNames.any { signedVariantTask.containsMatchIn(it) }) {
+    throw GradleException(
+        "Falta la firma de release (${missingSigningSecrets.joinToString()}). Configúrala en " +
+            "local.properties o en variables de entorno: ver docs/PUBLICACION_GOOGLE_PLAY.md.",
+    )
+}
 
 // versionCode = número de commits de la rama: crece solo en cada versión y permite que el
 // celular acepte la nueva como actualización. En el CI el checkout debe traer el historial
