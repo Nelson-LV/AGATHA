@@ -79,6 +79,7 @@ import com.hivend.agatha.ui.components.shortLabelRes
 import com.hivend.agatha.ui.components.formatDateTime
 import com.hivend.agatha.ui.components.label
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.ManagementAction
 import com.hivend.agatha.ui.components.StatusChip
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.pluralStringResource
@@ -246,42 +247,71 @@ private fun AlertCard(alert: Alert, onClassify: (AlertClassification) -> Unit, o
                         ?: stringResource(R.string.common_empty_value)
                     ),
                 stringResource(R.string.alert_detail_max_level) to stringResource(alert.maxLevel.shortLabelRes()),
-            ),
+            ) + serverFacts(alert),
             ongoing = alert.isOngoing,
         )
 
         LevelTimeline(alert)
 
-        if (alert.classification == null) {
+        // Los botones son los que habilita el backend (available_actions, guía §4), no una regla propia.
+        val actions = alert.availableActions
+        val canConfirm = ManagementAction.CONFIRM in actions
+        val canFalseAlarm = ManagementAction.FALSE_ALERT in actions
+        if (canConfirm || canFalseAlarm) {
             Text(
                 stringResource(R.string.inspection_classification_info),
                 color = AgathaTheme.colors.textSecondary,
                 style = MaterialTheme.typography.bodySmall,
             )
             Row(horizontalArrangement = Arrangement.spacedBy(10.dp), modifier = Modifier.fillMaxWidth()) {
-                ClassificationButton(
-                    text = stringResource(R.string.inspection_false_alarm),
-                    color = AgathaTheme.colors.classificationFalseAlarm,
-                    onClick = { onClassify(AlertClassification.FALSE_ALARM) },
-                    modifier = Modifier.weight(1f),
-                )
-                ClassificationButton(
-                    text = stringResource(R.string.inspection_confirm_alert),
-                    color = AgathaTheme.colors.critical,
-                    onClick = { onClassify(AlertClassification.CONFIRMED) },
-                    modifier = Modifier.weight(1f),
-                )
+                if (canFalseAlarm) {
+                    ClassificationButton(
+                        text = stringResource(R.string.inspection_false_alarm),
+                        color = AgathaTheme.colors.classificationFalseAlarm,
+                        onClick = { onClassify(AlertClassification.FALSE_ALARM) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                if (canConfirm) {
+                    ClassificationButton(
+                        text = stringResource(R.string.inspection_confirm_alert),
+                        color = AgathaTheme.colors.critical,
+                        onClick = { onClassify(AlertClassification.CONFIRMED) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
             }
-        } else {
+        } else if (alert.classification != null) {
+            // Con ADD_LABEL el reporte agrega la etiqueta; sin ella (solo VIEW) la gestión es de solo
+            // lectura y el reporte lleva solo lo propio de la app: mantenimiento, fotos y observación.
+            val addLabel = ManagementAction.ADD_LABEL in actions
             Button(
                 onClick = onNewReport,
                 colors = ButtonDefaults.buttonColors(containerColor = AgathaTheme.colors.brand),
                 modifier = Modifier.fillMaxWidth(),
             ) {
                 Icon(Icons.Filled.Add, contentDescription = null, modifier = Modifier.size(16.dp))
-                Text(stringResource(R.string.alert_detail_new_inspection_report), modifier = Modifier.padding(start = 4.dp))
+                Text(
+                    stringResource(if (addLabel) R.string.alert_detail_add_label else R.string.alert_detail_new_inspection_report),
+                    modifier = Modifier.padding(start = 4.dp),
+                )
             }
         }
+    }
+}
+
+/** Datos que calcula el backend (guía §5.4); solo se muestran los que llegaron. */
+@Composable
+private fun serverFacts(alert: Alert): List<Pair<String, String>> = buildList {
+    val server = alert.server
+    server.durationHours?.let {
+        add(stringResource(R.string.alert_detail_duration) to pluralStringResource(R.plurals.alert_detail_duration_hours, it, it))
+    }
+    server.maxIndicatorValue?.let {
+        add(stringResource(R.string.alert_detail_max_indicator) to stringResource(R.string.alert_detail_indicator_value, it))
+    }
+    server.reactivationCount?.takeIf { it > 0 }?.let {
+        add(stringResource(R.string.alert_detail_reactivations) to it.toString())
     }
 }
 

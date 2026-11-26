@@ -133,6 +133,14 @@
     <string name="alert_detail_no_reports">Todavía no hay reportes de inspección para esta alerta.</string>
     <string name="alert_detail_pending_sync">Pendiente de sincronizar</string>
     <string name="alert_detail_report_maintenance">Mantenimiento: %1$s</string>
+    <string name="alert_detail_add_label">Agregar etiqueta</string>
+    <string name="alert_detail_duration">Duración</string>
+    <plurals name="alert_detail_duration_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
+    <string name="alert_detail_max_indicator">Indicador máximo</string>
+    <string name="alert_detail_reactivations">Reactivaciones</string>
     <string name="alert_detail_new_inspection_report">Nuevo reporte de inspección</string>
     <string name="alert_detail_classify_dialog_title">¿Clasificar como “%1$s”?</string>
     <string name="alert_detail_classify_dialog_text">La clasificación se guarda de inmediato y no se puede cambiar después. Luego podrás agregar la etiqueta, observaciones, mantenimiento y fotos en el reporte de inspección.</string>

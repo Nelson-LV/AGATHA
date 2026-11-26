@@ -120,6 +120,14 @@
     <string name="alert_detail_no_reports">No inspection reports for this alert yet.</string>
     <string name="alert_detail_pending_sync">Pending sync</string>
     <string name="alert_detail_report_maintenance">Maintenance: %1$s</string>
+    <string name="alert_detail_add_label">Add label</string>
+    <string name="alert_detail_duration">Duration</string>
+    <plurals name="alert_detail_duration_hours">
+        <item quantity="one">%d h</item>
+        <item quantity="other">%d h</item>
+    </plurals>
+    <string name="alert_detail_max_indicator">Maximum indicator</string>
+    <string name="alert_detail_reactivations">Reactivations</string>
     <string name="alert_detail_new_inspection_report">New inspection report</string>
     <string name="alert_detail_classify_dialog_title">Classify as “%1$s”?</string>
     <string name="alert_detail_classify_dialog_text">The classification is saved right away and cannot be changed later. You can then add the tag, observations, maintenance and photos in the inspection report.</string>

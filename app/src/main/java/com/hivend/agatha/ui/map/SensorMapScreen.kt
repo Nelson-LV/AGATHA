@@ -125,6 +125,7 @@ fun SensorMapScreen(
                 selectedNodeId = state.selectedNode?.id,
                 onNodeTap = viewModel::selectNode,
                 modifier = Modifier.matchParentSize().clipToBounds(),
+                blinkingNodeIds = state.blinkingNodeIds,
             )
 
             if (state.isLoading || state.isRouteLoading) {

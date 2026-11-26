@@ -4,7 +4,9 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.AlertState
 import com.hivend.agatha.domain.model.AlertTag
+import com.hivend.agatha.domain.model.ManagementAction
 import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.ObservationKind
 import com.hivend.agatha.domain.model.Origin
@@ -59,6 +61,30 @@ class AlertMappersTest {
         assertEquals(1, alert.levelTimeline.size)
         assertEquals(AlertLevel.YELLOW, alert.levelTimeline.single().level)
         assertEquals(0.1656, alert.levelTimeline.single().indicatorValue!!, 1e-9)
+    }
+
+    @Test
+    fun `reads the state, actions and figures the backend computes`() {
+        val alert = orFail(alert(finishedDetail.replace("\"reactivation_count\":0", "\"reactivation_count\":2,\"max_indicator_value\":0.31")))
+        val server = alert.server
+
+        assertEquals(AlertState.FINISHED, server.state)
+        assertEquals(ManagementStatus.UNCLASSIFIED, server.managementStatus)
+        assertEquals(setOf(ManagementAction.CONFIRM, ManagementAction.FALSE_ALERT, ManagementAction.VIEW), server.availableActions)
+        assertEquals(false, server.blinking)
+        assertEquals(7, server.durationHours)
+        assertEquals(2, server.reactivationCount)
+        assertEquals(0.1656, server.openingIndicatorValue!!, 1e-9)
+        assertEquals(0.31, server.maxIndicatorValue!!, 1e-9)
+        assertEquals(false, alert.isOngoing)
+        assertEquals(false, alert.isBlinking)
+    }
+
+    @Test
+    fun `unknown actions are ignored and the known ones kept`() {
+        val alert = orFail(alert(finishedDetail.replace("\"available_actions\":[\"CONFIRM\",\"FALSE_ALERT\",\"VIEW\"]", "\"available_actions\":[\"VIEW\",\"REOPEN\"]")))
+
+        assertEquals(setOf(ManagementAction.VIEW), alert.availableActions)
     }
 
     @Test

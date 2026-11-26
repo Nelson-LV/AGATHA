@@ -1,6 +1,5 @@
 package com.hivend.agatha.ui.alerts
 
-import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.ui.components.levelColor
 import com.hivend.agatha.ui.components.agathaCard
 import androidx.compose.runtime.ReadOnlyComposable
@@ -45,7 +44,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.time.Duration
 import java.time.Instant
 import com.hivend.agatha.domain.model.Alert
-import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.ui.components.AgathaHeader
 import com.hivend.agatha.ui.components.ConnectivityBar
 import com.hivend.agatha.ui.components.LocalOnline
@@ -172,8 +170,8 @@ fun AlertInboxScreen(
 
 @Composable
 internal fun AlertCard(alert: Alert, onClick: () -> Unit) {
-    // Una alerta roja sin clasificar se tiñe, como la tarjeta "Nueva" de la web: es lo primero que debe verse.
-    val highlighted = alert.level == AlertLevel.RED && alert.managementStatus == ManagementStatus.UNCLASSIFIED
+    // `blinking` del backend (ACTIVA + ROJO + Sin clasificar) se tiñe, como la tarjeta "Nueva" de la web.
+    val highlighted = alert.isBlinking
     // Como la tarjeta de alerta de la web: franja de nivel, evento, inicio y "Disp. · PK · Municipio".
     Column(
         verticalArrangement = Arrangement.spacedBy(4.dp),

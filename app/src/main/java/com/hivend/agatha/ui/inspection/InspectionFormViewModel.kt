@@ -12,6 +12,7 @@ import com.hivend.agatha.core.navigation.AgathaDestination
 import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertTag
+import com.hivend.agatha.domain.model.ManagementAction
 import com.hivend.agatha.domain.model.Inspection
 import com.hivend.agatha.domain.model.MaintenanceRecord
 import com.hivend.agatha.domain.model.MaintenanceType
@@ -55,8 +56,9 @@ data class InspectionFormUiState(
     val classification: AlertClassification? get() = alert?.classification?.classification
 
     /** La etiqueta solo se puede elegir si la alerta está clasificada y aún no tiene una (RN-06). */
+    /** La etiqueta solo se ofrece si el backend habilita ADD_LABEL (guía §4). */
     val canTag: Boolean
-        get() = classification != null && alert?.classification?.tag == null
+        get() = classification != null && alert?.availableActions?.contains(ManagementAction.ADD_LABEL) == true
 
     val tagDetailMissing: Boolean
         get() = canTag && draft.tag?.requiresDetail == true && draft.tagOtherDetail.isBlank()

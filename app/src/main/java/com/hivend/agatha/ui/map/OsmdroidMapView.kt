@@ -54,6 +54,7 @@ internal fun OsmdroidMapView(
     selectedNodeId: String?,
     onNodeTap: (String) -> Unit,
     modifier: Modifier = Modifier,
+    blinkingNodeIds: Set<String> = emptySet(),
 ) {
     val context = LocalContext.current.applicationContext
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -78,6 +79,7 @@ internal fun OsmdroidMapView(
                     route = geoRoute,
                     nodes = nodes,
                     selectedNodeId = selectedNodeId,
+                    blinkingNodeIds = blinkingNodeIds,
                     onNodeTap = onNodeTap,
                 )
                 if (!hasFramedPipeline && geoRoute.size > 1) {
@@ -154,6 +156,7 @@ private fun updateMapOverlays(
     route: List<GeoPoint>,
     nodes: List<SensorNode>,
     selectedNodeId: String?,
+    blinkingNodeIds: Set<String>,
     onNodeTap: (String) -> Unit,
 ) {
     mapView.overlays.clear()
@@ -185,7 +188,7 @@ private fun updateMapOverlays(
             title = node.id
             setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
             setInfoWindow(null)
-            icon = nodeMarkerIcon(mapView.context, node.nodeStatus, node.id == selectedNodeId)
+            icon = nodeMarkerIcon(mapView.context, node.nodeStatus, node.id == selectedNodeId, node.id in blinkingNodeIds)
             setOnMarkerClickListener { tappedMarker, _ ->
                 onNodeTap(node.id)
                 tappedMarker.closeInfoWindow()
@@ -219,14 +222,21 @@ private fun nodeMarkerIcon(
     context: Context,
     status: SensorNodeStatus,
     selected: Boolean,
+    highlighted: Boolean,
 ): GradientDrawable {
     val density = context.resources.displayMetrics.density
-    val diameter = if (selected) 22f else 17f
+    // Una alerta `blinking` se destaca con un borde grueso oscuro, más grande que el resto.
+    val diameter = when {
+        selected -> 22f
+        highlighted -> 21f
+        else -> 17f
+    }
     return GradientDrawable().apply {
         shape = GradientDrawable.OVAL
         setColor(status.markerColor())
         setSize((diameter * density).toInt(), (diameter * density).toInt())
-        setStroke((2f * density).toInt(), Color.WHITE)
+        if (highlighted) setStroke((3.5f * density).toInt(), HIGHLIGHT_STROKE_COLOR)
+        else setStroke((2f * density).toInt(), Color.WHITE)
     }
 }
 
@@ -247,6 +257,7 @@ private val PIPELINE_BOUNDS = BoundingBox(
     -73.70,
 )
 
+private const val HIGHLIGHT_STROKE_COLOR = 0xFF7F1D1D.toInt()
 internal const val PIPELINE_MAIN_COLOR = 0xFF0D5D95.toInt()
 internal const val PIPELINE_OUTLINE_COLOR = 0xFFFFFFFF.toInt()
 internal const val PIPELINE_MAIN_WIDTH_DP = 5f

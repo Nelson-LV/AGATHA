@@ -4,6 +4,7 @@ import com.hivend.agatha.domain.model.Alert
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
+import com.hivend.agatha.domain.model.AlertServerState
 import com.hivend.agatha.domain.model.ClassificationRecord
 import java.time.Instant
 import org.junit.Assert.assertEquals
@@ -58,5 +59,15 @@ class MapInspectionAlertTest {
 
         assertNull(alerts.latestUnclassifiedFor("MP-11556"))
         assertNull(emptyList<Alert>().latestUnclassifiedFor("MP-11556"))
+    }
+
+    @Test
+    fun `highlights the devices whose alert the backend marks as blinking`() {
+        val alerts = listOf(
+            alert("ALR-000001", startedAt = "2026-11-10T10:00:00Z").copy(server = AlertServerState(blinking = true)),
+            alert("ALR-000002", deviceId = 20001, startedAt = "2026-11-10T10:00:00Z").copy(server = AlertServerState(blinking = false)),
+        )
+
+        assertEquals(setOf("MP-11556"), alerts.blinkingSensorIds())
     }
 }

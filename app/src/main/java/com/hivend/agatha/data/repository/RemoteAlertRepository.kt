@@ -153,6 +153,8 @@ class RemoteAlertRepository @Inject constructor(
             observations = old.observations,
             indicatorValue = old.indicatorValue,
             classification = mergeClassification(old.classification, row.classification),
+            // La fila trae estado, acciones y parpadeo; los datos del detalle se conservan.
+            server = row.server.orElse(old.server),
         )
     }
 

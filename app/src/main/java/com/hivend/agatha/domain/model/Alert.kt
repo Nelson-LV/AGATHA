@@ -45,6 +45,61 @@ data class LevelChange(
     val indicatorValue: Double? = null,
 )
 
+/** Estado de la alerta según el backend (guía §2): una Finalizada puede volver a Activa. */
+enum class AlertState {
+    ACTIVE,
+    FINISHED,
+}
+
+/** Acción de gestión que el backend habilita en una alerta (`available_actions`, guía §4). */
+enum class ManagementAction {
+    CONFIRM,
+    FALSE_ALERT,
+    ADD_LABEL,
+    VIEW,
+}
+
+/**
+ * Lo que el backend calcula de una alerta y la app muestra tal cual, sin reglas propias (guía
+ * §4, §5.4). Cada campo es null si la respuesta no lo trajo: las filas de la lista no traen los
+ * del detalle, y entonces [Alert] usa su regla derivada.
+ */
+data class AlertServerState(
+    val state: AlertState? = null,
+    val managementStatus: ManagementStatus? = null,
+    val availableActions: Set<ManagementAction>? = null,
+    /** ACTIVA + ROJO + Sin clasificar: la UI la destaca. */
+    val blinking: Boolean? = null,
+    /** Horas transcurridas hasta el fin o la última hora procesada (el número del mensaje de fin). */
+    val durationHours: Int? = null,
+    val reactivationCount: Int? = null,
+    val lastReactivatedAt: Instant? = null,
+    val openingIndicatorValue: Double? = null,
+    val maxIndicatorValue: Double? = null,
+    val lastEvaluatedAt: Instant? = null,
+) {
+    /** Completa lo que esta respuesta no trajo con lo que ya se sabía (p. ej. una fila sobre un detalle). */
+    fun orElse(known: AlertServerState) = AlertServerState(
+        state = state ?: known.state,
+        managementStatus = managementStatus ?: known.managementStatus,
+        availableActions = availableActions ?: known.availableActions,
+        blinking = blinking ?: known.blinking,
+        durationHours = durationHours ?: known.durationHours,
+        reactivationCount = reactivationCount ?: known.reactivationCount,
+        lastReactivatedAt = lastReactivatedAt ?: known.lastReactivatedAt,
+        openingIndicatorValue = openingIndicatorValue ?: known.openingIndicatorValue,
+        maxIndicatorValue = maxIndicatorValue ?: known.maxIndicatorValue,
+        lastEvaluatedAt = lastEvaluatedAt ?: known.lastEvaluatedAt,
+    )
+}
+
+/** Acciones que corresponden a un estado de gestión cuando el backend no las informa (guía §4). */
+fun ManagementStatus.defaultActions(): Set<ManagementAction> = when (this) {
+    ManagementStatus.UNCLASSIFIED -> setOf(ManagementAction.CONFIRM, ManagementAction.FALSE_ALERT, ManagementAction.VIEW)
+    ManagementStatus.CLASSIFIED_WITHOUT_TAG -> setOf(ManagementAction.ADD_LABEL, ManagementAction.VIEW)
+    ManagementStatus.CLASSIFIED_WITH_TAG -> setOf(ManagementAction.VIEW)
+}
+
 /**
  * Alerta temprana generada por un dispositivo del gasoducto (HE-04), con los datos que
  * entrega la API de gestión de alertas (la misma de la web, Backlog 1.3). Es el agregado raíz que enlaza con [Inspection] y con el
@@ -67,13 +122,15 @@ data class Alert(
     /** Niveles que tomó la alerta, en orden cronológico (RN-05). Vacía hasta cargar el detalle. */
     val levelTimeline: List<LevelChange> = emptyList(),
     val startedAt: Instant,
-    /** Primer cálculo Normal o clasificación como Falsa alerta (RN-04); null = "En curso". */
+    /** Fin que informa el backend; null = "En curso". La app nunca lo inventa. */
     val endedAt: Instant? = null,
     /** Último valor calculado del indicador; null si todavía no hay (aviso, RN-02). */
     val indicatorValue: Double? = null,
     val classification: ClassificationRecord? = null,
     /** Observaciones y conflictos registrados en la alerta, en orden cronológico. */
     val observations: List<AlertObservation> = emptyList(),
+    /** Estado, acciones y datos calculados por el backend; vacío en datos de ejemplo. */
+    val server: AlertServerState = AlertServerState(),
 ) {
     init {
         require(levelTimeline.all { it.level.isAlert }) { "The timeline only holds alert levels" }
@@ -82,26 +139,46 @@ data class Alert(
     /** Identificador del dispositivo como lo nombra la app y la telemetría: "MP-11556". */
     val sensorId: String get() = "MP-$deviceId"
 
-    val isOngoing: Boolean get() = endedAt == null
+    /** Activa según el backend; sin ese dato, mientras no tenga fin. */
+    val isOngoing: Boolean get() = server.state?.let { it == AlertState.ACTIVE } ?: (endedAt == null)
 
+    /**
+     * Estado de gestión (RN-06). Solo avanza, así que vale el mayor entre el del backend y el que
+     * se deriva de la clasificación y la etiqueta: lo hecho en este celular que aún no se
+     * sincronizó se ve aunque la última respuesta del servidor no lo tenga.
+     */
     val managementStatus: ManagementStatus
-        get() = when {
-            classification == null -> ManagementStatus.UNCLASSIFIED
-            classification.tag == null -> ManagementStatus.CLASSIFIED_WITHOUT_TAG
-            else -> ManagementStatus.CLASSIFIED_WITH_TAG
+        get() {
+            val derived = when {
+                classification == null -> ManagementStatus.UNCLASSIFIED
+                classification.tag == null -> ManagementStatus.CLASSIFIED_WITHOUT_TAG
+                else -> ManagementStatus.CLASSIFIED_WITH_TAG
+            }
+            return maxOf(derived, server.managementStatus ?: derived)
         }
 
     /**
-     * Clasifica una alerta Sin clasificar (HU-5.2). Una Falsa alerta en curso termina en ese
-     * momento (RN-04). Falla si la alerta ya estaba clasificada: no se edita (RN-06).
+     * Botones de gestión (guía §4): los del backend mientras correspondan al estado que se ve; si
+     * el celular ya avanzó el estado sin sincronizar, los que corresponden a ese estado.
+     */
+    val availableActions: Set<ManagementAction>
+        get() {
+            val status = managementStatus
+            return server.availableActions?.takeIf { server.managementStatus == status } ?: status.defaultActions()
+        }
+
+    /** Destacar (parpadeo): ACTIVA + ROJO + Sin clasificar, según el backend (`blinking`). */
+    val isBlinking: Boolean
+        get() = managementStatus == ManagementStatus.UNCLASSIFIED && isOngoing &&
+            (server.blinking ?: (level == AlertLevel.RED))
+
+    /**
+     * Clasifica una alerta Sin clasificar (HU-5.2). No cambia el fin: si la alerta termina lo
+     * informa el backend. Falla si la alerta ya estaba clasificada: no se edita (RN-06).
      */
     fun classify(classification: AlertClassification, at: Instant, origin: Origin): Alert {
         check(this.classification == null) { "Alert $id is already classified" }
-        val endsNow = classification == AlertClassification.FALSE_ALARM && isOngoing
-        return copy(
-            classification = ClassificationRecord(classification, at, origin),
-            endedAt = if (endsNow) at else endedAt,
-        )
+        return copy(classification = ClassificationRecord(classification, at, origin))
     }
 
     /**

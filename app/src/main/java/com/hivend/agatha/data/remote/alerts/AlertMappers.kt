@@ -5,15 +5,20 @@ import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertEvent
 import com.hivend.agatha.domain.model.AlertLevel
 import com.hivend.agatha.domain.model.AlertObservation
+import com.hivend.agatha.domain.model.AlertServerState
+import com.hivend.agatha.domain.model.AlertState
 import com.hivend.agatha.domain.model.AlertTag
 import com.hivend.agatha.domain.model.ClassificationRecord
 import com.hivend.agatha.domain.model.LevelChange
+import com.hivend.agatha.domain.model.ManagementAction
+import com.hivend.agatha.domain.model.ManagementStatus
 import com.hivend.agatha.domain.model.ObservationKind
 import com.hivend.agatha.domain.model.Origin
 import com.hivend.agatha.domain.model.TagRecord
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.format.DateTimeParseException
+import kotlin.math.roundToInt
 
 /** Valor de `origin` que la API espera de los envíos de la app. */
 internal const val ORIGIN_MOBILE_APP = "APP_MOVIL"
@@ -31,6 +36,28 @@ internal fun levelFromApi(value: String?): AlertLevel? = when (value) {
 internal fun eventFromApi(value: String): AlertEvent? = when (value) {
     "FUGA" -> AlertEvent.LEAK
     "MOVIMIENTO" -> AlertEvent.MOVEMENT
+    else -> null
+}
+
+internal fun stateFromApi(value: String?): AlertState? = when (value) {
+    "ACTIVA" -> AlertState.ACTIVE
+    "FINALIZADA" -> AlertState.FINISHED
+    else -> null
+}
+
+internal fun managementStatusFromApi(value: String?): ManagementStatus? = when (value) {
+    "SIN_CLASIFICAR" -> ManagementStatus.UNCLASSIFIED
+    "CLASIFICADA_SIN_ETIQUETA" -> ManagementStatus.CLASSIFIED_WITHOUT_TAG
+    "CLASIFICADA_CON_ETIQUETA" -> ManagementStatus.CLASSIFIED_WITH_TAG
+    else -> null
+}
+
+/** Una acción desconocida se ignora (guía §10): la app solo dibuja los botones que conoce. */
+internal fun actionFromApi(value: String): ManagementAction? = when (value) {
+    "CONFIRM" -> ManagementAction.CONFIRM
+    "FALSE_ALERT" -> ManagementAction.FALSE_ALERT
+    "ADD_LABEL" -> ManagementAction.ADD_LABEL
+    "VIEW" -> ManagementAction.VIEW
     else -> null
 }
 
@@ -95,8 +122,22 @@ internal fun AlertDto.toDomain(): Alert? {
         indicatorValue = lastIndicatorValue,
         classification = classificationValue?.let { classificationRecord(it) },
         observations = observations.map { it.toDomain() },
+        server = serverState(),
     )
 }
+
+private fun AlertDto.serverState() = AlertServerState(
+    state = stateFromApi(state),
+    managementStatus = managementStatusFromApi(managementStatus),
+    availableActions = availableActions?.mapNotNull(::actionFromApi)?.toSet(),
+    blinking = blinking,
+    durationHours = durationHours?.roundToInt(),
+    reactivationCount = reactivationCount,
+    lastReactivatedAt = parseInstant(lastReactivatedAt),
+    openingIndicatorValue = openingIndicatorValue,
+    maxIndicatorValue = maxIndicatorValue,
+    lastEvaluatedAt = parseInstant(lastEvaluatedAt),
+)
 
 private fun LevelDto.toDomain(): LevelChange? {
     val level = levelFromApi(level) ?: return null

@@ -50,6 +50,8 @@ data class MapState(
     val telemetryLoaded: Boolean = false,
     /** Alerta que abre "Iniciar inspección" en el nodo seleccionado; null si no tiene ninguna pendiente. */
     val inspectionAlertId: String? = null,
+    /** Nodos con una alerta que el backend marca `blinking` (ACTIVA + ROJO + Sin clasificar). */
+    val blinkingNodeIds: Set<String> = emptySet(),
 )
 
 /**
@@ -82,6 +84,10 @@ internal fun List<Alert>.ongoingLevelBySensor(): Map<String, AlertLevel> =
     filter { it.isOngoing }
         .groupBy { it.sensorId }
         .mapValues { (_, alerts) -> alerts.maxOf { it.level } }
+
+/** Dispositivos ("MP-11556") con una alerta a destacar según el backend (`blinking`, guía §6.3). */
+internal fun List<Alert>.blinkingSensorIds(): Set<String> =
+    filter { it.isBlinking }.mapTo(mutableSetOf()) { it.sensorId }
 
 /**
  * La alerta que se inspecciona desde el mapa: la más reciente del dispositivo que sigue Sin
@@ -190,6 +196,7 @@ class MapViewModel @Inject constructor(
             isOffline = !isConnected,
             telemetryLoaded = devices != null,
             inspectionAlertId = content.selectedNode?.let { alertList.latestUnclassifiedFor(it.id)?.id },
+            blinkingNodeIds = alertList.blinkingSensorIds(),
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), MapState())
 

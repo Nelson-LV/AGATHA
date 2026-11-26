@@ -54,7 +54,8 @@ class InspectionTest {
         assertEquals(ManagementStatus.CLASSIFIED_WITH_TAG, updated.managementStatus)
         assertEquals(app, updated.classification?.origin)
         assertEquals("Prueba de presión", updated.classification?.tag?.otherDetail)
-        assertEquals(now, updated.endedAt)
+        // El fin lo informa el backend; clasificar como Falsa alerta no lo inventa.
+        assertEquals(alert.endedAt, updated.endedAt)
     }
 
     @Test
