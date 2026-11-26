@@ -348,9 +348,15 @@
     <string name="devices_empty">La plataforma todavía no tiene dispositivos registrados.</string>
 
     <!-- Push de alertas (HU-4.1) -->
-    <string name="push_channel_alerts_id" translatable="false">agatha_alerts</string>
+    <!-- Canal para un push con "notification" que la app no arma (debe ser el id de LevelChannel.RED). -->
+    <string name="push_channel_default_id" translatable="false">agatha_alerts_red_v1</string>
     <string name="push_channel_alerts_name">Alertas</string>
-    <string name="push_channel_alerts_description">Alertas nuevas y alertas que suben de nivel</string>
+    <string name="push_channel_red_name">Alertas rojas</string>
+    <string name="push_channel_red_description">Alertas nuevas o que suben a nivel Rojo. Sonido de alarma urgente.</string>
+    <string name="push_channel_orange_name">Alertas naranja</string>
+    <string name="push_channel_orange_description">Alertas nuevas o que suben a nivel Naranja. Sonido de dos tonos.</string>
+    <string name="push_channel_yellow_name">Alertas amarillas</string>
+    <string name="push_channel_yellow_description">Alertas nuevas de nivel Amarillo. Sonido de un tono suave.</string>
     <string name="push_title_new">Nueva alerta %1$s: %2$s</string>
     <string name="push_title_level_up">La alerta %1$s subió a %2$s</string>
     <string name="push_body_pk">PK %1$s</string>

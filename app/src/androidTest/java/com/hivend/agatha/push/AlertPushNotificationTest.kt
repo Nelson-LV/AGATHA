@@ -31,7 +31,7 @@ class AlertPushNotificationTest {
     fun setUp() {
         InstrumentationRegistry.getInstrumentation().uiAutomation
             .grantRuntimePermission(context.packageName, Manifest.permission.POST_NOTIFICATIONS)
-        notifier.createChannel()
+        notifier.createChannels()
         manager.cancelAll()
     }
 
@@ -72,6 +72,28 @@ class AlertPushNotificationTest {
                 assertEquals(context.getString(title, alertId, context.getString(levelLabel)), titleOf(alertId))
             }
         }
+    }
+
+    @Test
+    fun eachLevelPostsToItsOwnChannelWithItsOwnSound() {
+        val expected = mapOf(
+            "YELLOW" to R.raw.alert_yellow,
+            "ORANGE" to R.raw.alert_orange,
+            "RED" to R.raw.alert_red,
+        )
+        val sounds = mutableSetOf<String>()
+        for ((level, sound) in expected) {
+            val alertId = "ALR-SOUND-$level"
+            deliver(payload(alertId, level, "NEW"))
+            assertTrue(titleOf(alertId) != null)
+            val channelId = manager.activeNotifications.first { it.id == alertId.hashCode() }.notification.channelId
+            val channelSound = manager.getNotificationChannel(channelId).sound.toString()
+            assertTrue(channelSound, channelSound.endsWith("/$sound"))
+            sounds += channelSound
+        }
+        assertEquals(3, sounds.size)
+        assertEquals(null, manager.getNotificationChannel("agatha_alerts"))
+        assertTrue(manager.getNotificationChannel(context.getString(R.string.push_channel_default_id)) != null)
     }
 
     @Test

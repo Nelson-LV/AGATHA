@@ -2,11 +2,17 @@ package com.hivend.agatha.push
 
 import android.Manifest
 import android.app.NotificationChannel
+import android.app.NotificationChannelGroup
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.ContentResolver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioAttributes
+import android.net.Uri
+import androidx.annotation.RawRes
+import androidx.annotation.StringRes
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
@@ -24,7 +30,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Muestra el push de una alerta (HU-4.1) en el canal de alertas. Título y cuerpo salen de
+ * Muestra el push de una alerta (HU-4.1) en el canal de su nivel, con su propio sonido. Título y cuerpo salen de
  * strings.xml, así que la notificación sale en el idioma del dispositivo. Al tocarla abre
  * [MainActivity] con [EXTRA_ALERT_ID], que navega al detalle de la alerta.
  */
@@ -33,14 +39,36 @@ class AlertNotifier @Inject constructor(
     @param:ApplicationContext private val context: Context,
 ) {
 
-    /** Crea (o actualiza el nombre de) el canal de alertas. Se llama al arrancar la app. */
-    fun createChannel() {
-        val channel = NotificationChannel(
-            context.getString(R.string.push_channel_alerts_id),
-            context.getString(R.string.push_channel_alerts_name),
-            NotificationManager.IMPORTANCE_HIGH,
-        ).apply { description = context.getString(R.string.push_channel_alerts_description) }
-        context.getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+    /**
+     * Crea un canal por nivel, cada uno con su sonido de `res/raw`, agrupados bajo "Alertas".
+     * Se llama al arrancar la app. Android fija el sonido de un canal al crearlo, por eso cada
+     * nivel tiene su propio canal (y un id nuevo si algún día cambia el sonido) y se borra el
+     * canal único anterior, que sonaba igual para todos los niveles.
+     */
+    fun createChannels() {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.createNotificationChannelGroup(
+            NotificationChannelGroup(CHANNEL_GROUP_ID, context.getString(R.string.push_channel_alerts_name)),
+        )
+        val audio = AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+            .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+            .build()
+        LevelChannel.entries.forEach { level ->
+            val channel = NotificationChannel(
+                level.id,
+                context.getString(level.nameRes),
+                NotificationManager.IMPORTANCE_HIGH,
+            ).apply {
+                description = context.getString(level.descriptionRes)
+                group = CHANNEL_GROUP_ID
+                setSound(soundUri(level.soundRes), audio)
+                enableVibration(true)
+                vibrationPattern = level.vibration
+            }
+            manager.createNotificationChannel(channel)
+        }
+        LEGACY_CHANNEL_IDS.forEach(manager::deleteNotificationChannel)
     }
 
     fun show(push: AlertPush) {
@@ -49,7 +77,7 @@ class AlertNotifier @Inject constructor(
             PackageManager.PERMISSION_GRANTED
         ) return
 
-        val notification = NotificationCompat.Builder(context, context.getString(R.string.push_channel_alerts_id))
+        val notification = NotificationCompat.Builder(context, push.level.channel().id)
             .setSmallIcon(R.drawable.ic_stat_alert)
             .setColor(push.level.notificationColor())
             .setContentTitle(title(push))
@@ -103,6 +131,9 @@ class AlertNotifier @Inject constructor(
         )
     }
 
+    private fun soundUri(@RawRes sound: Int): Uri =
+        Uri.parse("${ContentResolver.SCHEME_ANDROID_RESOURCE}://${context.packageName}/$sound")
+
     /** Mismo color de nivel que los chips de la app (RN-03), en su variante clara. */
     private fun AlertLevel.notificationColor(): Int = when (this) {
         AlertLevel.RED -> LightAgathaColors.critical
@@ -111,7 +142,41 @@ class AlertNotifier @Inject constructor(
         AlertLevel.GREEN -> LightAgathaColors.positive
     }.toArgb()
 
+    /** Canal de cada nivel con su sonido: más urgente cuanto más alto el nivel (RN-01). */
+    internal enum class LevelChannel(
+        val id: String,
+        @param:StringRes val nameRes: Int,
+        @param:StringRes val descriptionRes: Int,
+        @param:RawRes val soundRes: Int,
+        val vibration: LongArray,
+    ) {
+        RED(
+            "agatha_alerts_red_v1", R.string.push_channel_red_name, R.string.push_channel_red_description,
+            R.raw.alert_red, longArrayOf(0, 400, 150, 400, 150, 400),
+        ),
+        ORANGE(
+            "agatha_alerts_orange_v1", R.string.push_channel_orange_name, R.string.push_channel_orange_description,
+            R.raw.alert_orange, longArrayOf(0, 300, 200, 300),
+        ),
+        YELLOW(
+            "agatha_alerts_yellow_v1", R.string.push_channel_yellow_name, R.string.push_channel_yellow_description,
+            R.raw.alert_yellow, longArrayOf(0, 250),
+        ),
+    }
+
     companion object {
+        private const val CHANNEL_GROUP_ID = "agatha_alerts_group"
+
+        /** Canales de versiones anteriores que se borran al arrancar. */
+        private val LEGACY_CHANNEL_IDS = listOf("agatha_alerts")
+
+        /** Verde no genera push (RN-02); si llegara, usa el canal más suave. */
+        internal fun AlertLevel.channel(): LevelChannel = when (this) {
+            AlertLevel.RED -> LevelChannel.RED
+            AlertLevel.ORANGE -> LevelChannel.ORANGE
+            AlertLevel.YELLOW, AlertLevel.GREEN -> LevelChannel.YELLOW
+        }
+
         const val EXTRA_ALERT_ID = "com.hivend.agatha.extra.ALERT_ID"
         const val EXTRA_MESSAGE_ID = "com.hivend.agatha.extra.MESSAGE_ID"
     }

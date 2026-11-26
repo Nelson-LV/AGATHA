@@ -25,7 +25,7 @@ class AgathaApplication : Application(), Configuration.Provider {
     override fun onCreate() {
         super.onCreate()
         // El canal debe existir antes del primer push (HU-4.1).
-        alertNotifier.createChannel()
+        alertNotifier.createChannels()
         // Lo que quedó pendiente de una sesión anterior sale en cuanto haya red (HU-7.3).
         syncScheduler.schedule()
         // El backend pide el token en cada arranque, aunque no haya cambiado.

@@ -324,7 +324,12 @@
 
     <!-- Alert push (HU-4.1) -->
     <string name="push_channel_alerts_name">Alerts</string>
-    <string name="push_channel_alerts_description">New alerts and alerts that rise in level</string>
+    <string name="push_channel_red_name">Red alerts</string>
+    <string name="push_channel_red_description">New alerts or alerts that rise to Red. Urgent alarm sound.</string>
+    <string name="push_channel_orange_name">Orange alerts</string>
+    <string name="push_channel_orange_description">New alerts or alerts that rise to Orange. Two-tone sound.</string>
+    <string name="push_channel_yellow_name">Yellow alerts</string>
+    <string name="push_channel_yellow_description">New Yellow alerts. Soft single-tone sound.</string>
     <string name="push_title_new">New alert %1$s: %2$s</string>
     <string name="push_title_level_up">Alert %1$s rose to %2$s</string>
     <string name="push_body_pk">PK %1$s</string>
