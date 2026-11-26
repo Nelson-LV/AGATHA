@@ -55,7 +55,7 @@ import com.hivend.agatha.ui.sync.SyncScreen
  */
 @Composable
 fun AgathaApp(
-    alertToOpen: String? = null,
+    alertToOpen: AlertOpenRequest? = null,
     onAlertOpened: () -> Unit = {},
 ) {
     val navController = rememberNavController()
@@ -64,7 +64,8 @@ fun AgathaApp(
 
     LaunchedEffect(alertToOpen) {
         if (alertToOpen != null) {
-            navController.navigate(AlertDetail.buildRoute(alertToOpen))
+            // Sin messageId, el detalle va al tramo vigente (guía §8.3).
+            navController.navigate(AlertDetail.buildRoute(alertToOpen.alertId, alertToOpen.messageId ?: AlertDetail.FOCUS_CURRENT))
             onAlertOpened()
         }
     }
@@ -128,7 +129,14 @@ fun AgathaApp(
 
             composable(
                 route = AlertDetail.route,
-                arguments = listOf(navArgument(AlertDetail.ARG_ALERT_ID) { type = NavType.StringType }),
+                arguments = listOf(
+                    navArgument(AlertDetail.ARG_ALERT_ID) { type = NavType.StringType },
+                    navArgument(AlertDetail.ARG_FOCUS) {
+                        type = NavType.StringType
+                        nullable = true
+                        defaultValue = null
+                    },
+                ),
             ) {
                 AlertDetailScreen(
                     onBack = { navController.popBackStack() },

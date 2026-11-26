@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.hivend.agatha.core.navigation.AgathaApp
+import com.hivend.agatha.core.navigation.AlertOpenRequest
 import com.hivend.agatha.domain.repository.ConnectivityMonitor
 import com.hivend.agatha.push.AlertNotifier
 import com.hivend.agatha.ui.components.LocalOnline
@@ -31,14 +32,14 @@ class MainActivity : ComponentActivity() {
     @Inject lateinit var connectivityMonitor: ConnectivityMonitor
 
     /** Alerta que pidió abrir un push (HU-4.1); se consume al navegar a su detalle. */
-    private var alertToOpen by mutableStateOf<String?>(null)
+    private var alertToOpen by mutableStateOf<AlertOpenRequest?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Íconos claros en la barra de estado: el encabezado de la app es oscuro en ambos temas.
         enableEdgeToEdge(statusBarStyle = SystemBarStyle.dark(Color.TRANSPARENT))
         // Al recrearse (rotación) el intent original ya se atendió: no volver a abrir el detalle.
-        if (savedInstanceState == null) alertToOpen = intent.alertIdExtra()
+        if (savedInstanceState == null) alertToOpen = intent.alertOpenRequest()
         setContent {
             // Estado real de la red para la franja de conectividad de todas las pantallas (HU-7.1).
             val online by connectivityMonitor.isOnline.collectAsStateWithLifecycle(initialValue = true)
@@ -57,8 +58,11 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
-        intent.alertIdExtra()?.let { alertToOpen = it }
+        intent.alertOpenRequest()?.let { alertToOpen = it }
     }
 
-    private fun Intent.alertIdExtra(): String? = getStringExtra(AlertNotifier.EXTRA_ALERT_ID)
+    private fun Intent.alertOpenRequest(): AlertOpenRequest? =
+        getStringExtra(AlertNotifier.EXTRA_ALERT_ID)?.let {
+            AlertOpenRequest(it, getStringExtra(AlertNotifier.EXTRA_MESSAGE_ID))
+        }
 }

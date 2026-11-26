@@ -25,11 +25,16 @@ sealed class AgathaDestination(val route: String) {
         }
     }
 
-    data object AlertDetail : AgathaDestination("alert_detail/{alertId}") {
+    data object AlertDetail : AgathaDestination("alert_detail/{alertId}?focus={focus}") {
         const val ARG_ALERT_ID = "alertId"
 
+        /** Desde un push: el `messageId` al que ir, o [FOCUS_CURRENT] para el tramo vigente. */
+        const val ARG_FOCUS = "focus"
+        const val FOCUS_CURRENT = "current"
+
         /** El id puede venir de un push: sin codificar, un "/" o "?" haría fallar la navegación. */
-        fun buildRoute(alertId: String) = "alert_detail/${Uri.encode(alertId)}"
+        fun buildRoute(alertId: String, focus: String? = null) =
+            "alert_detail/${Uri.encode(alertId)}" + (focus?.let { "?focus=${Uri.encode(it)}" } ?: "")
     }
 
     data object InspectionForm : AgathaDestination("inspection_form/{alertId}") {
@@ -37,6 +42,9 @@ sealed class AgathaDestination(val route: String) {
         fun buildRoute(alertId: String) = "inspection_form/$alertId"
     }
 }
+
+/** Alerta que pidió abrir un push tocado (HU-4.1) y, si vino, el mensaje al que llevar el detalle. */
+data class AlertOpenRequest(val alertId: String, val messageId: String? = null)
 
 /** Route marker used by the Historial tab; its ViewModel restores the last sensor selection. */
 const val HISTORY_LAST_SELECTED_DEVICE_ID = "_last"

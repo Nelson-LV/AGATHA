@@ -82,3 +82,30 @@ data class LevelSegment(
  */
 fun List<LevelSegment>.filteredByLevel(level: AlertLevel?): List<LevelSegment> =
     sortedBy { it.seq }.filter { level == null || it.level == level }
+
+/** A dónde llevar el detalle al abrirlo desde un push (guía §8.3). */
+sealed interface DetailFocus {
+    /** El mensaje con este id (`messageId` del push). */
+    data class Message(val id: Long) : DetailFocus
+
+    /** El tramo vigente, cuando el push no trae un mensaje. */
+    data object CurrentSegment : DetailFocus
+}
+
+/** Tramo ([segmentIndex] en esta lista) y mensaje a mostrar; [messageId] null = el tramo entero. */
+data class FocusTarget(val segmentIndex: Int, val messageId: Long?)
+
+/**
+ * Dónde queda [focus] en estos tramos: el mensaje con ese id, o si no está (o no vino) el tramo
+ * vigente y, si la alerta ya terminó, el último. null mientras no haya tramos.
+ */
+fun List<LevelSegment>.focusTarget(focus: DetailFocus): FocusTarget? {
+    if (isEmpty()) return null
+    if (focus is DetailFocus.Message) {
+        forEachIndexed { index, segment ->
+            if (segment.messages.any { it.id == focus.id }) return FocusTarget(index, focus.id)
+        }
+    }
+    val current = indexOfFirst { it.isCurrent }.takeIf { it >= 0 } ?: lastIndex
+    return FocusTarget(current, null)
+}

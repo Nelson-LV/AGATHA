@@ -8,6 +8,7 @@ import com.hivend.agatha.R
 import com.hivend.agatha.core.device.DeviceOriginProvider
 import com.hivend.agatha.core.navigation.AgathaDestination
 import com.hivend.agatha.domain.model.Alert
+import com.hivend.agatha.domain.model.DetailFocus
 import com.hivend.agatha.domain.model.AlertClassification
 import com.hivend.agatha.domain.model.AlertFailure
 import com.hivend.agatha.domain.model.AlertResult
@@ -71,6 +72,9 @@ class AlertDetailViewModel @Inject constructor(
 
     val alertId: String =
         checkNotNull(savedStateHandle[AgathaDestination.AlertDetail.ARG_ALERT_ID])
+
+    /** A dónde llevar el detalle si se abrió desde un push; null al abrirlo desde la app. */
+    val focus: DetailFocus? = detailFocusOf(savedStateHandle[AgathaDestination.AlertDetail.ARG_FOCUS])
 
     private data class Local(
         val loading: Boolean = true,
@@ -186,4 +190,10 @@ class AlertDetailViewModel @Inject constructor(
         AlertClassification.CONFIRMED -> R.string.alert_classify_conflict_confirmed
         AlertClassification.FALSE_ALARM -> R.string.alert_classify_conflict_false_alarm
     }
+}
+
+/** El argumento `focus` de la ruta: un `messageId` numérico, o cualquier otro valor = el tramo vigente. */
+internal fun detailFocusOf(arg: String?): DetailFocus? = when {
+    arg.isNullOrBlank() -> null
+    else -> arg.trim().toLongOrNull()?.let { DetailFocus.Message(it) } ?: DetailFocus.CurrentSegment
 }

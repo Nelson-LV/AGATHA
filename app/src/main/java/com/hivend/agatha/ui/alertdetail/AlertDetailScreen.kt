@@ -20,6 +20,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.lazy.rememberLazyListState
+import com.hivend.agatha.domain.model.focusTarget
 import com.hivend.agatha.domain.model.filteredByLevel
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -128,6 +130,19 @@ fun AlertDetailScreen(
     var pendingChoice by remember { mutableStateOf<AlertClassification?>(null) }
     /** Filtro por color de los tramos (guía §6.1); null = Todos. */
     var segmentFilter by rememberSaveable { mutableStateOf<AlertLevel?>(null) }
+    val listState = rememberLazyListState()
+    /** Abierto desde un push: ir una vez al mensaje del push o al tramo vigente (guía §8.3). */
+    var focusPending by rememberSaveable { mutableStateOf(viewModel.focus != null) }
+    val focusTarget = viewModel.focus?.takeIf { focusPending }?.let { focus ->
+        alert?.levelSegments?.focusTarget(focus)
+    }
+    LaunchedEffect(focusTarget) {
+        if (focusTarget != null) {
+            segmentFilter = null
+            // El tramo es un ítem de la lista: primero se lleva a la vista y luego el mensaje dentro.
+            listState.scrollToItem(FIRST_SEGMENT_ITEM + focusTarget.segmentIndex)
+        }
+    }
 
     pendingChoice?.let { choice ->
         ClassifyDialog(
@@ -178,10 +193,11 @@ fun AlertDetailScreen(
         }
 
         LazyColumn(
+            state = listState,
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            item {
+            item(key = "alert") {
                 AlertCard(
                     alert = alert,
                     onClassify = { pendingChoice = it },
@@ -209,8 +225,14 @@ fun AlertDetailScreen(
                     )
                 }
             }
-            itemsIndexed(shownSegments, key = { index, segment -> "segment-$index-${segment.seq}" }) { _, segment ->
-                LevelSegmentBlock(segment)
+            itemsIndexed(shownSegments, key = { index, segment -> "segment-$index-${segment.seq}" }) { index, segment ->
+                val target = focusTarget?.takeIf { it.segmentIndex == index && segmentFilter == null }
+                LevelSegmentBlock(
+                    segment = segment,
+                    focusMessageId = target?.messageId,
+                    focusSegment = target != null && target.messageId == null,
+                    onFocused = { focusPending = false },
+                )
             }
             item {
                 ClassificationCard(
@@ -677,3 +699,6 @@ private fun RecentHistoryCard(events: List<HistoryEvent>) {
         }
     }
 }
+
+/** Ítems de la lista antes del primer tramo: la tarjeta de la alerta y el encabezado de mensajes. */
+private const val FIRST_SEGMENT_ITEM = 2

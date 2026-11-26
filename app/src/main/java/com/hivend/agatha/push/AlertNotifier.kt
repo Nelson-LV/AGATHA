@@ -58,7 +58,7 @@ class AlertNotifier @Inject constructor(
             .setCategory(NotificationCompat.CATEGORY_ALARM)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
-            .setContentIntent(openAlert(push.alertId))
+            .setContentIntent(openAlert(push.alertId, push.messageId))
             .build()
         // Un id por alerta: si sube de nivel, la nueva notificación reemplaza a la anterior.
         NotificationManagerCompat.from(context).notify(push.alertId.hashCode(), notification)
@@ -89,9 +89,11 @@ class AlertNotifier @Inject constructor(
             context.resources.configuration.locales[0],
         ).withZone(COLOMBIA)
 
-    private fun openAlert(alertId: String): PendingIntent {
+    /** Abre el detalle de la alerta en el mensaje del push (guía §8.3). */
+    private fun openAlert(alertId: String, messageId: String?): PendingIntent {
         val intent = Intent(context, MainActivity::class.java)
             .putExtra(EXTRA_ALERT_ID, alertId)
+            .putExtra(EXTRA_MESSAGE_ID, messageId)
             .addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP)
         return PendingIntent.getActivity(
             context,
@@ -111,5 +113,6 @@ class AlertNotifier @Inject constructor(
 
     companion object {
         const val EXTRA_ALERT_ID = "com.hivend.agatha.extra.ALERT_ID"
+        const val EXTRA_MESSAGE_ID = "com.hivend.agatha.extra.MESSAGE_ID"
     }
 }

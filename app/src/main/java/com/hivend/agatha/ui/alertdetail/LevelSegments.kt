@@ -84,19 +84,18 @@ internal fun LevelSegmentsHeader(selected: AlertLevel?, onSelect: (AlertLevel?) 
 /**
  * Un tramo de color (guía §6.1): cabecera con el color, el rango "inicio – fin" ("ahora" si sigue
  * vigente) y cómo empezó (abrió, subió, bajó, se reactivó); debajo sus mensajes en orden. Si
- * [focusMessageId] es de este tramo, o el tramo es el vigente y [focusCurrent] es true, se trae
- * a la vista al aparecer (apertura desde un push).
+ * [focusMessageId] es de un mensaje de este tramo, ese mensaje, o con [focusSegment] el tramo, se trae
+ * a la vista al aparecer (apertura desde un push, guía §8.3).
  */
 @Composable
 internal fun LevelSegmentBlock(
     segment: LevelSegment,
     focusMessageId: Long? = null,
-    focusCurrent: Boolean = false,
+    focusSegment: Boolean = false,
     onFocused: () -> Unit = {},
 ) {
     val color = segment.level?.levelColor() ?: AgathaTheme.colors.textTertiary
     val segmentRequester = remember { BringIntoViewRequester() }
-    val focusSegment = focusCurrent && focusMessageId == null && segment.isCurrent
     if (focusSegment) {
         LaunchedEffect(Unit) {
             segmentRequester.bringIntoView()
