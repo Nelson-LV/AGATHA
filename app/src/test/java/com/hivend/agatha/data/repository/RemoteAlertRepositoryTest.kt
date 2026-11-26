@@ -3,7 +3,10 @@ package com.hivend.agatha.data.repository
 import com.hivend.agatha.data.local.alert.AlertActionEntity
 import com.hivend.agatha.data.local.alert.AlertOutbox
 import com.hivend.agatha.data.remote.ApiResult
+import com.hivend.agatha.data.remote.alerts.ActiveAlertsDto
+import com.hivend.agatha.data.remote.alerts.ActivePointDto
 import com.hivend.agatha.data.remote.alerts.AlertDto
+import com.hivend.agatha.data.remote.alerts.DeviceAlertsDto
 import com.hivend.agatha.data.remote.alerts.AlertPageDto
 import com.hivend.agatha.data.remote.alerts.AlertPendingDto
 import com.hivend.agatha.data.remote.alerts.AlertsApi
@@ -76,7 +79,8 @@ class RemoteAlertRepositoryTest {
             status: String?,
         ): AlertPageDto {
             checkNetwork()
-            val items = if (device == null) recent else recent.filter { it.device.id.toString() == device }
+            pagedCalls++
+            val items = if (device == null) recent else recent.filter { it.device?.id.toString() == device }
             return AlertPageDto(total = items.size, page = page ?: 1, pageSize = 10, items = items)
         }
 
@@ -98,8 +102,32 @@ class RemoteAlertRepositoryTest {
             return AlertPendingDto(pendingTotal ?: pending.size, pending.take(limit ?: 5))
         }
 
+        var pagedCalls = 0
+        var detailCalls = 0
+        val deviceCalls = mutableListOf<Pair<Int, String?>>()
+        var deviceEndpointMissing = false
+        val active = mutableListOf<AlertDto>()
+        var activeFails = false
+
+        override suspend fun active(): ActiveAlertsDto {
+            checkNetwork()
+            if (activeFails) throw HttpException(Response.error<Any>(500, "{}".toResponseBody()))
+            return ActiveAlertsDto(listOf(ActivePointDto(11556, "Sensor PK34-470", "ROJO", false, active)))
+        }
+
+        override suspend fun deviceAlerts(pointId: Int, from: String?, to: String?): DeviceAlertsDto {
+            checkNetwork()
+            if (deviceEndpointMissing) throw HttpException(Response.error<Any>(404, "{}".toResponseBody()))
+            deviceCalls += pointId to from
+            // La cabecera reducida de §5.5: sin `device`, `current_level` ni `in_progress`.
+            val rows = recent.filter { it.device?.id == pointId }
+                .map { it.copy(device = null, currentLevel = null, inProgress = false, state = if (it.inProgress) "ACTIVA" else "FINALIZADA") }
+            return DeviceAlertsDto(pointId, "Sensor PK34-470", rows)
+        }
+
         override suspend fun alert(id: String): AlertDto {
             checkNetwork()
+            detailCalls++
             alertError?.let { throw it }
             return details[id] ?: (pending + recent).first { it.code == id }
         }
@@ -624,5 +652,66 @@ class RemoteAlertRepositoryTest {
 
         assertEquals(setOf("report-1"), repo.observePendingInspectionIds().first())
         assertTrue(repo.observeConflicts("ALR-000001").first().isEmpty())
+    }
+
+    @Test
+    fun `a device history comes in one call and each alert detail is completed only once`() = runBlocking {
+        val api = FakeApi()
+        api.recent += listOf(dto(1), dto(2, inProgress = false))
+        api.recent[0] = api.recent[0].copy(
+            levels = listOf(
+                com.hivend.agatha.data.remote.alerts.LevelDto(seq = 1, openedBy = "OPEN", level = "AMARILLO", startedAt = "2026-10-20T10:01:00-05:00", endedAt = "2026-10-20T11:00:00-05:00"),
+                com.hivend.agatha.data.remote.alerts.LevelDto(seq = 2, openedBy = "UP", level = "NARANJA", startedAt = "2026-10-20T11:00:00-05:00"),
+            ),
+        )
+        val repo = repository(api)
+
+        assertTrue(repo.refreshDevice(11556) is AlertResult.Success)
+        assertEquals(listOf(11556 to "2026-01-01"), api.deviceCalls)
+        assertEquals(0, api.pagedCalls)
+        assertEquals(2, api.detailCalls)
+
+        assertTrue(repo.refreshDevice(11556) is AlertResult.Success)
+        assertEquals(2, api.detailCalls)
+        val ongoing = repo.observeAlert("ALR-000001").first()!!
+        assertTrue(ongoing.isOngoing)
+        assertEquals(com.hivend.agatha.domain.model.AlertLevel.ORANGE, ongoing.level)
+        assertEquals(2, ongoing.levelSegments.size)
+    }
+
+    @Test
+    fun `without the device endpoint the history falls back to paging the alerts`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        api.deviceEndpointMissing = true
+        val repo = repository(api)
+
+        assertTrue(repo.refreshDevice(11556) is AlertResult.Success)
+
+        assertEquals(1, api.pagedCalls)
+        assertEquals(listOf("ALR-000001"), repo.observeAlerts().first().map { it.id })
+    }
+
+    @Test
+    fun `the list adds every active alert even beyond the first page`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        api.active += dto(40, classification = "CONFIRMADA")
+        val repo = repository(api)
+
+        repo.refreshAlerts()
+
+        assertEquals(setOf("ALR-000001", "ALR-000040"), repo.observeAlerts().first().map { it.id }.toSet())
+    }
+
+    @Test
+    fun `a failing active endpoint does not break the list`() = runBlocking {
+        val api = FakeApi()
+        api.recent += dto(1)
+        api.activeFails = true
+        val repo = repository(api)
+
+        assertTrue(repo.refreshAlerts() is AlertResult.Success)
+        assertEquals(listOf("ALR-000001"), repo.observeAlerts().first().map { it.id })
     }
 }

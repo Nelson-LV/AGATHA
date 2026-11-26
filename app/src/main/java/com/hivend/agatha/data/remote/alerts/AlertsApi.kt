@@ -64,6 +64,21 @@ interface AlertsApi {
     @GET("api/alerts/{id}")
     suspend fun alert(@Path("id") id: String): AlertDto
 
+    /** Alertas activas agrupadas por punto de medición (guía §5.1). */
+    @GET("api/alerts/active")
+    suspend fun active(): ActiveAlertsDto
+
+    /**
+     * Historial de un punto de medición con los tramos y mensajes de cada alerta (guía §5.5).
+     * Sin fechas el backend trae los últimos 30 días; las fechas van como `aaaa-mm-dd`.
+     */
+    @GET("api/alerts/devices/{pointId}/alerts")
+    suspend fun deviceAlerts(
+        @Path("pointId") pointId: Int,
+        @Query("from") from: String? = null,
+        @Query("to") to: String? = null,
+    ): DeviceAlertsDto
+
     // Los envíos devuelven el cuerpo crudo: el éxito se decide por el código HTTP, y el cuerpo
     // (ver [ActionBodyDto]) solo se lee para los avisos; así un cambio en él no pierde un envío.
 
@@ -94,6 +109,43 @@ data class AlertPendingDto(
 )
 
 @Serializable
+data class ActiveAlertsDto(
+    val devices: List<ActivePointDto> = emptyList(),
+)
+
+/** Un punto con alertas activas: [level] y [blinking] son los del punto (el peor de sus alertas). */
+@Serializable
+data class ActivePointDto(
+    @SerialName("measuring_point_id") val measuringPointId: Int,
+    val pk: String? = null,
+    val level: String? = null,
+    val blinking: Boolean? = null,
+    val alerts: List<AlertDto> = emptyList(),
+)
+
+/** Historial de un punto (guía §5.5): cabecera reducida de cada alerta, sin `device`, con sus tramos. */
+@Serializable
+data class DeviceAlertsDto(
+    @SerialName("measuring_point_id") val measuringPointId: Int,
+    val pk: String? = null,
+    val alerts: List<AlertDto> = emptyList(),
+) {
+    /**
+     * Las filas con el punto como `device`. La cabecera no trae `current_level` ni `in_progress`:
+     * una alerta ACTIVA está en curso y su nivel actual es el del tramo vigente.
+     */
+    fun rows(): List<AlertDto> = alerts.map { alert ->
+        val active = alert.state == "ACTIVA"
+        alert.copy(
+            device = alert.device ?: DeviceRefDto(measuringPointId, pk),
+            inProgress = alert.inProgress || active,
+            currentLevel = alert.currentLevel
+                ?: alert.levels.takeIf { active }?.maxByOrNull { it.seq }?.level,
+        )
+    }
+}
+
+@Serializable
 data class DeviceRefDto(
     val id: Int,
     /** Nombre del dispositivo ("Sensor PK34-470"): se muestra tal cual. */
@@ -105,7 +157,8 @@ data class DeviceRefDto(
 data class AlertDto(
     val id: Int,
     val code: String,
-    val device: DeviceRefDto,
+    /** null solo en el historial de un punto (guía §5.5), donde el punto es la cabecera. */
+    val device: DeviceRefDto? = null,
     val event: String? = null,
     val state: String? = null,
     @SerialName("started_at") val startedAt: String? = null,

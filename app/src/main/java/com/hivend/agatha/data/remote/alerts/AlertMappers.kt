@@ -112,6 +112,7 @@ private const val EMPTY_DETAIL = "—"
  * la alerta si no trae ninguna fecha de inicio.
  */
 internal fun AlertDto.toDomain(): Alert? {
+    val device = device ?: return null
     val max = levelFromApi(maxLevel) ?: levelFromApi(currentLevel)
         ?: levels.mapNotNull { levelFromApi(it.level) }.maxOrNull() ?: AlertLevel.YELLOW
     val started = parseInstant(startedAt) ?: parseInstant(openedAt) ?: return null

@@ -67,6 +67,9 @@ class RemoteAlertSearchRepositoryTest {
 
         override suspend fun pending(limit: Int?): AlertPendingDto = error("Not used")
         override suspend fun alert(id: String): AlertDto = error("Not used")
+        override suspend fun active(): com.hivend.agatha.data.remote.alerts.ActiveAlertsDto = error("Not used")
+        override suspend fun deviceAlerts(pointId: Int, from: String?, to: String?): com.hivend.agatha.data.remote.alerts.DeviceAlertsDto =
+            error("Not used")
         override suspend fun classify(id: String, body: ClassificationRequestDto): Response<ResponseBody> = error("Not used")
         override suspend fun label(id: String, body: LabelRequestDto): Response<ResponseBody> = error("Not used")
         override suspend fun observe(id: String, body: ObservationRequestDto): Response<ResponseBody> = error("Not used")

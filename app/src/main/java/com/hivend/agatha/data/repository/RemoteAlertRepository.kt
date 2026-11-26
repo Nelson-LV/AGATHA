@@ -73,6 +73,9 @@ class RemoteAlertRepository @Inject constructor(
     private val inspections = outbox.observeReports()
     private val unsynced = outbox.observeUnsynced()
 
+    /** Alertas cuyo detalle (`GET /api/alerts/{id}`) ya se descargó en esta sesión. */
+    private val detailLoaded: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
     /** Ids que trajo la última lista, para retirar de la caché las que ya no aplican. */
     private var lastListIds: Set<String> = emptySet()
 
@@ -87,14 +90,17 @@ class RemoteAlertRepository @Inject constructor(
     // ---- Lectura -------------------------------------------------------------------------
 
     override suspend fun refreshAlerts(): AlertResult<Unit> = fetch {
-        val (pending, recent) = coroutineScope {
+        val (pending, recent, active) = coroutineScope {
             // Con el máximo (50): con el valor por defecto (5) se perdían pendientes más viejas.
             val pending = async { api.pending(limit = AlertsApi.PENDING_LIMIT) }
             val recent = async { api.alerts(page = 1).items }
-            pending.await() to recent.await()
+            // Todas las activas (guía §5.1), aunque no estén en la primera página: el mapa pinta
+            // cada punto con su alerta en curso. Si falla, la lista sale igual con lo demás.
+            val active = async { activeAlerts() }
+            Triple(pending.await(), recent.await(), active.await())
         }
         unclassifiedTotal.value = pending.total
-        val rows = (pending.items + recent).distinctBy { it.id }.mapNotNull { it.toDomain() }
+        val rows = (pending.items + recent + active).distinctBy { it.id }.mapNotNull { it.toDomain() }
         val ids = rows.map { it.id }.toSet()
         alerts.update { current -> current.filterNot { it.id in lastListIds && it.id !in ids } }
         lastListIds = ids
@@ -108,6 +114,7 @@ class RemoteAlertRepository @Inject constructor(
                 val cached = current.firstOrNull { it.id == alert.id }
                 replace(current, alert.copy(classification = mergeClassification(cached?.classification, alert.classification)))
             }
+            detailLoaded += alert.id
         }
         // Un id con formato que la API no acepta (400 INVALID_INPUT, p. ej. el ALR-PRUEBA-000001 de
         // los push de prueba) es, para quien abre el detalle, una alerta que no existe.
@@ -116,29 +123,52 @@ class RemoteAlertRepository @Inject constructor(
         return if (invalidId) AlertResult.Failure(AlertFailure.NotFound) else result
     }
 
+    private suspend fun activeAlerts(): List<AlertDto> = try {
+        api.active().devices.flatMap { it.alerts }
+    } catch (e: CancellationException) {
+        throw e
+    } catch (_: Exception) {
+        emptyList()
+    }
+
     /**
-     * El listado no trae observaciones ni el detalle de clasificación y etiqueta: solo vienen en
-     * `GET /api/alerts/{id}`. Primero se publican las filas y luego se completa cada alerta, así el
-     * historial tiene esos datos sin que haga falta abrir cada alerta.
+     * Historial de un punto en una sola llamada (guía §5.5), con los tramos y mensajes de cada
+     * alerta. Si el backend no tiene ese endpoint (404) se pagina `GET /api/alerts` como antes.
+     *
+     * Esa respuesta no trae observaciones ni la fecha y el origen de la clasificación y la
+     * etiqueta: solo vienen en `GET /api/alerts/{id}`. Para que el historial los tenga sin abrir
+     * cada alerta, se completa una vez cada alerta cuyo detalle aún no se descargó; las ya
+     * completas no se vuelven a pedir.
      */
     override suspend fun refreshDevice(deviceId: Int): AlertResult<Unit> {
-        val rows = mutableListOf<Alert>()
-        val listed = fetch {
-            var seen = 0
-            for (page in 1..DEVICE_PAGES) {
-                val result = api.alerts(device = deviceId.toString(), page = page)
-                rows += result.items.mapNotNull(AlertDto::toDomain)
-                seen += result.items.size
-                if (result.items.size < result.pageSize || seen >= result.total) break
-            }
+        var rows: List<Alert> = emptyList()
+        var listed = fetch {
+            rows = api.deviceAlerts(deviceId, from = DEVICE_HISTORY_FROM).rows().mapNotNull(AlertDto::toDomain)
             upsertRows(rows)
         }
+        if (listed == AlertResult.Failure(AlertFailure.NotFound)) listed = fetch { rows = pagedDeviceRows(deviceId) }
         if (listed is AlertResult.Failure) return listed
         val permits = Semaphore(DETAIL_CONCURRENCY)
         val details = coroutineScope {
-            rows.map { row -> async { permits.withPermit { loadAlert(row.id) } } }.awaitAll()
+            rows.filterNot { it.id in detailLoaded }
+                .map { row -> async { permits.withPermit { loadAlert(row.id) } } }
+                .awaitAll()
         }
         return details.firstOrNull { it is AlertResult.Failure } ?: AlertResult.Success(Unit)
+    }
+
+    /** Respaldo para un backend sin §5.5: todas las páginas de `GET /api/alerts` del punto. */
+    private suspend fun pagedDeviceRows(deviceId: Int): List<Alert> {
+        val rows = mutableListOf<Alert>()
+        var seen = 0
+        for (page in 1..DEVICE_PAGES) {
+            val result = api.alerts(device = deviceId.toString(), page = page)
+            rows += result.items.mapNotNull(AlertDto::toDomain)
+            seen += result.items.size
+            if (result.items.size < result.pageSize || seen >= result.total) break
+        }
+        upsertRows(rows)
+        return rows
     }
 
     /** Las filas de la lista no traen el detalle: se conserva el que ya se tenía de cada alerta. */
@@ -150,8 +180,9 @@ class RemoteAlertRepository @Inject constructor(
     private fun mergeRow(old: Alert?, row: Alert): Alert {
         if (old == null) return row
         return row.copy(
-            levelTimeline = old.levelTimeline,
-            levelSegments = old.levelSegments,
+            // El historial de un punto trae los tramos; la lista no: entonces se conservan los del detalle.
+            levelTimeline = row.levelTimeline.ifEmpty { old.levelTimeline },
+            levelSegments = row.levelSegments.ifEmpty { old.levelSegments },
             observations = old.observations,
             indicatorValue = old.indicatorValue,
             classification = mergeClassification(old.classification, row.classification),
@@ -495,6 +526,9 @@ class RemoteAlertRepository @Inject constructor(
 
     private companion object {
         const val DEVICE_PAGES = 20
+
+        /** El historial de un punto sin `from` trae solo 30 días; se pide desde el inicio del piloto. */
+        const val DEVICE_HISTORY_FROM = "2026-01-01"
         const val DETAIL_CONCURRENCY = 4
         const val HTTP_NOT_FOUND = 404
         const val HTTP_CONFLICT = 409
