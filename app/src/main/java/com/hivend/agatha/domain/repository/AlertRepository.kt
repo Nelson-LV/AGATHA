@@ -22,6 +22,12 @@ interface AlertRepository {
     fun observeAlerts(): Flow<List<Alert>>
     fun observeAlert(alertId: String): Flow<Alert?>
 
+    /**
+     * Total de alertas Sin clasificar según el servidor en la última descarga de la lista; puede
+     * ser mayor que las que trae la lista. null mientras no se haya descargado.
+     */
+    fun observeUnclassifiedTotal(): Flow<Int?>
+
     /** Descarga la lista de alertas del celular (Sin clasificar y activas) y reenvía lo pendiente. */
     suspend fun refreshAlerts(): AlertResult<Unit>
 

@@ -65,7 +65,7 @@ class RemoteAlertSearchRepositoryTest {
             return exportResponse()
         }
 
-        override suspend fun pending(): AlertPendingDto = error("Not used")
+        override suspend fun pending(limit: Int?): AlertPendingDto = error("Not used")
         override suspend fun alert(id: String): AlertDto = error("Not used")
         override suspend fun classify(id: String, body: ClassificationRequestDto): Response<ResponseBody> = error("Not used")
         override suspend fun label(id: String, body: LabelRequestDto): Response<ResponseBody> = error("Not used")

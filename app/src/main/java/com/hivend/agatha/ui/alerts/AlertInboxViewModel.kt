@@ -25,6 +25,8 @@ data class AlertInboxUiState(
     val lastSyncedAt: Instant? = null,
     /** Falla de la última actualización; las alertas ya descargadas se siguen mostrando. */
     val failure: AlertFailure? = null,
+    /** Pendientes de clasificar según el servidor (puede superar las que trae la lista). */
+    val unclassifiedTotal: Int? = null,
 )
 
 /**
@@ -45,8 +47,12 @@ class AlertInboxViewModel @Inject constructor(
 
     private val sync = MutableStateFlow(Sync())
 
-    val uiState: StateFlow<AlertInboxUiState> = combine(alertRepository.observeAlerts(), sync) { alerts, sync ->
-        AlertInboxUiState(alerts.forAlertList(), sync.refreshing, sync.lastSyncedAt, sync.failure)
+    val uiState: StateFlow<AlertInboxUiState> = combine(
+        alertRepository.observeAlerts(),
+        alertRepository.observeUnclassifiedTotal(),
+        sync,
+    ) { alerts, unclassifiedTotal, sync ->
+        AlertInboxUiState(alerts.forAlertList(), sync.refreshing, sync.lastSyncedAt, sync.failure, unclassifiedTotal)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AlertInboxUiState())
 
     fun refresh() {

@@ -49,9 +49,17 @@ interface AlertsApi {
         @Query("status") status: String? = null,
     ): Response<ResponseBody>
 
-    /** Alertas Sin clasificar. */
+    /**
+     * Alertas Sin clasificar, la más reciente primero (guía §5.2). Sin [limit] el backend trae
+     * solo 5; `total` cuenta todas las pendientes aunque `items` traiga como máximo [limit].
+     */
     @GET("api/alerts/pending")
-    suspend fun pending(): AlertPendingDto
+    suspend fun pending(@Query("limit") limit: Int? = PENDING_LIMIT): AlertPendingDto
+
+    companion object {
+        /** Máximo que acepta `GET /api/alerts/pending`. */
+        const val PENDING_LIMIT = 50
+    }
 
     @GET("api/alerts/{id}")
     suspend fun alert(@Path("id") id: String): AlertDto

@@ -68,6 +68,7 @@ class RemoteAlertRepository @Inject constructor(
 ) : AlertRepository {
 
     private val alerts = MutableStateFlow<List<Alert>>(emptyList())
+    private val unclassifiedTotal = MutableStateFlow<Int?>(null)
     private val inspections = outbox.observeReports()
     private val unsynced = outbox.observeUnsynced()
 
@@ -80,15 +81,19 @@ class RemoteAlertRepository @Inject constructor(
     override fun observeAlert(alertId: String): Flow<Alert?> =
         observeAlerts().map { list -> list.find { it.id == alertId } }
 
+    override fun observeUnclassifiedTotal(): Flow<Int?> = unclassifiedTotal
+
     // ---- Lectura -------------------------------------------------------------------------
 
     override suspend fun refreshAlerts(): AlertResult<Unit> = fetch {
         val (pending, recent) = coroutineScope {
-            val pending = async { api.pending().items }
+            // Con el máximo (50): con el valor por defecto (5) se perdían pendientes más viejas.
+            val pending = async { api.pending(limit = AlertsApi.PENDING_LIMIT) }
             val recent = async { api.alerts(page = 1).items }
             pending.await() to recent.await()
         }
-        val rows = (pending + recent).distinctBy { it.id }.mapNotNull { it.toDomain() }
+        unclassifiedTotal.value = pending.total
+        val rows = (pending.items + recent).distinctBy { it.id }.mapNotNull { it.toDomain() }
         val ids = rows.map { it.id }.toSet()
         alerts.update { current -> current.filterNot { it.id in lastListIds && it.id !in ids } }
         lastListIds = ids

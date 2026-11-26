@@ -89,9 +89,13 @@ class RemoteAlertRepositoryTest {
             status: String?,
         ): Response<ResponseBody> = error("Not used by these tests")
 
-        override suspend fun pending(): AlertPendingDto {
+        val pendingLimits = mutableListOf<Int?>()
+        var pendingTotal: Int? = null
+
+        override suspend fun pending(limit: Int?): AlertPendingDto {
             checkNetwork()
-            return AlertPendingDto(pending.size, pending)
+            pendingLimits += limit
+            return AlertPendingDto(pendingTotal ?: pending.size, pending.take(limit ?: 5))
         }
 
         override suspend fun alert(id: String): AlertDto {
@@ -179,6 +183,20 @@ class RemoteAlertRepositoryTest {
         assertTrue(repo.refreshAlerts() is AlertResult.Success)
 
         assertEquals(listOf("ALR-000003", "ALR-000002", "ALR-000001"), repo.observeAlerts().first().map { it.id })
+    }
+
+    @Test
+    fun `the list asks for up to 50 pending alerts and exposes the server total`() = runBlocking {
+        val api = FakeApi()
+        api.pending += (1..8).map { dto(it) }
+        api.pendingTotal = 60
+        val repo = repository(api)
+
+        repo.refreshAlerts()
+
+        assertEquals(listOf<Int?>(50), api.pendingLimits)
+        assertEquals(8, repo.observeAlerts().first().size)
+        assertEquals(60, repo.observeUnclassifiedTotal().first())
     }
 
     @Test

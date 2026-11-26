@@ -92,6 +92,10 @@
 
     <!-- Bandeja de alertas -->
     <string name="inbox_my_alerts">Mis alertas</string>
+    <plurals name="inbox_unclassified_count">
+        <item quantity="one">%d sin clasificar</item>
+        <item quantity="other">%d sin clasificar</item>
+    </plurals>
     <plurals name="inbox_active_count">
         <item quantity="one">%d activa</item>
         <item quantity="other">%d activas</item>

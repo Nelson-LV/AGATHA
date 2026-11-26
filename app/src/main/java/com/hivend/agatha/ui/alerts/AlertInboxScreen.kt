@@ -115,6 +115,13 @@ fun AlertInboxScreen(
                     ) {
                         Text(stringResource(R.string.inbox_my_alerts), style = MaterialTheme.typography.titleLarge, color = AgathaTheme.colors.textPrimary)
                         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                            state.unclassifiedTotal?.takeIf { it > 0 }?.let { total ->
+                                StatusChip(
+                                    text = pluralStringResource(R.plurals.inbox_unclassified_count, total, total),
+                                    containerColor = AgathaTheme.colors.criticalSurface,
+                                    contentColor = AgathaTheme.colors.textPrimary,
+                                )
+                            }
                             StatusChip(
                                 text = alerts.count { it.isOngoing }.let { pluralStringResource(R.plurals.inbox_active_count, it, it) },
                                 containerColor = AgathaTheme.colors.noticeContainer,
